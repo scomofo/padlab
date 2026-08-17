@@ -25,7 +25,9 @@ writeLessons([
     grid: {
       1: rep(3, 'x.......x.......', 'x.......x......x'),
       2: '...x..x....x..x.',
-      5: 's.s.s.s.s.s.s.s.',
+      // Off-beat hats only: the dembow snare is already busy, and eighth hats
+      // on top pushed this past what a level-2 player can physically keep up.
+      5: '..s...s...s...s.',
     },
   },
   {
@@ -35,11 +37,11 @@ writeLessons([
     genre: 'afrobeat',
     level: 2,
     padCount: 16,
-    bpm: 104,
+    bpm: 100,
     bars: 8,
     pads: { 1: 'kick', 4: 'rimshot', 7: 'shaker', 10: 'tomMid', 14: 'perc' },
     steps: [
-      { name: 'Shaker bed', description: 'Steady eighth-note shaker — the constant everything sits on.', playerPads: [7], tempoScale: 0.75 },
+      { name: 'Shaker bed', description: 'Shaker on every off-beat — the constant everything else sits on.', playerPads: [7], tempoScale: 0.75 },
       { name: 'Kick pattern', description: 'Kick on 1 and the "and" of 2 — not on every beat.', playerPads: [1], tempoScale: 0.8 },
       { name: 'Conga + rim', description: 'Mid tom as a conga, rimshot accents answering it.', playerPads: [4, 10], tempoScale: 0.85 },
       { name: 'Percussion', description: 'Perc fills the gaps at the end of each bar.', playerPads: [14], tempoScale: 0.9 },
@@ -48,9 +50,9 @@ writeLessons([
     grid: {
       1: rep(3, 'x.....x.........', 'x.....x........x'),
       4: rep(3, '..........o.....', '..........o...o.'),
-      7: 's.s.s.s.s.s.s.s.',
-      10: rep(3, '...o.........o..', '...o.....o...o..'),
-      14: rep(3, '............o...', '........o...o...'),
+      7: '..s...s...s...s.',
+      10: '...o.........o..',
+      14: '............o...',
     },
   },
   {
@@ -112,19 +114,19 @@ writeLessons([
     genre: 'technique',
     level: 1,
     padCount: 8,
-    bpm: 90,
+    bpm: 84,
     bars: 8,
-    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed' },
+    pads: { 1: 'kick', 2: 'snare' },
     steps: [
       { name: 'Quarters', description: 'Alternate kick and snare on every beat. Identical volume each time.', playerPads: [1, 2], tempoScale: 0.75 },
       { name: 'With the click', description: 'Same drill, faster. Listen for your hits landing exactly on the click.', playerPads: [1, 2], tempoScale: 0.9 },
-      { name: 'Eighths', description: 'Bars 5-8 double to eighth notes — keep the alternation even.', playerPads: [1, 2, 5], tempoScale: 0.9 },
-      perform('Quarters then eighths. Consistency beats speed here.'),
+      { name: 'Eighths', description: 'Bars 5 and 6 double to eighths, then it drops back. Keep the alternation even.', playerPads: [1, 2], tempoScale: 0.9 },
+      perform('Quarters, a burst of eighths, then quarters again. Consistency beats speed here.'),
     ],
     grid: {
-      1: rep(4, 'x.......x.......', ...rep(4, 'x...x...x...x...')),
-      2: rep(4, '....x.......x...', ...rep(4, '..x...x...x...x.')),
-      5: rep(4, '................', ...rep(4, 's...s...s...s...')),
+      // Quarters for 4 bars, eighths for 2, then back — a build, not a wall.
+      1: [...rep(4, 'x.......x.......'), 'x...x...x...x...', 'x...x...x...x...', 'x.......x.......', 'x.......x.......'],
+      2: [...rep(4, '....x.......x...'), '..x...x...x...x.', '..x...x...x...x.', '....x.......x...', '....x.......x...'],
     },
   },
   {

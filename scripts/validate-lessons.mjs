@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { analyzeLesson } from './lib/difficulty.mjs'
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'lessons')
 const DATA_DIR = join(SRC_DIR, 'data')
@@ -11,6 +12,20 @@ const COURSE_IDS = new Set(
 )
 /** Soft ceiling on note count per level, to catch charts denser than their rating. */
 const MAX_EVENTS_BY_LEVEL = { 1: 110, 2: 135, 3: 165, 4: 195, 5: 225, 6: 265 }
+/**
+ * Difficulty ceilings measured at full tempo, on *effective* hits per second:
+ * physical actions (a chord is one action), discounting instants that are
+ * nothing but a steady ostinato voice — see lib/difficulty.mjs for why.
+ * `doublePct` is the share of actions needing two pads at once.
+ */
+const DIFFICULTY = {
+  1: { hitsPerSec: 2.4, doublePct: 25 },
+  2: { hitsPerSec: 3.6, doublePct: 60 },
+  3: { hitsPerSec: 6.0, doublePct: 100 },
+  4: { hitsPerSec: 6.5, doublePct: 100 },
+  5: { hitsPerSec: 8.0, doublePct: 100 },
+  6: { hitsPerSec: 11.0, doublePct: 100 },
+}
 const SOUNDS = new Set([
   'kick', 'snare', 'clap', 'rimshot', 'hatClosed', 'hatOpen', 'shaker', 'crash',
   'ride', 'tomLow', 'tomMid', 'tomHigh', 'cowbell', 'perc', 'stab', 'bass',
@@ -98,6 +113,21 @@ for (const file of readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'))) {
       err(`step ${i + 1} tempoScale ${s.tempoScale} out of range`)
     }
   })
+
+  // Difficulty: effective actions per second, and how many need two hands.
+  const d = analyzeLesson(l)
+  const limit = DIFFICULTY[l.level]
+  if (limit) {
+    if (d.effectiveHitsPerSec > limit.hitsPerSec) {
+      err(
+        `${d.effectiveHitsPerSec} effective hits/sec exceeds the level ${l.level} ceiling of ` +
+          `${limit.hitsPerSec} (raw ${d.hitsPerSec})`,
+      )
+    }
+    if (d.doublePct > limit.doublePct) {
+      err(`${d.doublePct}% of hits need two pads at once (level ${l.level} allows ${limit.doublePct}%)`)
+    }
+  }
 
   const count = (l.events ?? []).length
   if (count < 8) err(`only ${count} events`)

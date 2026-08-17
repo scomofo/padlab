@@ -1,0 +1,118 @@
+{
+  "id": "first-taps",
+  "title": "First Taps",
+  "course": "foundations",
+  "genre": "hip-hop",
+  "level": 1,
+  "padCount": 8,
+  "bpm": 80,
+  "bars": 4,
+  "pads": {
+    "1": "kick"
+  },
+  "steps": [
+    {
+      "name": "The pulse",
+      "description": "One kick on every beat. Nothing else — just land on the click.",
+      "playerPads": [
+        1
+      ],
+      "tempoScale": 0.7
+    },
+    {
+      "name": "A little faster",
+      "description": "Same four hits per bar, closer to tempo. Keep them even.",
+      "playerPads": [
+        1
+      ],
+      "tempoScale": 0.85
+    },
+    {
+      "name": "Perform",
+      "description": "Four beats to the bar at full speed. This pulse is under everything else you will play.",
+      "playerPads": "all"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 1,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 2,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 3,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 4,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 6,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 7,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 8,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 9,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 10,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 11,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 12,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 13,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 14,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 15,
+      "pad": 1,
+      "vel": 102
+    }
+  ]
+}
