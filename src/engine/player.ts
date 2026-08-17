@@ -9,7 +9,7 @@ export type PlayMode = 'listen' | 'practice' | 'play'
 
 export interface FeedbackItem {
   pad: number
-  judgement: Judgement | 'stray'
+  judgement: Judgement | 'stray' | 'ignored'
   wall: number // performance.now() when it happened, for fading popups
 }
 
@@ -178,7 +178,9 @@ export class PlayerRuntime {
       if (hitBeat < -0.5) return // jamming during count-in is free
       if (hitBeat > this.totalBeats + 0.5) return
       const res = this.score.registerHit(pad, hitBeat)
-      this.feedback.push({ pad, judgement: res.judgement, wall: performance.now() })
+      if (res.judgement !== 'ignored') {
+        this.feedback.push({ pad, judgement: res.judgement, wall: performance.now() })
+      }
       return
     }
     if (this.mode === 'practice') {

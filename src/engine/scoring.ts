@@ -6,7 +6,8 @@ export interface JudgedEvent extends NoteEvent {
 }
 
 export interface HitResult {
-  judgement: Judgement | 'stray'
+  /** 'ignored' = debounced retrigger; it neither scores nor penalises. */
+  judgement: Judgement | 'stray' | 'ignored'
   event?: JudgedEvent
   deltaMs?: number
 }
@@ -26,6 +27,21 @@ export interface ScoreSummary {
 /** Timing windows, in ms of absolute error. Beyond `good` is a miss. */
 export const WINDOW_MS = { perfect: 45, great: 90, good: 135 } as const
 
+/**
+ * Repeat hits on the same pad closer together than this are treated as one
+ * physical hit. Velocity pads bounce and some controllers send duplicate
+ * note-ons; without this, one tap can score once and then be penalised.
+ * Kept below the fastest same-pad interval any chart uses (43 ms at level 6).
+ */
+export const RETRIGGER_DEBOUNCE_MS = 30
+
+/**
+ * Extra hits cost accuracy, but proportionally and with a ceiling — sloppiness
+ * should not be able to wipe out a performance where every note was hit.
+ */
+const STRAY_WEIGHT = 0.5
+const MAX_STRAY_PENALTY = 20
+
 export function starsForAccuracy(acc: number): 0 | 1 | 2 | 3 {
   if (acc >= 90) return 3
   if (acc >= 75) return 2
@@ -44,6 +60,9 @@ export class ScoreKeeper {
   combo = 0
   maxCombo = 0
   stray = 0
+  /** Retriggers swallowed by the debounce, for diagnostics. */
+  ignored = 0
+  private readonly lastHitMs = new Map<number, number>()
 
   constructor(playerEvents: NoteEvent[], secPerBeat: number) {
     this.events = playerEvents
@@ -55,6 +74,15 @@ export class ScoreKeeper {
 
   /** Register a pad hit at the given beat position. */
   registerHit(pad: number, hitBeat: number): HitResult {
+    // One physical hit can arrive as several note-ons; count it once.
+    const hitMs = hitBeat * this.secPerBeat * 1000
+    const prevMs = this.lastHitMs.get(pad)
+    if (prevMs !== undefined && hitMs - prevMs < RETRIGGER_DEBOUNCE_MS) {
+      this.ignored++
+      return { judgement: 'ignored' }
+    }
+    this.lastHitMs.set(pad, hitMs)
+
     let best: JudgedEvent | null = null
     let bestDist = Infinity
     for (const ev of this.events) {
@@ -105,7 +133,11 @@ export class ScoreKeeper {
     const raw = total === 0
       ? 100
       : ((counts.perfect + counts.great * 0.85 + counts.good * 0.5) / total) * 100
-    const accuracy = Math.max(0, Math.round(raw - this.stray)) // light stray-hit penalty
+    // Proportional and capped: extra hits cost you, but never everything.
+    const strayPenalty = total === 0
+      ? 0
+      : Math.min(MAX_STRAY_PENALTY, (this.stray / total) * 100 * STRAY_WEIGHT)
+    const accuracy = Math.max(0, Math.round(raw - strayPenalty))
     return {
       ...counts,
       stray: this.stray,
