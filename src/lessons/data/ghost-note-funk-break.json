@@ -1,0 +1,565 @@
+{
+  "id": "ghost-note-funk-break",
+  "title": "Ghost Note Funk Break",
+  "course": "breaks-and-bass",
+  "genre": "funk breaks",
+  "level": 3,
+  "padCount": 16,
+  "bpm": 98,
+  "bars": 8,
+  "pads": {
+    "1": "kick",
+    "2": "snare",
+    "3": "rimshot",
+    "4": "stab",
+    "5": "hatClosed",
+    "6": "hatOpen",
+    "7": "cowbell",
+    "9": "tomLow",
+    "10": "tomMid",
+    "11": "tomHigh",
+    "12": "crash"
+  },
+  "steps": [
+    {
+      "name": "Ghost note snare",
+      "description": "Snare alone: dig into the backbeats at full strength and brush the ghosts on the 'a' of 1 and 'e' of 3 near velocity 50.",
+      "playerPads": [
+        2
+      ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "Kick meets snare",
+      "description": "Add the kick: downbeat, the 'a' of 2 and the 'and' of 3 lock around your ghost notes.",
+      "playerPads": [
+        1,
+        2
+      ],
+      "tempoScale": 0.8
+    },
+    {
+      "name": "Sixteenth hats",
+      "description": "Closed-hat eighths with a sixteenth pickup on the 'e' of 4 into the open hat on the 'and'.",
+      "playerPads": [
+        5,
+        6
+      ],
+      "tempoScale": 0.85
+    },
+    {
+      "name": "Full drum kit",
+      "description": "Drums and hats together, switching to rimshot backbeats for the bar 5 breakdown.",
+      "playerPads": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "tempoScale": 0.9
+    },
+    {
+      "name": "Perform",
+      "description": "Full speed with every color: the horn stab, cowbell pickup, descending tom run and closing crash.",
+      "playerPads": "all"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 0,
+      "pad": 12,
+      "vel": 102
+    },
+    {
+      "t": 1,
+      "pad": 2,
+      "vel": 110
+    },
+    {
+      "t": 1.75,
+      "pad": 1,
+      "vel": 98
+    },
+    {
+      "t": 3,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 3.5,
+      "pad": 4,
+      "vel": 100
+    },
+    {
+      "t": 4,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 4,
+      "pad": 5,
+      "vel": 92
+    },
+    {
+      "t": 4.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 5,
+      "pad": 2,
+      "vel": 110
+    },
+    {
+      "t": 5,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 5.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 6,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 6.5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 6.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 7,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 7,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 7.5,
+      "pad": 6,
+      "vel": 86
+    },
+    {
+      "t": 8,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 8,
+      "pad": 5,
+      "vel": 92
+    },
+    {
+      "t": 8.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 9,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 9,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 9.75,
+      "pad": 1,
+      "vel": 96
+    },
+    {
+      "t": 10,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 10.25,
+      "pad": 2,
+      "vel": 50
+    },
+    {
+      "t": 10.5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 10.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 11,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 11,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 11.25,
+      "pad": 5,
+      "vel": 72
+    },
+    {
+      "t": 11.5,
+      "pad": 6,
+      "vel": 86
+    },
+    {
+      "t": 12,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 12,
+      "pad": 5,
+      "vel": 92
+    },
+    {
+      "t": 12.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 12.75,
+      "pad": 2,
+      "vel": 48
+    },
+    {
+      "t": 13,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 13,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 13.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 14,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 14.5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 14.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 15,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 15,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 15.5,
+      "pad": 6,
+      "vel": 86
+    },
+    {
+      "t": 16,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 16,
+      "pad": 5,
+      "vel": 90
+    },
+    {
+      "t": 16.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 17,
+      "pad": 3,
+      "vel": 100
+    },
+    {
+      "t": 17,
+      "pad": 5,
+      "vel": 84
+    },
+    {
+      "t": 17.75,
+      "pad": 1,
+      "vel": 96
+    },
+    {
+      "t": 18,
+      "pad": 5,
+      "vel": 86
+    },
+    {
+      "t": 18.25,
+      "pad": 2,
+      "vel": 50
+    },
+    {
+      "t": 18.5,
+      "pad": 1,
+      "vel": 100
+    },
+    {
+      "t": 18.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 19,
+      "pad": 3,
+      "vel": 102
+    },
+    {
+      "t": 19,
+      "pad": 5,
+      "vel": 84
+    },
+    {
+      "t": 19.75,
+      "pad": 7,
+      "vel": 92
+    },
+    {
+      "t": 20,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 20,
+      "pad": 5,
+      "vel": 92
+    },
+    {
+      "t": 20.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 21,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 21,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 21.75,
+      "pad": 1,
+      "vel": 96
+    },
+    {
+      "t": 22,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 22.25,
+      "pad": 2,
+      "vel": 54
+    },
+    {
+      "t": 22.5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 22.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 23,
+      "pad": 2,
+      "vel": 114
+    },
+    {
+      "t": 23,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 23.25,
+      "pad": 5,
+      "vel": 72
+    },
+    {
+      "t": 23.5,
+      "pad": 6,
+      "vel": 86
+    },
+    {
+      "t": 24,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 24,
+      "pad": 5,
+      "vel": 92
+    },
+    {
+      "t": 24.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 24.75,
+      "pad": 2,
+      "vel": 46
+    },
+    {
+      "t": 25,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 25,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 25.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 26,
+      "pad": 4,
+      "vel": 102
+    },
+    {
+      "t": 26,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 26.5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 26.5,
+      "pad": 5,
+      "vel": 80
+    },
+    {
+      "t": 27,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 27,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 27.5,
+      "pad": 6,
+      "vel": 86
+    },
+    {
+      "t": 28,
+      "pad": 1,
+      "vel": 108
+    },
+    {
+      "t": 28,
+      "pad": 5,
+      "vel": 88
+    },
+    {
+      "t": 29,
+      "pad": 2,
+      "vel": 112
+    },
+    {
+      "t": 29,
+      "pad": 5,
+      "vel": 84
+    },
+    {
+      "t": 29.75,
+      "pad": 1,
+      "vel": 96
+    },
+    {
+      "t": 30,
+      "pad": 2,
+      "vel": 90
+    },
+    {
+      "t": 30.25,
+      "pad": 2,
+      "vel": 100
+    },
+    {
+      "t": 30.5,
+      "pad": 11,
+      "vel": 106
+    },
+    {
+      "t": 30.75,
+      "pad": 10,
+      "vel": 102
+    },
+    {
+      "t": 31,
+      "pad": 1,
+      "vel": 104
+    },
+    {
+      "t": 31,
+      "pad": 9,
+      "vel": 108
+    },
+    {
+      "t": 31.5,
+      "pad": 1,
+      "vel": 106
+    },
+    {
+      "t": 31.5,
+      "pad": 12,
+      "vel": 110
+    }
+  ]
+}

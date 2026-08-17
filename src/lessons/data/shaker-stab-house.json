@@ -1,0 +1,412 @@
+{
+  "id": "shaker-stab-house",
+  "title": "Shaker City",
+  "course": "four-to-the-floor",
+  "genre": "house",
+  "level": 2,
+  "padCount": 16,
+  "bpm": 124,
+  "bars": 8,
+  "pads": {
+    "1": "kick",
+    "2": "clap",
+    "4": "hatOpen",
+    "8": "shaker",
+    "9": "stab"
+  },
+  "steps": [
+    {
+      "name": "Four on the Floor",
+      "description": "Lock in steady quarter-note kicks — the heartbeat of house. Count 1-2-3-4 out loud.",
+      "playerPads": [
+        1
+      ],
+      "tempoScale": 0.8
+    },
+    {
+      "name": "Backbeat Claps",
+      "description": "Claps join on beats 2 and 4 from bar 3. Keep the kick rock solid underneath.",
+      "playerPads": [
+        1,
+        2
+      ],
+      "tempoScale": 0.85
+    },
+    {
+      "name": "Hats Pass to Shaker",
+      "description": "Play the offbeat open hats, hand the groove to the shaker sixteenths in bars 5-6, then catch the hats again in bar 7.",
+      "playerPads": [
+        4,
+        8
+      ],
+      "tempoScale": 0.85
+    },
+    {
+      "name": "Catch the Stabs",
+      "description": "Foundation plus the chord stab on the 'and' of 2. Snap the stab hard while the hats and shaker back you up.",
+      "playerPads": [
+        1,
+        2,
+        9
+      ],
+      "tempoScale": 0.9
+    },
+    {
+      "name": "Perform",
+      "description": "Full speed, all pads — pump the floor, ride the shaker section, and land the closing stab into the loop.",
+      "playerPads": "all"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 1,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 2,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 3,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 4,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 4.5,
+      "pad": 4,
+      "vel": 94
+    },
+    {
+      "t": 5,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 5.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 6,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 6.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 7,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 7.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 8,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 8.5,
+      "pad": 4,
+      "vel": 94
+    },
+    {
+      "t": 9,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 9,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 9.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 10,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 10.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 11,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 11,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 11.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 12,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 12.5,
+      "pad": 4,
+      "vel": 94
+    },
+    {
+      "t": 13,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 13,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 13.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 14,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 14.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 15,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 15,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 15.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 16,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 16.25,
+      "pad": 8,
+      "vel": 62
+    },
+    {
+      "t": 16.75,
+      "pad": 8,
+      "vel": 78
+    },
+    {
+      "t": 17,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 17,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 17.5,
+      "pad": 9,
+      "vel": 118
+    },
+    {
+      "t": 18,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 18.25,
+      "pad": 8,
+      "vel": 62
+    },
+    {
+      "t": 18.75,
+      "pad": 8,
+      "vel": 78
+    },
+    {
+      "t": 19,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 19,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 20,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 20.25,
+      "pad": 8,
+      "vel": 62
+    },
+    {
+      "t": 20.75,
+      "pad": 8,
+      "vel": 78
+    },
+    {
+      "t": 21,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 21,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 21.5,
+      "pad": 9,
+      "vel": 118
+    },
+    {
+      "t": 22,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 22.25,
+      "pad": 8,
+      "vel": 62
+    },
+    {
+      "t": 22.75,
+      "pad": 8,
+      "vel": 78
+    },
+    {
+      "t": 23,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 23,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 24,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 24.5,
+      "pad": 4,
+      "vel": 94
+    },
+    {
+      "t": 25,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 25,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 25.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 26,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 26.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 27,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 27,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 27.5,
+      "pad": 4,
+      "vel": 90
+    },
+    {
+      "t": 28,
+      "pad": 1,
+      "vel": 112
+    },
+    {
+      "t": 29,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 29,
+      "pad": 2,
+      "vel": 106
+    },
+    {
+      "t": 30,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 31,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 31.5,
+      "pad": 9,
+      "vel": 122
+    }
+  ]
+}

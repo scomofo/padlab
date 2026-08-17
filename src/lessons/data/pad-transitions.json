@@ -1,0 +1,398 @@
+{
+  "id": "pad-transitions",
+  "title": "Pad Transitions",
+  "course": "technique",
+  "genre": "technique",
+  "level": 4,
+  "padCount": 16,
+  "bpm": 104,
+  "bars": 8,
+  "pads": {
+    "1": "kick",
+    "2": "snare",
+    "9": "tomLow",
+    "10": "tomMid",
+    "11": "tomHigh",
+    "14": "perc"
+  },
+  "steps": [
+    {
+      "name": "Bottom row",
+      "description": "Kick and snare only — your home position.",
+      "playerPads": [
+        1,
+        2
+      ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "Tom sweep",
+      "description": "Low, mid, high in order. Move your hand as one unit, do not reach.",
+      "playerPads": [
+        9,
+        10,
+        11
+      ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "Row jumps",
+      "description": "Alternate bottom row and top row — the hardest movement on the grid.",
+      "playerPads": [
+        1,
+        11,
+        14
+      ],
+      "tempoScale": 0.85
+    },
+    {
+      "name": "Full sweep",
+      "description": "Everything except perc. Plan each hand movement ahead.",
+      "playerPads": [
+        1,
+        2,
+        9,
+        10,
+        11
+      ],
+      "tempoScale": 0.9
+    },
+    {
+      "name": "Perform",
+      "description": "Move cleanly across all four rows without looking down.",
+      "playerPads": "all"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 0.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 1,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 1.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 2,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 2.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 3,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 3.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 4,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 4.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 5.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 6,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 6.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 7,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 7.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 8,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 8.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 9,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 9.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 10,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 10.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 11,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 11.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 12,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 12.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 13,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 13.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 14,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 14.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 15,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 15,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 15.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 16,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 16.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 17,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 17.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 18,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 18.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 19,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 19.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 20,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 20.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 21,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 21.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 22,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 22.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 23,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 23.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 24,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 24.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 25,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 25.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 26,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 26.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 27,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 27.5,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 28,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 28.5,
+      "pad": 9,
+      "vel": 86
+    },
+    {
+      "t": 29,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 29.5,
+      "pad": 10,
+      "vel": 86
+    },
+    {
+      "t": 30,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 30.5,
+      "pad": 11,
+      "vel": 86
+    },
+    {
+      "t": 31,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 31,
+      "pad": 14,
+      "vel": 86
+    },
+    {
+      "t": 31.5,
+      "pad": 14,
+      "vel": 86
+    }
+  ]
+}

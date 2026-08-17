@@ -1,0 +1,76 @@
+{
+  "id": "sp404-chop-and-shape",
+  "title": "Chop & Shape a Sample",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Turn one long sample into playable pieces, then reshape them with gate, loop, reverse, and pitch.",
+  "level": 2,
+  "minutes": 12,
+  "padCount": 16,
+  "bpm": 88,
+  "steps": [
+    {
+      "title": "Pick your source",
+      "body": [
+        "Load or record a longer sample onto a pad — a few bars of music, a spoken phrase, or a drum break.",
+        "Play it once and listen for the moments you actually want: the downbeat, a vocal word, a chord change."
+      ],
+      "pads": [{ "pad": 1, "label": "Source" }],
+      "checkpoint": "One pad holds the full-length sample.",
+      "tip": "Longer sources give you more to work with, but eat memory fast. A 4-bar loop is plenty for a first pass."
+    },
+    {
+      "title": "Set the start and end points",
+      "body": [
+        "With the pad selected, press START/END.",
+        "CTRL 1 moves the start point; CTRL 2 moves the end point.",
+        "Trim the start onto the transient you want to hear the instant you press the pad — no lead-in silence.",
+        "Move the end just past the tail of that section."
+      ],
+      "keys": [["START/END"]],
+      "pads": [{ "pad": 1, "label": "Trimming" }],
+      "checkpoint": "The pad triggers exactly the slice you intended, with no dead air at the front.",
+      "tip": "Hold the pad and adjust while it plays. Your ears will find the transient faster than your eyes will."
+    },
+    {
+      "title": "Gate versus loop",
+      "body": [
+        "GATE makes the pad sound only while you hold it, and stop when you release — ideal for stabs and chops you want to play rhythmically.",
+        "LOOP makes the pad repeat continuously — ideal for drum loops and sustained textures.",
+        "Toggle each one on your chop and play it a few times to feel the difference."
+      ],
+      "keys": [["GATE"], ["LOOP"]],
+      "pads": [{ "pad": 1, "label": "Try both" }],
+      "checkpoint": "You can start and stop the sound with your finger under GATE, and leave it running under LOOP.",
+      "tip": "Gate is what makes finger drumming with melodic chops feel expressive — short taps become staccato, held taps ring out."
+    },
+    {
+      "title": "Reverse and re-pitch",
+      "body": [
+        "Press REVERSE to play the slice backwards. Reversed tails make natural transitions and risers.",
+        "Use the pitch and speed controls to shift the slice up or down.",
+        "Pitching a drum break down thickens it; pitching a vocal up changes its character completely."
+      ],
+      "keys": [["REVERSE"]],
+      "pads": [{ "pad": 1, "label": "Reversed" }],
+      "checkpoint": "The same source now gives you several usable variations.",
+      "tip": "Whether pitch changes affect playback length depends on the mode you are in — try both and pick whichever keeps your loop in time."
+    },
+    {
+      "title": "Spread the chops across pads",
+      "body": [
+        "Copy the sample to several pads and give each one a different start and end point, so each pad is a different slice of the same source.",
+        "Lay them out so the slices you play together sit under comfortable fingers — order them musically, not just left to right.",
+        "Now you can perform the sample instead of just replaying it."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Slice 1" },
+        { "pad": 2, "label": "Slice 2" },
+        { "pad": 3, "label": "Slice 3" },
+        { "pad": 4, "label": "Slice 4" }
+      ],
+      "checkpoint": "Four pads, four slices, one source — playable as a phrase.",
+      "tip": "Once the layout feels good, resample your performance to a single pad. That is the Resample guide, and it is how chopped beats get built."
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "id": "sp404-resample-first-beat",
+  "title": "Resample Your First Beat",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Stack a kick/snare loop, trim it, then layer hats and a melody on top — all inside the unit.",
+  "level": 1,
+  "minutes": 15,
+  "padCount": 16,
+  "bpm": 90,
+  "steps": [
+    {
+      "title": "Gather your elements",
+      "body": [
+        "Record or load a kick, snare, and hi-hat onto three separate pads — pads 1, 2, and 3 on Bank A.",
+        "Have a chopped sample or a melodic phrase ready on another pad, say pad 5.",
+        "Play each one to check the levels are roughly even. Resampling prints whatever you hear, so fix balance now rather than later."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 3, "label": "Hi-Hat" },
+        { "pad": 5, "label": "Melody" }
+      ],
+      "checkpoint": "Four pads, four sounds, no surprises in volume.",
+      "tip": "Keep one bank free for your resampled loops so you never overwrite a source sound."
+    },
+    {
+      "title": "Set your metronome and tempo",
+      "body": [
+        "Enter the metronome menu, turn it ON, and set your target tempo.",
+        "90 BPM is a classic hip-hop groove and an easy speed to play accurately."
+      ],
+      "keys": [["SHIFT", "TAP TEMPO"]],
+      "checkpoint": "You hear a steady click, and the tempo reads 90.",
+      "tip": "Start the practice metronome below and tap along on your pads before you record anything. Recording a sloppy take costs more time than practising the bar twice."
+    },
+    {
+      "title": "Lay down the foundation",
+      "body": [
+        "Press RESAMPLE.",
+        "Select an empty pad to record onto — pad 9. It starts blinking red.",
+        "Hit REC to arm it. Resampling begins the instant audio plays or you hit a pad.",
+        "Tap pad 1 (kick) and pad 2 (snare) in time with the metronome for 2 or 4 bars.",
+        "Hit REC, or the destination pad, to stop the moment the final bar finishes."
+      ],
+      "keys": [["RESAMPLE"], ["REC"]],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 9, "label": "Record to" }
+      ],
+      "checkpoint": "Pad 9 plays back your kick and snare as one sound.",
+      "tip": "Count yourself in out loud. Stopping one beat late is the most common mistake here, and it shows up as a gap when you loop."
+    },
+    {
+      "title": "Trim and loop it",
+      "body": [
+        "Tap pad 9, then press START/END.",
+        "Use CTRL 1 and CTRL 2 to move the start point onto the first kick transient and the end point to exactly where the loop resets.",
+        "Press LOOP on pad 9 to test playback.",
+        "If it stutters or drifts, nudge the end point until it rolls over seamlessly."
+      ],
+      "keys": [["START/END"], ["LOOP"]],
+      "pads": [{ "pad": 9, "label": "Drum loop" }],
+      "checkpoint": "Pad 9 loops indefinitely with no click, gap, or hiccup at the seam.",
+      "tip": "Trim the start tight to the transient. Even a few milliseconds of silence in front makes every later layer feel late."
+    },
+    {
+      "title": "Layer the hats and melody",
+      "body": [
+        "Press RESAMPLE again and pick a new empty pad — pad 10.",
+        "Press REC to arm.",
+        "Hit pad 9 to start your drum loop playing, then play pad 3 (hi-hat) and pad 5 (melody) over the top in real time.",
+        "Tap REC when the loop finishes to capture the full, layered beat."
+      ],
+      "keys": [["RESAMPLE"], ["REC"]],
+      "pads": [
+        { "pad": 3, "label": "Hi-Hat" },
+        { "pad": 5, "label": "Melody" },
+        { "pad": 9, "label": "Drum loop" },
+        { "pad": 10, "label": "Record to" }
+      ],
+      "checkpoint": "Pad 10 is a single pad holding your whole beat: drums, hats, and melody.",
+      "tip": "Pad 9 still holds the clean drum loop. Keep it — if the layered take is wrong, you re-record pad 10 instead of starting over."
+    },
+    {
+      "title": "Where to go next",
+      "body": [
+        "You now have a one-pad beat and a fallback drum loop, which is the core resampling loop: build, print, layer, repeat.",
+        "Each resample pass is committed audio, so work in stages you are happy with rather than one long take.",
+        "Try the same process with effects printed in — that is the Bus FX guide — or sequence pad 10 into a longer arrangement with the Pattern Sequencer guide."
+      ],
+      "pads": [
+        { "pad": 9, "label": "Drums" },
+        { "pad": 10, "label": "Full beat" }
+      ],
+      "tip": "Resampling is destructive by nature. Back up your project to an SD card before a big session."
+    }
+  ]
+}

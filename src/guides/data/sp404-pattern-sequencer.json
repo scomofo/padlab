@@ -1,0 +1,77 @@
+{
+  "id": "sp404-pattern-sequencer",
+  "title": "Pattern Sequencer",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Record your pads into a pattern, fix it step by step, and chain patterns into an arrangement.",
+  "level": 2,
+  "minutes": 14,
+  "padCount": 16,
+  "bpm": 92,
+  "steps": [
+    {
+      "title": "Choose a pattern slot and tempo",
+      "body": [
+        "Press PATTERN SELECT and pick an empty pattern slot to work in.",
+        "Set the tempo and pattern length before recording — changing length later can truncate what you played.",
+        "Turn the metronome on so your take has something to lock to."
+      ],
+      "keys": [["PATTERN SELECT"], ["SHIFT", "TAP TEMPO"]],
+      "checkpoint": "An empty pattern is selected and the click is running at your chosen tempo.",
+      "tip": "Two bars is the right length for a first pattern. You can always chain two patterns rather than recording one long one."
+    },
+    {
+      "title": "Record in real time",
+      "body": [
+        "Press REC to arm the pattern, then play your pads in time with the click.",
+        "The sequencer captures your timing and velocity as you play, so play it like a performance rather than a data entry task.",
+        "Let it loop and keep playing — you can add layers on each pass."
+      ],
+      "keys": [["REC"]],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 3, "label": "Hi-Hat" }
+      ],
+      "checkpoint": "The pattern plays your part back without you touching the pads.",
+      "tip": "Record one voice per pass — kick first, then snare, then hats. Layering is far more accurate than trying to play everything at once."
+    },
+    {
+      "title": "Step-record with TR-REC",
+      "body": [
+        "For patterns that need to be exact, use TR-REC instead of playing live.",
+        "Select the pad you want to program, then switch on the steps where it should trigger.",
+        "This is the fastest way to build machine-tight hi-hats or a four-on-the-floor kick.",
+        "Move to the next pad and repeat until the pattern is complete."
+      ],
+      "keys": [["TR-REC"]],
+      "pads": [
+        { "pad": 1, "label": "Program" },
+        { "pad": 3, "label": "Then this" }
+      ],
+      "checkpoint": "Steps you enabled trigger exactly on the grid, dead on time.",
+      "tip": "Mix both methods: step-record the drums so they are rigid, then play the melodic pads in live so they breathe."
+    },
+    {
+      "title": "Fix and refine",
+      "body": [
+        "Play the pattern back and listen for the one thing that bothers you most, rather than trying to fix everything at once.",
+        "Clear a pad's part and re-record just that voice if a layer is off.",
+        "Adjust velocities so accents stand out — a pattern with flat dynamics sounds programmed, not played."
+      ],
+      "checkpoint": "The loop is something you would happily hear repeat twenty times.",
+      "tip": "If a part never sits right, the problem is usually the sample's start point, not your timing. Go back and re-trim it."
+    },
+    {
+      "title": "Chain patterns into an arrangement",
+      "body": [
+        "Record a second pattern as a variation — drop the hats, change the kick, add a fill.",
+        "Chain the patterns in the order you want them to play so a loop becomes a track with sections.",
+        "Then resample the whole chain to a pad if you want to build further on top of it."
+      ],
+      "keys": [["PATTERN SELECT"]],
+      "checkpoint": "Patterns play back in sequence without you switching them by hand.",
+      "tip": "Small variation goes a long way: one pattern with hats and one without is enough to imply an arrangement."
+    }
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "id": "steady-hands",
+  "title": "Steady Hands",
+  "course": "technique",
+  "genre": "technique",
+  "level": 1,
+  "padCount": 8,
+  "bpm": 90,
+  "bars": 8,
+  "pads": {
+    "1": "kick",
+    "2": "snare",
+    "5": "hatClosed"
+  },
+  "steps": [
+    {
+      "name": "Quarters",
+      "description": "Alternate kick and snare on every beat. Identical volume each time.",
+      "playerPads": [
+        1,
+        2
+      ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "With the click",
+      "description": "Same drill, faster. Listen for your hits landing exactly on the click.",
+      "playerPads": [
+        1,
+        2
+      ],
+      "tempoScale": 0.9
+    },
+    {
+      "name": "Eighths",
+      "description": "Bars 5-8 double to eighth notes — keep the alternation even.",
+      "playerPads": [
+        1,
+        2,
+        5
+      ],
+      "tempoScale": 0.9
+    },
+    {
+      "name": "Perform",
+      "description": "Quarters then eighths. Consistency beats speed here.",
+      "playerPads": "all"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 1,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 2,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 3,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 4,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 6,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 7,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 8,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 9,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 10,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 11,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 12,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 13,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 14,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 15,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 16,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 16,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 16.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 17,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 17,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 17.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 18,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 18,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 18.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 19,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 19,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 19.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 20,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 20,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 20.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 21,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 21,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 21.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 22,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 22,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 22.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 23,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 23,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 23.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 24,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 24,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 24.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 25,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 25,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 25.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 26,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 26,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 26.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 27,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 27,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 27.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 28,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 28,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 28.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 29,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 29,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 29.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 30,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 30,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 30.5,
+      "pad": 2,
+      "vel": 102
+    },
+    {
+      "t": 31,
+      "pad": 1,
+      "vel": 102
+    },
+    {
+      "t": 31,
+      "pad": 5,
+      "vel": 70
+    },
+    {
+      "t": 31.5,
+      "pad": 2,
+      "vel": 102
+    }
+  ]
+}

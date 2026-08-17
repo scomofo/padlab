@@ -1,0 +1,37 @@
+[
+  {
+    "id": "foundations",
+    "title": "Foundations",
+    "blurb": "Your first beats — backbeats, steady subdivisions, and simple fills."
+  },
+  {
+    "id": "technique",
+    "title": "Technique Workouts",
+    "blurb": "Drills, not songs: timing consistency, dynamics, and rolls."
+  },
+  {
+    "id": "hip-hop-lab",
+    "title": "Hip-Hop Lab",
+    "blurb": "Boom bap through trap, drill, and neo-soul: swing, ghost notes, and 808s."
+  },
+  {
+    "id": "four-to-the-floor",
+    "title": "Four to the Floor",
+    "blurb": "House, garage, and techno — offbeat hats and relentless kicks."
+  },
+  {
+    "id": "breaks-and-bass",
+    "title": "Breaks & Bass",
+    "blurb": "Funk breaks, halftime, and fast chopped-break playing."
+  },
+  {
+    "id": "global-grooves",
+    "title": "Global Grooves",
+    "blurb": "Dembow, afrobeat, and Latin percussion patterns."
+  },
+  {
+    "id": "sp404-workshop",
+    "title": "SP-404 MKII Workshop",
+    "blurb": "Hardware walkthroughs, not charts: resampling, chopping, the sequencer, and Bus FX. Button names follow the MKII front panel — check your manual if a shortcut differs on your firmware."
+  }
+]

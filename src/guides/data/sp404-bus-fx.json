@@ -1,0 +1,75 @@
+{
+  "id": "sp404-bus-fx",
+  "title": "Bus FX & Printing Effects",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Shape a pad with MFX, drive the whole beat through Bus FX, then resample to commit the sound.",
+  "level": 3,
+  "minutes": 12,
+  "padCount": 16,
+  "bpm": 90,
+  "steps": [
+    {
+      "title": "Per-pad MFX versus the bus",
+      "body": [
+        "MFX applies to a single pad, so use it to fix or characterise one sound — a filter on a bassline, saturation on a snare.",
+        "BUS FX applies to everything running through it, so use it to glue the whole beat together.",
+        "Knowing which one you want saves you from processing a sound twice by mistake."
+      ],
+      "checkpoint": "You can state, out loud, which of the two you need for the change you have in mind.",
+      "tip": "If you want the effect on a single element, reach for MFX. If you want it on the beat, reach for Bus FX."
+    },
+    {
+      "title": "Put MFX on one pad",
+      "body": [
+        "Select the pad you want to process, then assign an MFX type to it.",
+        "Use the CTRL knobs to adjust the effect's parameters while the pad plays.",
+        "Keep it musical: a small amount of filtering or saturation usually does more than an extreme setting."
+      ],
+      "keys": [["MFX"]],
+      "pads": [{ "pad": 5, "label": "Processed" }],
+      "checkpoint": "That one pad sounds different; every other pad is untouched.",
+      "tip": "Adjust with the pad looping so you hear the change in context rather than in isolation."
+    },
+    {
+      "title": "Run the beat through Bus FX",
+      "body": [
+        "Press BUS FX and choose an effect for the whole mix.",
+        "The vinyl-style and filter effects are what give this unit much of its signature character — try them first.",
+        "Tweak with the CTRL knobs while your beat loops, and stop when it sounds better, not when you have explored everything."
+      ],
+      "keys": [["BUS FX"]],
+      "checkpoint": "The entire beat is coloured by the effect, and it feels like one cohesive sound.",
+      "tip": "Bus FX is a performance tool too — sweeping a filter live over a loop is an instant arrangement change."
+    },
+    {
+      "title": "Print the effect with a resample",
+      "body": [
+        "Effects are live until you commit them. To make the processed sound permanent, resample it to a new pad.",
+        "Press RESAMPLE, pick an empty pad, hit REC to arm, then play the beat through the effect.",
+        "Stop recording at the end of your loop. The new pad now contains the effected audio.",
+        "Because the effect is baked in, your Bus FX slot is free to process the new pad again."
+      ],
+      "keys": [["RESAMPLE"], ["REC"]],
+      "pads": [
+        { "pad": 10, "label": "Source beat" },
+        { "pad": 13, "label": "Printed" }
+      ],
+      "checkpoint": "The new pad sounds effected even with Bus FX switched off.",
+      "tip": "This stacking trick — print, then process again — is how you build heavily textured, layered sounds on a unit with one bus."
+    },
+    {
+      "title": "Know when to stop",
+      "body": [
+        "Every resample pass is committed and cannot be undone, so keep the clean version on its original pad until you are certain.",
+        "Two or three considered passes beat ten reactive ones.",
+        "When the beat sounds finished, stop processing and start arranging it instead."
+      ],
+      "pads": [
+        { "pad": 10, "label": "Keep clean" },
+        { "pad": 13, "label": "Printed" }
+      ],
+      "tip": "Back up to an SD card before a heavy printing session. It is the only real undo you have."
+    }
+  ]
+}
