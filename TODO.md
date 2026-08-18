@@ -18,10 +18,16 @@ what "done" looks like — so none of it needs recovering from memory.
       two are told apart by *proximity* — a bounce lands nearer the note just
       played, a real stroke nearer the next unplayed one.
 
-      Known limit, accepted deliberately: a bounce landing near the midpoint
-      between two notes is indistinguishable from a stroke and will be scored.
-      Reaching that needs a ~21 ms bounce on the tightest chart; real bounces are
-      single-digit milliseconds.
+      Known limit: two note-ons arriving closer together than the second is to
+      the note it would claim are read as one strike. On the tightest chart that
+      means arrivals under ~12 ms — roughly 90 Hz on a single pad, which no hand
+      produces, so a bounce is the only physical explanation left.
+
+      An earlier revision measured that distance from the *charted note* rather
+      than from the previous note-on, which made the threshold move with the
+      player's timing error: a 1 ms duplicate was scored as a real stroke once
+      the stroke itself was 21 ms late, well inside the Perfect window. Review
+      caught it. Both boundaries are now pinned by tests.
 
 ## Repo hygiene
 

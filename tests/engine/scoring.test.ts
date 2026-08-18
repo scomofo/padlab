@@ -437,6 +437,44 @@ describe('ScoreKeeper — retrigger debounce', () => {
     expect(s.accuracy).toBe(100)
   })
 
+  /**
+   * A bounce is defined by how soon it follows the strike, so it must stay a
+   * bounce however late that strike was. An earlier version measured from the
+   * charted note instead, which made the threshold move with the player's
+   * timing error: a 1 ms duplicate was scored as a real stroke once the stroke
+   * itself was 21 ms late — ordinary Perfect-window playing.
+   */
+  it.each([1, 2, 4, 6, 8, 10])(
+    'treats a %d ms duplicate as a bounce however late the stroke was',
+    (bounceMs) => {
+      const bpm = 174
+      const gap = 0.125 // 43.1 ms, the tightest interval in the library
+      for (let lateMs = 0; lateMs <= 40; lateMs += 2) {
+        const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+        k.registerHit(1, beatsFromMs(lateMs, bpm))
+        const bounce = k.registerHit(1, beatsFromMs(lateMs + bounceMs, bpm))
+        expect(bounce.judgement, `stroke ${lateMs} ms late`).toBe('ignored')
+      }
+    },
+  )
+
+  /**
+   * The residual ambiguity, and why it sits where it does. Two note-ons closer
+   * together than the second is to the note it would claim are read as one
+   * strike. On the tightest chart that means arrivals under ~12 ms — roughly
+   * 90 Hz on a single pad, which no hand produces, so a bounce is the only
+   * physical explanation left. The limit is a property of arrival spacing, not
+   * of where the player sits relative to the beat.
+   */
+  it('reads note-ons closer together than a hand can strike as one hit', () => {
+    const bpm = 174
+    const gap = 0.125
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+    k.registerHit(1, beatsFromMs(20, bpm)) // stroke 20 ms late
+    const second = k.registerHit(1, beatsFromMs(31, bpm)) // 11 ms later
+    expect(second.judgement).toBe('ignored')
+  })
+
   it('still swallows a bounce that lands nearer the note just played', () => {
     // Same chart spacing, but the second note-on is 4 ms after the first —
     // far closer to the note already claimed than to the next one.

@@ -62,11 +62,8 @@ export class ScoreKeeper {
   stray = 0
   /** Retriggers swallowed by the debounce, for diagnostics. */
   ignored = 0
-  /**
-   * Per pad: when the last accepted note-on arrived, and where the note it
-   * claimed sits (its own arrival time, if it claimed nothing). Both in ms.
-   */
-  private readonly lastHit = new Map<number, { hitMs: number; anchorMs: number }>()
+  /** Per pad, when the last accepted note-on arrived, in ms. */
+  private readonly lastHitMs = new Map<number, number>()
 
   constructor(playerEvents: NoteEvent[], secPerBeat: number) {
     this.events = playerEvents
@@ -97,20 +94,31 @@ export class ScoreKeeper {
     }
 
     // One physical hit can arrive as several note-ons: velocity pads bounce and
-    // some controllers send duplicates. Time alone cannot separate those from a
-    // genuine fast roll — charts go as tight as a 32nd (43 ms at 174 BPM), which
-    // ordinary playing compresses well inside the window. So inside the window,
-    // decide by proximity: a bounce lands nearer the note just played, a real
-    // stroke lands nearer the next unplayed one.
-    const prev = this.lastHit.get(pad)
-    if (prev !== undefined && Math.abs(hitMs - prev.hitMs) < RETRIGGER_DEBOUNCE_MS) {
-      const toBest = best === null ? Infinity : Math.abs(hitMs - this.beatToMs(best.t))
-      if (Math.abs(hitMs - prev.anchorMs) <= toBest) {
-        this.ignored++
-        return { judgement: 'ignored' }
+    // some controllers send duplicates. A fixed time threshold cannot separate
+    // those from a genuine fast roll — charts go as tight as a 32nd (43 ms at
+    // 174 BPM), which ordinary playing compresses well inside the window.
+    //
+    // So inside the window, weigh how close together the two note-ons arrived
+    // against how close this one is to the note it would claim. Arriving nearer
+    // the previous note-on than the next unplayed note means one strike that
+    // reached us twice; the reverse means the player struck again.
+    //
+    // Deliberately measured from the previous *note-on*, not from the note it
+    // claimed: inter-arrival time bounds what a hand can physically do, while
+    // distance to a charted note moves around with the player's timing error. A
+    // bounce a few ms after a stroke stays a bounce however late that stroke was.
+    const prevMs = this.lastHitMs.get(pad)
+    if (prevMs !== undefined) {
+      const sincePrevMs = Math.abs(hitMs - prevMs)
+      if (sincePrevMs < RETRIGGER_DEBOUNCE_MS) {
+        const toBest = best === null ? Infinity : Math.abs(hitMs - this.beatToMs(best.t))
+        if (sincePrevMs <= toBest) {
+          this.ignored++
+          return { judgement: 'ignored' }
+        }
       }
     }
-    this.lastHit.set(pad, { hitMs, anchorMs: best === null ? hitMs : this.beatToMs(best.t) })
+    this.lastHitMs.set(pad, hitMs)
 
     if (!best) {
       this.stray++
