@@ -48,12 +48,29 @@ echo "==> patching Info.plists"
 python3 scripts/patch-macos-plists.py "$APP" "$VERSION"
 
 # Apple Silicon refuses to execute unsigned code, and editing the bundle
-# invalidates the signature Electron ships with. Sign nested code first, then
-# the outer bundle, so each seal covers already-signed contents.
+# invalidates the signature Electron ships with, so everything gets re-signed.
+#
+# Order matters, and so does reach. codesign refuses to seal a bundle that
+# still contains unsigned code, and the darwin-x64 build of Electron ships
+# *nothing* signed — not just the bundle executables but the crashpad handler,
+# four dylibs under Versions/A/Libraries, and Squirrel's ShipIt. (The arm64
+# build arrives fully pre-signed, because Apple Silicon will not run otherwise,
+# which is why an x64-only failure here is easy to miss.) So: every loose
+# Mach-O first, then the nested bundles, then the outer app.
 echo "==> ad-hoc signing"
+
+sign_count=0
+while IFS= read -r -d '' bin; do
+  case "$(file -b "$bin")" in
+    *Mach-O*) codesign --force --sign - --timestamp=none "$bin"; sign_count=$((sign_count + 1)) ;;
+  esac
+done < <(find "$APP" -type f ! -type l -print0)
+echo "    signed $sign_count Mach-O binaries"
+
 while IFS= read -r -d '' nested; do
   codesign --force --sign - --timestamp=none "$nested"
 done < <(find "$APP/Contents/Frameworks" -maxdepth 1 \( -name '*.framework' -o -name '*.app' \) -print0)
+
 codesign --force --sign - --timestamp=none "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
