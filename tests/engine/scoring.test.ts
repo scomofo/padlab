@@ -329,11 +329,12 @@ describe('ScoreKeeper.summary — edge cases worth a decision', () => {
   })
 
   /**
-   * The stray penalty is a flat `raw - strayCount`, so it costs the same number
-   * of points on a 12-note chart as on a 100-note one — roughly 8x harsher per
-   * note on short charts. `fix/scoring-stray-penalty` proposes making this
-   * proportional and capped; this test documents today's behaviour so that
-   * change shows up as an intentional diff rather than a silent one.
+   * Pins current behaviour rather than endorsing it: the stray penalty is a
+   * flat `raw - strayCount`, so it costs the same number of points on a
+   * 12-note chart as on a 100-note one — roughly 8x harsher per note on short
+   * charts. The `fix/scoring-stray-penalty` branch proposes making this
+   * proportional and capped; pinning today's behaviour means that change shows
+   * up as an intentional diff rather than a silent one.
    */
   it('charges strays a flat cost independent of chart length', () => {
     const runWith = (noteCount: number) => {
