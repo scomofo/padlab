@@ -62,7 +62,11 @@ export class ScoreKeeper {
   stray = 0
   /** Retriggers swallowed by the debounce, for diagnostics. */
   ignored = 0
-  private readonly lastHitMs = new Map<number, number>()
+  /**
+   * Per pad: when the last accepted note-on arrived, and where the note it
+   * claimed sits (its own arrival time, if it claimed nothing). Both in ms.
+   */
+  private readonly lastHit = new Map<number, { hitMs: number; anchorMs: number }>()
 
   constructor(playerEvents: NoteEvent[], secPerBeat: number) {
     this.events = playerEvents
@@ -72,19 +76,13 @@ export class ScoreKeeper {
     this.outerBeats = WINDOW_MS.good / 1000 / secPerBeat
   }
 
+  private beatToMs(beat: number): number {
+    return beat * this.secPerBeat * 1000
+  }
+
   /** Register a pad hit at the given beat position. */
   registerHit(pad: number, hitBeat: number): HitResult {
-    // One physical hit can arrive as several note-ons; count it once.
     const hitMs = hitBeat * this.secPerBeat * 1000
-    const prevMs = this.lastHitMs.get(pad)
-    // Compared as a distance, not a signed difference: the live runtime feeds
-    // hits in time order, but a scorekeeper that swallowed anything arriving
-    // out of order would be wrong for any other caller.
-    if (prevMs !== undefined && Math.abs(hitMs - prevMs) < RETRIGGER_DEBOUNCE_MS) {
-      this.ignored++
-      return { judgement: 'ignored' }
-    }
-    this.lastHitMs.set(pad, hitMs)
 
     let best: JudgedEvent | null = null
     let bestDist = Infinity
@@ -97,6 +95,23 @@ export class ScoreKeeper {
         bestDist = d
       }
     }
+
+    // One physical hit can arrive as several note-ons: velocity pads bounce and
+    // some controllers send duplicates. Time alone cannot separate those from a
+    // genuine fast roll — charts go as tight as a 32nd (43 ms at 174 BPM), which
+    // ordinary playing compresses well inside the window. So inside the window,
+    // decide by proximity: a bounce lands nearer the note just played, a real
+    // stroke lands nearer the next unplayed one.
+    const prev = this.lastHit.get(pad)
+    if (prev !== undefined && Math.abs(hitMs - prev.hitMs) < RETRIGGER_DEBOUNCE_MS) {
+      const toBest = best === null ? Infinity : Math.abs(hitMs - this.beatToMs(best.t))
+      if (Math.abs(hitMs - prev.anchorMs) <= toBest) {
+        this.ignored++
+        return { judgement: 'ignored' }
+      }
+    }
+    this.lastHit.set(pad, { hitMs, anchorMs: best === null ? hitMs : this.beatToMs(best.t) })
+
     if (!best) {
       this.stray++
       this.combo = 0

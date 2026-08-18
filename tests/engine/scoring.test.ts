@@ -412,6 +412,45 @@ describe('ScoreKeeper — retrigger debounce', () => {
     expect(k.summary().miss).toBe(0)
   })
 
+  /**
+   * Exact-time play keeps a fast roll clear of the debounce, but real play
+   * compresses it. On amen-chop-science two pad-2 notes sit a 32nd apart at
+   * 174 BPM — 43.1 ms. Hitting the first 10 ms late and the second 10 ms early
+   * puts the two note-ons 23.1 ms apart, inside the window, even though each
+   * is independently a Perfect on a distinct note.
+   */
+  it('scores both notes of a fast roll when the player’s timing compresses it', () => {
+    const bpm = 174
+    const gap = 0.125 // a 32nd, the validator's minimum spacing
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+
+    const first = k.registerHit(1, beatsFromMs(10, bpm))
+    const second = k.registerHit(1, gap - beatsFromMs(10, bpm))
+
+    expect(first.judgement).toBe('perfect')
+    expect(second.judgement).toBe('perfect')
+    expect(second.event?.t).toBe(gap)
+
+    expect(k.ignored).toBe(0)
+    const s = k.summary()
+    expect(s.miss).toBe(0)
+    expect(s.accuracy).toBe(100)
+  })
+
+  it('still swallows a bounce that lands nearer the note just played', () => {
+    // Same chart spacing, but the second note-on is 4 ms after the first —
+    // far closer to the note already claimed than to the next one.
+    const bpm = 174
+    const gap = 0.125
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(4, bpm)).judgement).toBe('ignored')
+    // The second note is still there to be played.
+    expect(k.registerHit(1, gap).judgement).toBe('perfect')
+    expect(k.summary().miss).toBe(0)
+  })
+
   it('debounces per pad, not globally', () => {
     const k = keeper([note(0, 1), note(0, 2)])
     expect(k.registerHit(1, 0).judgement).toBe('perfect')
