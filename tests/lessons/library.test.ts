@@ -147,6 +147,41 @@ describe('every shipped chart against the scorer', () => {
   )
 
   /**
+   * Exact-time play is the easy case: it keeps every same-pad interval at its
+   * charted width, clear of the debounce. Real playing compresses them — a note
+   * hit slightly late followed by one hit slightly early can put two note-ons
+   * far closer together than the chart ever does. On the tightest chart that is
+   * 43.1 ms charted arriving 23.1 ms apart, well inside the 30 ms window.
+   */
+  it.each(LESSONS.map((l) => [l.id, l] as const))(
+    '%s scores 100%% when the player rushes and drags by 10 ms',
+    (_id, lesson) => {
+      const msPerBeat = (60 / lesson.bpm) * 1000
+      const jitter = 10 / msPerBeat // 10 ms, in beats — inside the Perfect window
+      const seenPerPad = new Map<number, number>()
+
+      // Alternate late/early per pad so consecutive same-pad notes squeeze
+      // together, then deliver in arrival order the way the runtime does.
+      const hits = lesson.events
+        .map((e) => {
+          const n = seenPerPad.get(e.pad) ?? 0
+          seenPerPad.set(e.pad, n + 1)
+          return { pad: e.pad, at: e.t + (n % 2 === 0 ? jitter : -jitter) }
+        })
+        .sort((a, b) => a.at - b.at)
+
+      const k = scorerFor(lesson)
+      for (const h of hits) k.registerHit(h.pad, h.at)
+
+      const s = k.summary()
+      expect(k.ignored, 'a real note was swallowed as a retrigger').toBe(0)
+      expect(s.miss).toBe(0)
+      expect(s.stray).toBe(0)
+      expect(s.accuracy).toBe(100)
+    },
+  )
+
+  /**
    * The safety margin the debounce relies on. If someone raises
    * RETRIGGER_DEBOUNCE_MS, or authors a chart with a faster same-pad roll than
    * any existing one, real notes would start being swallowed as retriggers —
