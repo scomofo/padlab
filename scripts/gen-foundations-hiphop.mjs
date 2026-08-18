@@ -142,6 +142,31 @@ writeLessons([
       5: rep(6, 's.s.s.s.s.s.s.s.', 's.s.s.s.s.s.s.s.', 's.s.s.s.........'),
     },
   },
+  {
+    id: 'pushed-kicks',
+    title: 'Pushed Kicks',
+    course: 'foundations',
+    genre: 'hip-hop',
+    level: 2,
+    padCount: 8,
+    bpm: 92,
+    bars: 8,
+    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed' },
+    steps: [
+      { name: 'Backbeat', description: 'Snare on 2 and 4 only. Nothing here is new — get it steady before the kick moves.', playerPads: [2], tempoScale: 0.7 },
+      { name: 'The push', description: 'Beat 1, then a kick a sixteenth *before* beat 3. It should feel like it arrives early on purpose.', playerPads: [1], tempoScale: 0.75 },
+      { name: 'Both hands', description: 'Kick and snare together. The pushed kick must not drag the snare off the beat with it.', playerPads: [1, 2], tempoScale: 0.85 },
+      perform('Every other bar adds a ghost snare and a kick that pushes into the next downbeat.'),
+    ],
+    grid: {
+      // Alternating bars: the plain push, then a bar that also leans into the
+      // next downbeat. Kick and snare never share an instant, so each hand
+      // keeps its own job while the syncopation moves underneath.
+      1: ['x......x..x.....', 'x......x..x....x'],
+      2: ['....x.......x...', '....x......gx...'],
+      5: 's.s.s.s.s.s.s.s.',
+    },
+  },
 
   // ---------------- Hip-Hop Lab ----------------
   {
@@ -318,6 +343,33 @@ writeLessons([
       6: rep(3, '..............o.', '......o......o..'),
       14: '.o...o...o.....o',
       16: rep(3, 'x..x......x.....', 'x..x......x...x.'),
+    },
+  },
+  {
+    id: 'phonk-cowbell',
+    title: 'Phonk Cowbell',
+    course: 'hip-hop-lab',
+    genre: 'phonk',
+    level: 5,
+    padCount: 16,
+    bpm: 145,
+    bars: 8,
+    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed', 13: 'cowbell', 16: 'bass' },
+    steps: [
+      { name: 'The bell riff', description: 'Cowbell alone. It is a melody, not a pulse — five hits that land off the beat as often as on it.', playerPads: [13], tempoScale: 0.7 },
+      { name: 'Kick + 808', description: 'Kick on 1 and the "and" of 2, with the sub answering late in the bar. They never land together.', playerPads: [1, 16], tempoScale: 0.75 },
+      { name: 'Halftime snare', description: 'One snare on beat 3, plus a ghost right after it. Halftime feel at a fast tempo.', playerPads: [2], tempoScale: 0.8 },
+      { name: 'Hat carpet', description: 'Sixteenth hats under everything. Keep the hand loose — this runs for eight bars.', playerPads: [5], tempoScale: 0.85 },
+      perform('All five voices at speed — the bell has to stay in front of the hats, not sink into them.'),
+    ],
+    grid: {
+      1: rep(3, 'x.....x.........', 'x.....x.......x.'),
+      2: '........x.g.....',
+      5: 'ssssssssssssssss',
+      // The riff shifts its last note every fourth bar so the loop breathes;
+      // the bell is deliberately never on the same instant as the snare ghost.
+      13: rep(3, 'o..o..o.o..o....', 'o..o..o.o.....o.'),
+      16: rep(3, '...........x..x.', '...........x.x..'),
     },
   },
 ])

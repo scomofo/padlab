@@ -1,0 +1,77 @@
+{
+  "id": "sp404-import-and-organize",
+  "title": "Import & Organize Your Kit",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Get your own samples onto the unit and lay them out as a kit you can play without hunting for pads.",
+  "level": 1,
+  "minutes": 12,
+  "padCount": 16,
+  "bpm": 90,
+  "steps": [
+    {
+      "title": "Prepare the files on your computer",
+      "body": [
+        "Trim each sample so it starts exactly on the transient. Silence at the front of a kick is the single most common reason a kit feels late.",
+        "Normalize the levels roughly, so a kick and a hat do not arrive twenty decibels apart.",
+        "Name the files so they sort in the order you want to place them — a leading number is enough.",
+        "Keep them as WAV files. Converting from a lossy format after the fact is work you do not need."
+      ],
+      "checkpoint": "A folder of trimmed, sanely named, roughly level-matched WAVs.",
+      "tip": "Do this on the computer, where you have a waveform view and undo. Fixing a badly trimmed sample on the unit is possible but slow."
+    },
+    {
+      "title": "Import from the SD card",
+      "body": [
+        "Copy the folder onto the unit's SD card using the import folder the SP-404MKII expects, then put the card back in.",
+        "Open the menu and run the import function, then choose the files you want and the pads to place them on.",
+        "Import a small batch first — a kick, a snare, and a hat — and confirm they play before moving a hundred files across.",
+        "Your firmware's menu wording may differ from the manual you read online. Trust the unit's display over any tutorial."
+      ],
+      "keys": [["MENU"]],
+      "checkpoint": "Three imported samples play from three pads.",
+      "tip": "Importing does not trim. Whatever you did not fix on the computer, you will now be fixing with START/END on the unit."
+    },
+    {
+      "title": "Lay out the kit deliberately",
+      "body": [
+        "Put the sounds you play most under your strongest fingers: kick, snare, and hat on the bottom row.",
+        "Keep the layout the same across every bank you build. A kit you can play blind is worth more than a kit with the perfect sound in the wrong place.",
+        "PadLab's 16-pad lessons assume the same idea — pads 1 to 4 are the bottom row — so a consistent layout means the muscle memory carries over.",
+        "Leave the top row for the sounds you reach for occasionally: crashes, one-shots, vocal stabs."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 3, "label": "Clap" },
+        { "pad": 4, "label": "Hat" },
+        { "pad": 13, "label": "Stab" },
+        { "pad": 16, "label": "Crash" }
+      ],
+      "checkpoint": "You can find kick, snare, and hat without looking at the unit.",
+      "tip": "Copy the layout of the kit you already practise on. Two different layouts means twice the practice for half the fluency."
+    },
+    {
+      "title": "Trim, level, and label on the unit",
+      "body": [
+        "Play each imported pad and set its start point with START/END so it fires the instant you hit it.",
+        "Balance pad levels against each other, not against silence — play the kick and snare alternately while you adjust.",
+        "Give each pad a name you will recognize in six months. 'Vox2Final' is not that name.",
+        "Save when the bank is how you want it."
+      ],
+      "keys": [["START/END"]],
+      "checkpoint": "Every pad in the bank fires instantly and sits at a sensible level next to its neighbours.",
+      "tip": "If a pad feels late no matter how you play it, it is almost always the start point rather than your timing."
+    },
+    {
+      "title": "Back it up",
+      "body": [
+        "Copy the project off the SD card to your computer as soon as a kit is worth keeping.",
+        "Do it again after any session where you resampled — resampling is destructive, and there is no undo for a pad you overwrote last week.",
+        "Keep the source WAVs alongside the backup so you can rebuild the kit from scratch if you need to."
+      ],
+      "checkpoint": "A copy of the project exists somewhere that is not the SD card in the unit.",
+      "tip": "SD cards fail without warning. The backup takes two minutes; the kit took two hours."
+    }
+  ]
+}

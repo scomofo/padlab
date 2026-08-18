@@ -1,0 +1,65 @@
+{
+  "id": "mpk-programs-and-knobs",
+  "title": "Programs & Knob Control",
+  "course": "mpk-mini-workshop",
+  "device": "Akai MPK Mini MK4",
+  "blurb": "Save one setup for PadLab and another for your DAW, so switching between practice and production is a single button press.",
+  "level": 3,
+  "minutes": 12,
+  "padCount": 8,
+  "bpm": 90,
+  "steps": [
+    {
+      "title": "What a program actually stores",
+      "body": [
+        "A program is a saved snapshot of the controller's assignments: which note each pad sends on each bank, which CC each knob sends, and the MIDI channel everything goes out on.",
+        "It does not store any sound. The sound always comes from whatever is receiving the MIDI — PadLab's synthesized kit, or a plugin in your DAW.",
+        "Press PROG SELECT to see the saved programs and step between them.",
+        "This is why the same pad can play a kick in PadLab and open a totally different instrument in your DAW: only the assignments changed."
+      ],
+      "keys": [["PROG SELECT"]],
+      "checkpoint": "You can move between programs and see the display change, with no change in what the pads sound like in PadLab.",
+      "tip": "If your unit's programs are edited in Akai's MPK Mini editor rather than on the display, do the same steps there — the concepts are identical."
+    },
+    {
+      "title": "Make a practice program",
+      "body": [
+        "Start from the factory program and change as little as possible: PadLab's built-in profile expects the factory pad notes, so leaving them alone means it works with no setup.",
+        "Set the MIDI channel to one your other gear is not listening on, so practising does not trigger a synth in the next room.",
+        "Save it to a program slot and name it for what it is.",
+        "Now open PadLab, check the device chip reads your controller, and play a pad on each bank to confirm nothing moved."
+      ],
+      "keys": [["PROG SELECT"]],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 5, "label": "Hats" }
+      ],
+      "checkpoint": "Recalling your practice program leaves every pad landing where PadLab expects it.",
+      "tip": "If you have already run MIDI Learn in PadLab, that mapping wins regardless of what the controller sends — but keep the program clean anyway, so the app works on a machine where you have not."
+    },
+    {
+      "title": "Assign the knobs to something useful",
+      "body": [
+        "Each knob sends a CC number on a channel. The receiving software decides what that CC does.",
+        "Pick a CC for each knob and write the numbers down. Unlabelled knobs are the reason most controllers end up with three unused ones.",
+        "Set the range where it matters: a filter knob that only sweeps the useful half of its travel is far more playable than one that spends most of its range doing nothing.",
+        "Save the program again once the knobs are how you want them."
+      ],
+      "checkpoint": "Every knob moves something you actually use, and you know which CC each one sends.",
+      "tip": "PadLab ignores knobs entirely — a learned mapping only listens to your pads. Knob assignments are for your DAW; they cannot disturb a lesson."
+    },
+    {
+      "title": "One program per context",
+      "body": [
+        "Build a second program for production: your DAW's drum-rack note layout, knobs mapped to the mixer or a plugin, and whatever channel your template expects.",
+        "Keep the practice program on a slot you can find by feel, so a warm-up never turns into a ten-minute setup detour.",
+        "Switching contexts is then one button press in each direction.",
+        "Check both programs after a firmware update — that is the one time saved assignments tend to move."
+      ],
+      "keys": [["PROG SELECT"]],
+      "checkpoint": "You can go from a PadLab lesson to your DAW session and back without re-mapping anything.",
+      "tip": "Back up your programs with the editor software if yours supports it. Rebuilding a knob map from memory is an hour you will not enjoy."
+    }
+  ]
+}

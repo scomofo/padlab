@@ -15,8 +15,8 @@ Use Chrome or Edge — Web MIDI is required for hardware controllers. Allow MIDI
 
 ## How it works
 
-- **Lessons** live in `src/lessons/data/*.json` — 46 original charts across levels 1-6, grouped into courses (`src/lessons/courses.json`): Foundations, Technique Workouts, Hip-Hop Lab, Four to the Floor, Breaks & Bass, and Global Grooves.
-- **Guides** live in `src/guides/data/*.json` — hardware walkthroughs rather than playable charts, shown as the **SP-404 MKII Workshop** course. They open in a step-by-step viewer with button-combo keycaps, a pad diagram per step, "you'll know it worked when" checkpoints, and a practice metronome. Covers resampling a first beat, chopping and shaping samples, the pattern sequencer, and Bus FX / printing effects. Your position in each guide is remembered. Each is a chart of `{t, pad, vel}` events plus **steps**: early steps give you one or two pads (the rest of the kit auto-plays as backing) at reduced tempo; the final **Perform** step is the whole kit at full speed and is what saves stars.
+- **Lessons** live in `src/lessons/data/*.json` — 50 original charts across levels 1-6, grouped into courses (`src/lessons/courses.json`): Foundations, Technique Workouts, Hip-Hop Lab, Four to the Floor, Breaks & Bass, and Global Grooves. Each is a chart of `{t, pad, vel}` events plus **steps**: early steps give you one or two pads (the rest of the kit auto-plays as backing) at reduced tempo; the final **Perform** step is the whole kit at full speed and is what saves stars.
+- **Guides** live in `src/guides/data/*.json` — hardware walkthroughs rather than playable charts, grouped into two more courses: the **SP-404 MKII Workshop** (resampling a first beat, chopping and shaping samples, importing and laying out a kit, the pattern sequencer, Bus FX / printing effects, and building a live set) and the **MPK Mini MK4 Workshop** (pads and banks, note repeat and the arpeggiator, saved programs and knob assignments). They open in a step-by-step viewer with button-combo keycaps, a pad diagram per step, "you'll know it worked when" checkpoints, and a practice metronome. Your position in each guide is remembered.
 - **Modes** — *Listen* (the app plays it), *Practice* (playback waits at each note until you hit the right pad), *Play* (scored: Perfect ±45 ms, Great ±90 ms, Good ±135 ms; extra hits cost you; 3 stars at 90 %).
 - **Sound** is a fully synthesized 16-voice drum kit (WebAudio — no samples), scheduled on the AudioContext clock with a lookahead scheduler, so timing doesn't wobble with the UI thread.
 - **Devices** — MPK Mini pads map from factory notes 36-43 (bank A) / 44-51 (bank B); SP-404 MKII pads from notes 36-51. If your unit sends anything else, open the device panel (chip in the top-right of the lesson list) and run **MIDI Learn** — tap your pads in order once and the mapping is saved. A learned mapping is authoritative: notes outside it (keybed, knobs, transport buttons) are ignored, so nothing but your pads can trigger a sound. There's also an input-latency slider if hits feel systematically late — it shifts both judging *and* miss detection, so raising it never turns a good hit into a miss.
@@ -34,7 +34,7 @@ grid: {
 }
 ```
 
-See `scripts/gen-*.mjs` for the courses authored this way. To add a hardware walkthrough instead, drop a JSON file in `src/guides/data/` following `src/guides/types.ts` — steps take `body` lines, optional `keys` combos (`[["SHIFT","TAP TEMPO"]]`), `pads` to highlight, a `checkpoint`, and a `tip`.
+See `scripts/gen-*.mjs` for the courses authored this way. To add a hardware walkthrough instead, drop a JSON file in `src/guides/data/` following `src/guides/types.ts` — steps take `body` lines, optional `keys` combos (`[["SHIFT","TAP TEMPO"]]`), `pads` to highlight, a `checkpoint`, and a `tip`. A guide's `course` must exist in `src/lessons/courses.json`; a course containing only guides is fine.
 
 Either route, validate before committing:
 

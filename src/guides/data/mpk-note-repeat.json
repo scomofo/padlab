@@ -1,0 +1,79 @@
+{
+  "id": "mpk-note-repeat",
+  "title": "Note Repeat & the Arpeggiator",
+  "course": "mpk-mini-workshop",
+  "device": "Akai MPK Mini MK4",
+  "blurb": "Use the controller's own timing tools to hear a roll before you can play it — then switch them off and match what you heard.",
+  "level": 2,
+  "minutes": 12,
+  "padCount": 8,
+  "bpm": 96,
+  "steps": [
+    {
+      "title": "Set the tempo first",
+      "body": [
+        "Note Repeat and the arpeggiator both run off the controller's internal clock, so the tempo has to be right before either is useful.",
+        "Tap TAP TEMPO four times in time with the speed you want, or set the value in the display.",
+        "Start PadLab's practice metronome below at the same tempo and check the two agree over eight bars — not just over one."
+      ],
+      "keys": [["TAP TEMPO"]],
+      "checkpoint": "The controller's clock and the click stay locked together for eight bars without drifting apart.",
+      "tip": "Tapping tempo by ear is close but never exact. If you are practising against a fixed BPM, type the number in rather than tapping it."
+    },
+    {
+      "title": "Note Repeat, one division at a time",
+      "body": [
+        "Hold NOTE REPEAT and press a pad: the pad retriggers at the current time division for as long as you hold it.",
+        "Change the division to hear eighths, sixteenths, and triplets. Every roll you will ever play is one of these rates.",
+        "Hold pad 5 (hats in most lessons) at eighths, then at sixteenths. Listen to the difference rather than counting it — the point is to get the sound in your ear.",
+        "This is the same build that Roll Builder in Technique Workouts asks you to play by hand."
+      ],
+      "keys": [["NOTE REPEAT"]],
+      "pads": [
+        { "pad": 5, "label": "Hats" }
+      ],
+      "checkpoint": "You can switch between eighths and sixteenths on the same pad and hear exactly where the extra notes land.",
+      "tip": "Triplet divisions are worth ten minutes on their own. Most players can hear a triplet long before they can place one, and hearing it first is what closes the gap."
+    },
+    {
+      "title": "Play against it, then without it",
+      "body": [
+        "Hold Note Repeat on the hat pad at sixteenths and play a kick and snare underneath with your other hand.",
+        "The repeat is a perfect grid — anything of yours that is out of time will stick out immediately.",
+        "Now release Note Repeat and play the same hats yourself, keeping the kick and snare going.",
+        "Alternate: four bars with the repeat, four bars without. That contrast is the whole exercise."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" },
+        { "pad": 5, "label": "Hats" }
+      ],
+      "checkpoint": "The bars you play by hand sound the same as the bars the controller played for you.",
+      "tip": "Do not chase perfection here. Getting your unaided bars to sound close is the goal; a hand-played hat that is exactly machine-even usually sounds worse anyway."
+    },
+    {
+      "title": "The arpeggiator on the keybed",
+      "body": [
+        "Press ARP and hold a chord on the keys: the notes play back one at a time in the current mode — up, down, alternating, or in the order you pressed them.",
+        "Gate controls how long each note rings; swing pushes every second note late, which is exactly the feel the swung lessons in Hip-Hop Lab ask your hands to produce.",
+        "Latch keeps the pattern running after you let go, so you can leave a bassline playing and practise drums over it.",
+        "Set swing to something obvious and listen to what it does to a straight sixteenth run."
+      ],
+      "keys": [["ARP"], ["ARP", "LATCH"]],
+      "checkpoint": "A held chord plays back as a moving pattern, and it keeps going with latch on after you release the keys.",
+      "tip": "Swing on the arpeggiator and swing in a drum chart are the same idea. If you can hear the arp's swing, you can hear whether your own boom bap is swinging or just late."
+    },
+    {
+      "title": "Build a practice loop",
+      "body": [
+        "Latch an arpeggiated bassline at your practice tempo, and let it run.",
+        "Play a lesson pattern over it — Swung Boom Bap or Lo-Fi Head Nod work well at these tempos.",
+        "Playing against something musical rather than a click is the fastest way to find out whether your groove actually sits.",
+        "Turn everything off and play the pattern one more time, unaccompanied. That last pass is the one that tells you what you have learned."
+      ],
+      "keys": [["ARP", "LATCH"]],
+      "checkpoint": "You can hold a groove over a latched arpeggio for a full eight bars without drifting.",
+      "tip": "Record the last unaccompanied pass on your phone. You will hear things playing back that you cannot hear while playing."
+    }
+  ]
+}
