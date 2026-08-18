@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { LESSONS } from '../../src/lessons'
 import { GUIDES } from '../../src/guides'
 import { COURSES, COURSE_IDS, courseTitle } from '../../src/lessons/courses'
+import { RETRIGGER_DEBOUNCE_MS, ScoreKeeper } from '../../src/engine/scoring'
 
 describe('LESSONS', () => {
   it('loads the whole data directory', () => {
@@ -105,6 +106,69 @@ describe('GUIDES', () => {
   it('does not collide with lesson ids — both are keyed into the same progress store', () => {
     const lessonIds = new Set(LESSONS.map((l) => l.id))
     for (const g of GUIDES) expect(lessonIds, g.id).not.toContain(g.id)
+  })
+})
+
+describe('every shipped chart against the scorer', () => {
+  /** The scored step is always the last one, and it is always the full kit. */
+  const scorerFor = (lesson: (typeof LESSONS)[number]) =>
+    new ScoreKeeper(lesson.events, 60 / lesson.bpm)
+
+  it.each(LESSONS.map((l) => [l.id, l] as const))(
+    '%s scores 100%% and 3 stars on exact-time play',
+    (_id, lesson) => {
+      const k = scorerFor(lesson)
+      for (const e of lesson.events) k.registerHit(e.pad, e.t)
+      const s = k.summary()
+      expect(s.miss).toBe(0)
+      expect(s.stray).toBe(0)
+      expect(s.accuracy).toBe(100)
+      expect(s.stars).toBe(3)
+    },
+  )
+
+  it.each(LESSONS.map((l) => [l.id, l] as const))(
+    '%s survives every hit arriving tripled',
+    (_id, lesson) => {
+      // A single physical tap can reach us as several note-ons. Retriggers must
+      // be swallowed rather than charged as strays, on every real chart.
+      const k = scorerFor(lesson)
+      const nudge = 4 / 1000 / (60 / lesson.bpm) // 4 ms, in beats
+      for (const e of lesson.events) {
+        k.registerHit(e.pad, e.t)
+        k.registerHit(e.pad, e.t + nudge)
+        k.registerHit(e.pad, e.t + nudge * 2)
+      }
+      const s = k.summary()
+      expect(s.stray).toBe(0)
+      expect(s.accuracy).toBe(100)
+      expect(s.stars).toBe(3)
+    },
+  )
+
+  /**
+   * The safety margin the debounce relies on. If someone raises
+   * RETRIGGER_DEBOUNCE_MS, or authors a chart with a faster same-pad roll than
+   * any existing one, real notes would start being swallowed as retriggers —
+   * and the run above would stop reaching 100%. This fails first, and says why.
+   */
+  it('keeps every same-pad interval clear of the debounce window', () => {
+    for (const lesson of LESSONS) {
+      const msPerBeat = (60 / lesson.bpm) * 1000
+      const byPad = new Map<number, number[]>()
+      for (const e of lesson.events) {
+        if (!byPad.has(e.pad)) byPad.set(e.pad, [])
+        byPad.get(e.pad)!.push(e.t)
+      }
+      for (const [pad, times] of byPad) {
+        times.sort((a, b) => a - b)
+        for (let i = 1; i < times.length; i++) {
+          const gapMs = (times[i] - times[i - 1]) * msPerBeat
+          expect(gapMs, `${lesson.id} pad ${pad} at beat ${times[i - 1]}`)
+            .toBeGreaterThan(RETRIGGER_DEBOUNCE_MS)
+        }
+      }
+    }
   })
 })
 
