@@ -42,4 +42,31 @@ Either route, validate before committing:
 npm run validate
 ```
 
-The validator enforces pad mappings, event ranges, grid alignment, step sanity, per-pad spacing, and known course ids. It rejects charts with more than three notes on the same instant (unplayable with two hands) and warns when a chart is denser than its difficulty level claims.
+The validator enforces pad mappings, event ranges, grid alignment, step sanity, per-pad spacing, and known course ids. It rejects charts with more than three notes on the same instant (unplayable with two hands) and warns when a chart is denser than its difficulty level claims. Its rules live in `scripts/lib/validate.mjs`; the two `scripts/validate-*.mjs` entry points just read files, print, and set the exit code.
+
+## Tests
+
+```bash
+npm test            # unit tests
+npm run test:watch  # re-run on change
+npm run check       # typecheck + build, validate, test — what CI runs
+```
+
+Tests live in `tests/`, mirroring the source layout. They cover the scoring
+and timing engine, the transport, the player runtime, device profiles and MIDI
+handling, saved progress, the difficulty model, the chart authoring helper, and
+both validators. The React components and the WebAudio synth are not covered.
+
+Two things worth knowing when adding tests:
+
+- The engine is driven by a **fake AudioContext clock and fake timers** (see
+  `tests/engine/player.test.ts`), so a ten-second run executes in microseconds
+  and is exactly reproducible. Never use real timers for engine tests.
+- Both validators run against **negative fixtures** — each test breaks exactly
+  one rule and asserts that rule fires. If you add a validation rule, add the
+  fixture that proves it works; a rule with no failing fixture is untested.
+
+A handful of tests deliberately pin behaviour that is questionable rather than
+correct, each with a comment saying so. They exist so that changing the
+behaviour shows up as an intentional diff rather than a silent one. Grep for
+`rather than endorsing it` in `tests/` to find them.
