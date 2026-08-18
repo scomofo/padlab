@@ -59,18 +59,27 @@ python3 scripts/patch-macos-plists.py "$APP" "$VERSION"
 # Mach-O first, then the nested bundles, then the outer app.
 echo "==> ad-hoc signing"
 
+# 1. Nested binaries that are not any bundle's own main executable: the crashpad
+#    handler, the dylibs under Versions/A/Libraries, and Squirrel's ShipIt.
+#    Nothing else reaches these, and they are exactly what the x64 build leaves
+#    unsigned. Only these — a bundle's main executable must NOT be signed here,
+#    because codesign resolves such a path to its enclosing bundle and would try
+#    to seal that bundle before its own contents are signed.
 sign_count=0
 while IFS= read -r -d '' bin; do
   case "$(file -b "$bin")" in
     *Mach-O*) codesign --force --sign - --timestamp=none "$bin"; sign_count=$((sign_count + 1)) ;;
   esac
-done < <(find "$APP" -type f ! -type l -print0)
-echo "    signed $sign_count Mach-O binaries"
+done < <(find "$APP/Contents/Frameworks" -type f ! -type l \
+  \( -path '*/Helpers/*' -o -path '*/Libraries/*' -o -path '*/Resources/*' \) -print0)
+echo "    signed $sign_count nested binaries"
 
+# 2. The nested bundles. Signing a bundle seals its own main executable too.
 while IFS= read -r -d '' nested; do
   codesign --force --sign - --timestamp=none "$nested"
 done < <(find "$APP/Contents/Frameworks" -maxdepth 1 \( -name '*.framework' -o -name '*.app' \) -print0)
 
+# 3. Finally the outer bundle, over contents that are now fully signed.
 codesign --force --sign - --timestamp=none "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
