@@ -142,7 +142,7 @@ writeLessons([
     genre: 'hard techno',
     level: 6,
     padCount: 16,
-    bpm: 140,
+    bpm: 154,
     bars: 8,
     pads: { 1: 'kick', 3: 'clap', 5: 'hatClosed', 6: 'hatOpen', 8: 'crash', 9: 'tomLow', 11: 'tomHigh', 14: 'perc' },
     steps: [

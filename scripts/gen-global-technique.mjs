@@ -3,6 +3,12 @@
 import { writeLessons, perform } from './lib/chart.mjs'
 
 const rep = (n, p, ...tail) => [...Array(n).fill(p), ...tail]
+/** Build a 16-step bar string with 'x' at the given step indices. */
+const bar16 = (on) => {
+  const s = Array(16).fill('.')
+  for (const i of on) s[i] = 'x'
+  return s.join('')
+}
 
 writeLessons([
   // ---------------- Global Grooves ----------------
@@ -147,7 +153,18 @@ writeLessons([
       perform('Full drill — your dynamics should be audible from across the room.'),
     ],
     grid: {
-      1: 'x.......x.......',
+      // Base pulse on 1 and 3, plus syncopated pickups that vary bar to bar
+      // so the kick hand stays reactive instead of locking into autopilot.
+      1: [
+        bar16([0, 3, 8, 11]),
+        bar16([0, 5, 8, 13]),
+        bar16([0, 1, 8, 9]),
+        bar16([0, 7, 8, 15]),
+        bar16([0, 3, 8, 9]),
+        bar16([0, 1, 8, 13]),
+        bar16([0, 5, 8, 11]),
+        bar16([0, 7, 8, 9]),
+      ],
       2: rep(4, 'X.g.X.g.X.g.X.g.', ...rep(4, 'g.X.g.X.g.X.g.X.')),
       5: 's.s.s.s.s.s.s.s.',
     },
@@ -159,7 +176,7 @@ writeLessons([
     genre: 'technique',
     level: 4,
     padCount: 16,
-    bpm: 104,
+    bpm: 112,
     bars: 8,
     pads: { 1: 'kick', 2: 'snare', 9: 'tomLow', 10: 'tomMid', 11: 'tomHigh', 14: 'perc' },
     steps: [
@@ -196,16 +213,37 @@ writeLessons([
       perform('The full build: quarters to sixteenths across 8 bars, evenly.'),
     ],
     grid: {
-      1: 'x.......x.......',
-      2: '....x.......x...',
+      // Kick/snare pick up extra pushes in the quieter early bars, in the
+      // gaps the hat pattern leaves open, so the build has more going on
+      // underneath than just the widening roll.
+      1: [
+        bar16([0, 2, 7, 8, 11]),
+        bar16([0, 3, 6, 8, 10]),
+        bar16([0, 1, 7, 8, 13]),
+        bar16([0, 3, 8, 9, 15]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+      ],
+      2: [
+        bar16([4, 5, 12, 13]),
+        bar16([4, 7, 12, 15]),
+        bar16([3, 4, 11, 12]),
+        bar16([4, 5, 12, 13]),
+        '....x.......x...',
+        '....x.......x...',
+        '....x.......x...',
+        '....x.......x...',
+      ],
       5: [
         's...s...s...s...',
         's...s...s...s...',
         's.s.s.s.s.s.s.s.',
         's.s.s.s.s.s.s.s.',
-        'ssssssss........',
         'ssssssssssssssss',
-        's.s.s.s.ssssssss',
+        'ssssssssssssssss',
+        'ssssssssssssssss',
         'ssssssssssssssss',
       ],
     },
