@@ -77,7 +77,10 @@ export class ScoreKeeper {
     // One physical hit can arrive as several note-ons; count it once.
     const hitMs = hitBeat * this.secPerBeat * 1000
     const prevMs = this.lastHitMs.get(pad)
-    if (prevMs !== undefined && hitMs - prevMs < RETRIGGER_DEBOUNCE_MS) {
+    // Compared as a distance, not a signed difference: the live runtime feeds
+    // hits in time order, but a scorekeeper that swallowed anything arriving
+    // out of order would be wrong for any other caller.
+    if (prevMs !== undefined && Math.abs(hitMs - prevMs) < RETRIGGER_DEBOUNCE_MS) {
       this.ignored++
       return { judgement: 'ignored' }
     }

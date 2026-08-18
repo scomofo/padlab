@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ScoreKeeper, WINDOW_MS, starsForAccuracy } from '../../src/engine/scoring'
+import {
+  RETRIGGER_DEBOUNCE_MS,
+  ScoreKeeper,
+  WINDOW_MS,
+  starsForAccuracy,
+} from '../../src/engine/scoring'
 import { beatsFromMs, note, secPerBeat } from '../helpers/chart'
 
 const SPB = secPerBeat(120)
@@ -126,17 +131,20 @@ describe('ScoreKeeper.registerHit — event matching', () => {
   })
 
   it('leaves the passed-over note still hittable', () => {
+    // Hits arrive in time order, so the earlier note is claimed by an earlier
+    // tap; the retrigger debounce would swallow a hit that went backwards.
     const k = keeper([note(0, 1), note(0.2, 1)])
-    k.registerHit(1, 0.12)
     expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, 0.2).event?.t).toBe(0.2)
     expect(k.summary().miss).toBe(0)
   })
 
   it('does not re-award a note that was already judged', () => {
     const k = keeper()
     expect(k.registerHit(1, 0).judgement).toBe('perfect')
-    // Second tap on the same note has nothing left to claim.
-    expect(k.registerHit(1, 0).judgement).toBe('stray')
+    // Second tap, clear of the debounce, has nothing left to claim.
+    const later = beatsFromMs(RETRIGGER_DEBOUNCE_MS + 10)
+    expect(k.registerHit(1, later).judgement).toBe('stray')
     expect(k.summary().perfect).toBe(1)
   })
 
@@ -328,23 +336,109 @@ describe('ScoreKeeper.summary — edge cases worth a decision', () => {
     expect(s.accuracy).toBeLessThanOrEqual(100)
   })
 
+})
+
+describe('ScoreKeeper — stray penalty', () => {
+  /** A flawless run of `noteCount` notes, then `strays` extra taps. */
+  const runWith = (noteCount: number, strays: number) => {
+    const events = Array.from({ length: noteCount }, (_, i) => note(i, 1))
+    const k = keeper(events)
+    for (let i = 0; i < noteCount; i++) k.registerHit(1, i)
+    // Spaced past the debounce so each counts as its own extra hit.
+    for (let i = 0; i < strays; i++) k.registerHit(7, i * 0.25)
+    return k.summary()
+  }
+
+  it('scales the penalty with the share of the chart the strays represent', () => {
+    // Half a point per stray as a percentage of chart length: the same 12
+    // extra taps cost far more on a short chart than a long one.
+    expect(runWith(100, 12).accuracy).toBe(94)
+    expect(runWith(200, 12).accuracy).toBe(97)
+  })
+
   /**
-   * Pins current behaviour rather than endorsing it: the stray penalty is a
-   * flat `raw - strayCount`, so it costs the same number of points on a
-   * 12-note chart as on a 100-note one — roughly 8x harsher per note on short
-   * charts. The `fix/scoring-stray-penalty` branch proposes making this
-   * proportional and capped; pinning today's behaviour means that change shows
-   * up as an intentional diff rather than a silent one.
+   * The point of the fix: a run where every note was hit should never be
+   * driven to zero by extra taps, however many there are.
    */
-  it('charges strays a flat cost independent of chart length', () => {
-    const runWith = (noteCount: number) => {
-      const events = Array.from({ length: noteCount }, (_, i) => note(i, 1))
-      const k = keeper(events)
-      for (let i = 0; i < noteCount; i++) k.registerHit(1, i)
-      for (let i = 0; i < 12; i++) k.registerHit(7, 0.5)
-      return k.summary().accuracy
+  it('caps the penalty so sloppiness cannot wipe out a clean run', () => {
+    for (const strays of [50, 200, 1000]) {
+      const s = runWith(100, strays)
+      expect(s.miss).toBe(0)
+      expect(s.accuracy).toBe(80) // 100 - the 20-point ceiling
     }
-    expect(runWith(12)).toBe(88)
-    expect(runWith(100)).toBe(88)
+  })
+
+  it('still ranks a cleaner run above a sloppier one', () => {
+    const accuracies = [0, 2, 5, 10].map((n) => runWith(100, n).accuracy)
+    for (let i = 1; i < accuracies.length; i++) {
+      expect(accuracies[i]).toBeLessThan(accuracies[i - 1])
+    }
+  })
+
+  it('counts the strays it penalised', () => {
+    expect(runWith(100, 12).stray).toBe(12)
+  })
+})
+
+describe('ScoreKeeper — retrigger debounce', () => {
+  it('treats a duplicate note-on as one physical hit, not a stray', () => {
+    // Velocity pads bounce and some controllers send duplicate note-ons.
+    const k = keeper()
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(5)).judgement).toBe('ignored')
+    expect(k.stray).toBe(0)
+    expect(k.ignored).toBe(1)
+  })
+
+  it('scores a flawless run at 100% even when every hit arrives tripled', () => {
+    const events = Array.from({ length: 33 }, (_, i) => note(i, 1))
+    const k = keeper(events)
+    for (let i = 0; i < 33; i++) {
+      k.registerHit(1, i)
+      k.registerHit(1, i + beatsFromMs(4))
+      k.registerHit(1, i + beatsFromMs(8))
+    }
+    const s = k.summary()
+    expect(s.accuracy).toBe(100)
+    expect(s.stars).toBe(3)
+    expect(s.stray).toBe(0)
+  })
+
+  it('does not swallow a genuine fast roll', () => {
+    // The tightest same-pad interval any shipped chart uses is 43 ms.
+    const k = keeper([note(0, 1), note(beatsFromMs(43), 1)])
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(43)).judgement).not.toBe('ignored')
+    expect(k.summary().miss).toBe(0)
+  })
+
+  it('debounces per pad, not globally', () => {
+    const k = keeper([note(0, 1), note(0, 2)])
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(2, beatsFromMs(5)).judgement).toBe('perfect')
+  })
+
+  it('measures the window in milliseconds, not beats, so tempo cannot change it', () => {
+    for (const bpm of [60, 174]) {
+      const k = new ScoreKeeper([note(0, 1)], secPerBeat(bpm))
+      k.registerHit(1, 0)
+      expect(k.registerHit(1, beatsFromMs(RETRIGGER_DEBOUNCE_MS - 5, bpm)).judgement).toBe('ignored')
+      expect(k.registerHit(1, beatsFromMs(RETRIGGER_DEBOUNCE_MS + 5, bpm)).judgement).not.toBe('ignored')
+    }
+  })
+
+  it('ignores an out-of-order retrigger by distance, not by sign', () => {
+    // The live runtime feeds hits in time order, so this cannot happen through
+    // handlePad; the unit should not depend on the caller for correctness.
+    const k = keeper([note(0, 1), note(0.2, 1)])
+    k.registerHit(1, 0.2)
+    expect(k.registerHit(1, 0).judgement).toBe('perfect') // 100 ms earlier, not a retrigger
+  })
+
+  it('leaves the stray path intact for genuinely extra hits', () => {
+    const k = keeper()
+    k.registerHit(1, 0)
+    expect(k.registerHit(7, beatsFromMs(200)).judgement).toBe('stray')
+    expect(k.stray).toBe(1)
   })
 })
