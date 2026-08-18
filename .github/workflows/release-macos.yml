@@ -1,0 +1,81 @@
+name: Release (macOS)
+
+# Builds PadLab.app for both Mac architectures and publishes the DMGs to a
+# GitHub release. Runs on macOS so hdiutil and codesign are the real tools, and
+# so the workflow can prove the image mounts before publishing it.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create (e.g. v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+      prerelease:
+        description: 'Mark as a pre-release'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  ELECTRON_VERSION: '33.2.1'
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # The desktop build ships whatever the tests passed against.
+      - name: Typecheck, validate and test
+        run: npm run check
+
+      - name: Build arm64
+        run: |
+          npm install --no-save electron@"$ELECTRON_VERSION"
+          scripts/package-macos.sh arm64
+
+      - name: Build x64
+        run: |
+          # Electron's postinstall skips the download when dist/ already exists,
+          # so the arm64 copy has to go before asking for the x64 one.
+          rm -rf node_modules/electron
+          npm_config_arch=x64 npm install --no-save electron@"$ELECTRON_VERSION"
+          scripts/package-macos.sh x64
+
+      - name: Checksums
+        run: |
+          cd release
+          shasum -a 256 *.dmg | tee SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: padlab-macos-dmg
+          path: |
+            release/*.dmg
+            release/SHA256SUMS.txt
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+          PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease }}
+        run: |
+          flags=()
+          [ "$PRERELEASE" = "true" ] && flags+=(--prerelease)
+          gh release create "$TAG" \
+            release/PadLab-*.dmg release/SHA256SUMS.txt \
+            --title "PadLab $TAG" \
+            --notes-file .github/release-notes-macos.md \
+            "${flags[@]}"
