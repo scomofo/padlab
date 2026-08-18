@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "validate": "node scripts/validate-lessons.mjs && node scripts/validate-guides.mjs"
+    "validate": "node scripts/validate-lessons.mjs && node scripts/validate-guides.mjs && node scripts/analyze-difficulty.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",
