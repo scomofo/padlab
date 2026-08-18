@@ -105,6 +105,7 @@ export function LessonBrowser({
           ? courseGuides.filter((g) => guideProgress[g.id]?.completed).length
           : courseLessons.filter((l) => (progress[l.id]?.stars ?? 0) >= 3).length
         const total = courseGuides.length || courseLessons.length
+        const pct = total ? Math.round((done / total) * 100) : 0
         return (
           <section className="course" key={course.id}>
             <div className="course-head">
@@ -115,6 +116,9 @@ export function LessonBrowser({
               <span className="course-count muted">
                 {done}/{total} {courseGuides.length ? 'complete' : 'mastered'}
               </span>
+            </div>
+            <div className="course-progress">
+              <div className={pct === 100 ? 'course-progress-fill maxed' : 'course-progress-fill'} style={{ width: `${pct}%` }} />
             </div>
             <div className="lesson-grid">
               {courseGuides.map((g) => {
@@ -149,7 +153,7 @@ export function LessonBrowser({
                     <h3>{l.title}</h3>
                     <div className="muted">{l.genre} · {l.bpm} BPM · {l.bars} bars</div>
                     <div className="card-bottom">
-                      <span className="stars">
+                      <span className={(p?.stars ?? 0) >= 3 ? 'stars maxed' : 'stars'}>
                         {[1, 2, 3].map((s) => (
                           <span key={s} className={(p?.stars ?? 0) >= s ? 'star on' : 'star'}>★</span>
                         ))}

@@ -33,6 +33,23 @@ const JUDGE_TEXT: Record<string, string> = {
 
 const VISIBLE_SEC = 2.6 // seconds of chart between the hit line and the top edge
 
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  life: number
+  maxLife: number
+  color: string
+}
+
+const COMBO_TIERS: { min: number; color: string }[] = [
+  { min: 20, color: '#ff6ec7' },
+  { min: 10, color: '#ffd166' },
+  { min: 0, color: '#3ef0c8' },
+]
+const comboColor = (combo: number) => COMBO_TIERS.find((t) => combo >= t.min)!.color
+
 export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -65,6 +82,31 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
     const laneIndex = new Map(lanePads.map((p, i) => [p, i]))
     const sortedEvents = [...lesson.events].sort((a, b) => a.t - b.t)
 
+    // ---- flare state (particles, combo pulse, miss flash) — persists across frames ----
+    let particles: Particle[] = []
+    const processedFeedback = new WeakSet<object>()
+    let lastFrame = performance.now()
+    let lastCombo = 0
+    let comboPulseUntil = 0
+    let missFlashUntil = 0
+
+    const spawnBurst = (x: number, y: number, color: string) => {
+      const n = 10
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 * i) / n + Math.random() * 0.4
+        const speed = 60 + Math.random() * 100
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 60,
+          life: 0,
+          maxLife: 380 + Math.random() * 200,
+          color,
+        })
+      }
+    }
+
     const draw = () => {
       raf = requestAnimationFrame(draw)
       const dpr = window.devicePixelRatio || 1
@@ -73,6 +115,10 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
       ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx2d.clearRect(0, 0, w, h)
       if (w < 40 || h < 60) return
+
+      const frameNow = performance.now()
+      const dt = Math.min(50, frameNow - lastFrame)
+      lastFrame = frameNow
 
       const rt = runtimeRef.current
       const step = lesson.steps[stepRef.current]
@@ -91,6 +137,25 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
       const ppb = (hitY / VISIBLE_SEC) * secPerBeat // px per beat
       const laneW = w / lanePads.length
       const beatToY = (t: number) => hitY - (t - now) * ppb
+
+      // react to new judgements: bursts on great hits, a flash on misses
+      if (rt) {
+        for (const f of rt.feedback) {
+          if (processedFeedback.has(f)) continue
+          processedFeedback.add(f)
+          const li = laneIndex.get(f.pad)
+          if (li === undefined) continue
+          if (f.judgement === 'perfect' || f.judgement === 'great') {
+            spawnBurst(li * laneW + laneW / 2, hitY, JUDGE_COLORS[f.judgement])
+          } else if (f.judgement === 'miss') {
+            missFlashUntil = frameNow + 220
+          }
+        }
+        if (rt.score && rt.score.combo > lastCombo) comboPulseUntil = frameNow + 260
+        lastCombo = rt.score?.combo ?? 0
+      } else {
+        lastCombo = 0
+      }
 
       // lane backgrounds
       for (let i = 0; i < lanePads.length; i++) {
@@ -122,12 +187,17 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
         }
       }
 
-      // hit line
+      // hit line, with a soft glow that brightens with combo
+      const comboGlow = rt?.score ? Math.min(1, rt.score.combo / 24) : 0
       const grad = ctx2d.createLinearGradient(0, hitY - 2, w, hitY - 2)
       grad.addColorStop(0, '#3ef0c8')
       grad.addColorStop(1, '#818cf8')
+      ctx2d.save()
+      ctx2d.shadowColor = rt?.score ? comboColor(rt.score.combo) : '#3ef0c8'
+      ctx2d.shadowBlur = 6 + comboGlow * 18
       ctx2d.fillStyle = grad
       ctx2d.fillRect(0, hitY - 2, w, 4)
+      ctx2d.restore()
 
       // notes
       const noteH = Math.max(10, Math.min(18, ppb * 0.22))
@@ -184,6 +254,22 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
         }
       }
 
+      // hit-burst particles
+      particles = particles.filter((p) => p.life < p.maxLife)
+      for (const p of particles) {
+        p.life += dt
+        p.x += p.vx * (dt / 1000)
+        p.y += p.vy * (dt / 1000)
+        p.vy += 260 * (dt / 1000) // gravity
+        const t = p.life / p.maxLife
+        ctx2d.globalAlpha = Math.max(0, 1 - t)
+        ctx2d.fillStyle = p.color
+        ctx2d.beginPath()
+        ctx2d.arc(p.x, p.y, Math.max(0.5, 2.5 * (1 - t) + 1), 0, Math.PI * 2)
+        ctx2d.fill()
+      }
+      ctx2d.globalAlpha = 1
+
       // waiting indicator (practice mode)
       if (rt?.waitingPads) {
         const pulse = 0.55 + 0.45 * Math.sin(performance.now() / 180)
@@ -219,12 +305,21 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
           ctx2d.fillText(JUDGE_TEXT[f.judgement], li * laneW + laneW / 2, hitY - 34 - age * 26)
           ctx2d.globalAlpha = 1
         }
-        // combo
+        // combo, with a brief pop + glow on every step up and a hotter color at higher tiers
         if (rt.score && rt.score.combo >= 4) {
-          ctx2d.fillStyle = '#3ef0c8'
+          const pulseT = Math.max(0, (comboPulseUntil - frameNow) / 260)
+          const scale = 1 + pulseT * 0.4
+          const color = comboColor(rt.score.combo)
+          ctx2d.save()
+          ctx2d.translate(w - 14, 30)
+          ctx2d.scale(scale, scale)
+          ctx2d.shadowColor = color
+          ctx2d.shadowBlur = 8 + pulseT * 14
+          ctx2d.fillStyle = color
           ctx2d.font = '800 20px system-ui, sans-serif'
           ctx2d.textAlign = 'right'
-          ctx2d.fillText(`${rt.score.combo}x`, w - 14, 30)
+          ctx2d.fillText(`${rt.score.combo}x`, 0, 0)
+          ctx2d.restore()
         }
         // count-in
         if (rt.transport.state === 'playing' && now < 0) {
@@ -233,6 +328,16 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
           ctx2d.textAlign = 'center'
           ctx2d.fillText(String(Math.ceil(-now)), w / 2, h * 0.4)
         }
+      }
+
+      // miss flash — a quick red vignette at the screen edges
+      if (frameNow < missFlashUntil) {
+        const t = (missFlashUntil - frameNow) / 220
+        const vignette = ctx2d.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.7)
+        vignette.addColorStop(0, 'rgba(255,93,115,0)')
+        vignette.addColorStop(1, `rgba(255,93,115,${0.35 * t})`)
+        ctx2d.fillStyle = vignette
+        ctx2d.fillRect(0, 0, w, h)
       }
 
       // lane footer labels
