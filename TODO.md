@@ -1,37 +1,11 @@
 # TODO
 
-Open work as of `main` @ `649bf09`. Each item says what it is, where it lives, and
+Open work as of `main` @ `2455bef`. Each item says what it is, where it lives, and
 what "done" looks like — so none of it needs recovering from memory.
-
-## In review
-
-- [ ] **PR #5 — fast rolls swallowed by the retrigger debounce.** CI green,
-      awaiting review. Fixes a P1: on `amen-chop-science` two pad-2 notes sit a
-      32nd apart at 174 BPM (43.1 ms), so hitting one late and the next early
-      puts the note-ons ~23 ms apart, inside the 30 ms debounce — the second was
-      discarded and its note swept as a miss.
-
-      Worth an actual look rather than a rubber stamp: the fix makes a design
-      call. Time alone cannot separate a bounce from a fast stroke, because
-      charted intervals go tighter than the debounce window once ordinary timing
-      error is included. So matching now runs first, and inside the window the
-      two are told apart by *proximity* — a bounce lands nearer the note just
-      played, a real stroke nearer the next unplayed one.
-
-      Known limit: two note-ons arriving closer together than the second is to
-      the note it would claim are read as one strike. On the tightest chart that
-      means arrivals under ~12 ms — roughly 90 Hz on a single pad, which no hand
-      produces, so a bounce is the only physical explanation left.
-
-      An earlier revision measured that distance from the *charted note* rather
-      than from the previous note-on, which made the threshold move with the
-      player's timing error: a 1 ms duplicate was scored as a real stroke once
-      the stroke itself was 21 ms late, well inside the Perfect window. Review
-      caught it. Both boundaries are now pinned by tests.
 
 ## Repo hygiene
 
-- [ ] **Delete stale branches.** Five remain, four of them dead:
+- [ ] **Delete stale branches.** Six remain, five of them dead:
 
       | Branch | State |
       |---|---|
@@ -39,7 +13,8 @@ what "done" looks like — so none of it needs recovering from memory.
       | `fix/difficulty-calibration` | Merged into `main`, no unique work. |
       | `claude/todo-implementation-3mwax4` | Merged (PR #1), no unique work. |
       | `claude/project-state-detection-81tfdq` | Merged (PR #2), no unique work. |
-      | `claude/test-coverage-analysis-d9rvfq` | Live — carries PR #5. Keep until that merges. |
+      | `claude/test-coverage-analysis-d9rvfq` | Merged (PRs #3 and #5), no unique work. |
+      | `claude/todo-file` | Merged (PR #6), no unique work. |
 
 ## Needs hardware
 
@@ -59,7 +34,14 @@ what "done" looks like — so none of it needs recovering from memory.
         reason the debounce exists — bouncy pads sending duplicate note-ons — and
         it has only ever been tested against synthetic input. Play a fast roll on
         the tightest chart (`amen-chop-science`, level 6) and confirm no notes
-        are dropped and no phantom strays appear. Do this after PR #5 lands.
+        are dropped and no phantom hits appear.
+
+- [ ] **Launch the packaged macOS app.** The DMG is built and verified on a
+      macOS runner (it mounts, the signature verifies, the payload is present),
+      and the Electron shell is verified end-to-end under Linux Electron. What
+      no CI step covers is a human double-clicking it: Gatekeeper, the window
+      appearing, and Web MIDI seeing a real controller through the Electron
+      permission handler rather than the browser's.
 
 ## Open design questions
 

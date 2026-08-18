@@ -1,0 +1,8 @@
+{
+  "name": "padlab-desktop",
+  "productName": "PadLab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Manifest for the packaged app payload, copied into PadLab.app/Contents/Resources/app.",
+  "main": "main.cjs"
+}
