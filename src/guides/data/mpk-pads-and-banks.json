@@ -1,0 +1,78 @@
+{
+  "id": "mpk-pads-and-banks",
+  "title": "Pads, Banks & Full Level",
+  "course": "mpk-mini-workshop",
+  "device": "Akai MPK Mini MK4",
+  "blurb": "Set the controller up for practice: confirm the pads reach PadLab, learn the two banks, and get Full Level out of your way.",
+  "level": 1,
+  "minutes": 10,
+  "padCount": 8,
+  "bpm": 90,
+  "steps": [
+    {
+      "title": "Connect and confirm",
+      "body": [
+        "Plug the MPK into your computer with a USB cable and open PadLab in Chrome or Edge. Allow MIDI access when the browser asks.",
+        "The chip in the top-right of the lesson list should name your controller. Open it and hit each pad in turn.",
+        "Every pad you hit should flash the matching pad on screen. If the wrong pad lights up — or none does — run MIDI Learn in that panel and tap pads 1 to 8 in order once."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Tap first" },
+        { "pad": 2, "label": "Then this" },
+        { "pad": 3, "label": "Then this" },
+        { "pad": 4, "label": "Then this" }
+      ],
+      "checkpoint": "All eight pads light the right on-screen pad, and nothing else on the controller makes a sound.",
+      "tip": "A learned mapping is authoritative: once you have taught PadLab your pads, the keybed, knobs, and transport buttons are ignored, so a stray knob twist can never trigger a hit mid-lesson."
+    },
+    {
+      "title": "The two banks",
+      "body": [
+        "The MPK has eight physical pads but two banks of assignments, A and B, giving sixteen sounds in total.",
+        "Press PAD BANK to switch. The display shows which bank you are on.",
+        "PadLab's 8-pad lessons all live on one bank — the factory Bank A notes. Leave the controller on Bank A while you practise and you never have to think about it again.",
+        "Bank B is worth knowing for the 16-pad charts: they are written for a 4x4 grid, so on an 8-pad controller you would have to bank-switch mid-bar. Use the 8-pad filter in the lesson list instead."
+      ],
+      "keys": [["PAD BANK"]],
+      "checkpoint": "You can switch to Bank B and back, and you know which bank your lessons expect.",
+      "tip": "If you bank-switch by accident during a lesson your hits will stop registering. That is the usual cause of a run where nothing scores."
+    },
+    {
+      "title": "Turn Full Level off for practice",
+      "body": [
+        "FULL LEVEL forces every pad hit to maximum velocity no matter how hard you play.",
+        "It is genuinely useful when you are programming a part and want each note identical.",
+        "It is the wrong setting for practice: the ghost-note lessons in Technique Workouts are built entirely on the gap between a soft hit and a hard one, and with Full Level on there is no gap.",
+        "Press it and check the light is off before you start a session."
+      ],
+      "keys": [["FULL LEVEL"]],
+      "checkpoint": "Playing a pad gently and then hard produces two clearly different volumes.",
+      "tip": "PadLab scores timing, not velocity — but the sound you hear back is velocity-mapped, so dynamics are how you tell whether your hands are actually doing what you think."
+    },
+    {
+      "title": "Pick a velocity curve you can live with",
+      "body": [
+        "The pads respond through a velocity curve that decides how hard you have to hit for a loud note. It is in the on-board settings menu on the display, or in Akai's MPK Mini editor software.",
+        "Try each curve with the same relaxed stroke and pick the one where a comfortable hit lands around three-quarters volume.",
+        "If you find yourself hammering the pads to be heard, the curve is too hard — that is a setup problem, not a technique problem, and it will wreck your timing at speed."
+      ],
+      "checkpoint": "A relaxed, repeatable stroke gives you a solid hit without any effort.",
+      "tip": "Set this before you build habits. Re-learning your stroke after changing the curve costs far more than the five minutes it takes to choose now."
+    },
+    {
+      "title": "Sit down and play something",
+      "body": [
+        "Rest your index and middle fingers on pads 1 and 2 — kick and snare in almost every PadLab lesson — and leave them there.",
+        "Play from the finger, not the wrist or the arm. The pad only needs a few millimetres of travel.",
+        "Open the Foundations course and run First Beats. Use Practice mode first: playback waits at each note until you hit the right pad, so you cannot fall behind.",
+        "If your hits feel systematically late even when they sound right, open the device panel and raise the input-latency slider a few milliseconds."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Kick" },
+        { "pad": 2, "label": "Snare" }
+      ],
+      "checkpoint": "You can play a bar of kick and snare without looking down at your hands.",
+      "tip": "The latency slider shifts judging and miss detection together, so raising it can never turn a good hit into a miss. Set it once, honestly, and forget it."
+    }
+  ]
+}

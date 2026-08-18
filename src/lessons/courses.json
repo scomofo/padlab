@@ -32,6 +32,11 @@
   {
     "id": "sp404-workshop",
     "title": "SP-404 MKII Workshop",
-    "blurb": "Hardware walkthroughs, not charts: resampling, chopping, the sequencer, and Bus FX. Button names follow the MKII front panel — check your manual if a shortcut differs on your firmware."
+    "blurb": "Hardware walkthroughs, not charts: resampling, chopping, the sequencer, Bus FX, importing samples, and playing a live set. Button names follow the MKII front panel — check your manual if a shortcut differs on your firmware."
+  },
+  {
+    "id": "mpk-mini-workshop",
+    "title": "MPK Mini MK4 Workshop",
+    "blurb": "Getting the most out of the controller itself: pad banks, note repeat and the arpeggiator, and saved programs. Button names follow the MK4 front panel — check your manual if yours is labelled differently."
   }
 ]

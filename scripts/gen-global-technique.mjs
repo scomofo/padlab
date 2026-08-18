@@ -168,6 +168,34 @@ writeLessons([
       16: rep(3, 'x..x......x.....', 'x..x.x....x.....'),
     },
   },
+  {
+    id: 'soca-drive',
+    title: 'Soca Drive',
+    course: 'global-grooves',
+    genre: 'soca',
+    level: 5,
+    padCount: 16,
+    bpm: 160,
+    bars: 8,
+    pads: { 1: 'kick', 3: 'clap', 7: 'shaker', 9: 'tomLow', 10: 'tomMid', 13: 'cowbell' },
+    steps: [
+      { name: 'Four on the floor', description: 'Kick on every beat at speed. It never moves — everything else is measured against it.', playerPads: [1], tempoScale: 0.7 },
+      { name: 'The bell', description: 'Cowbell in a 3-3-2 shape that keeps landing between the kicks. Count it, do not guess it.', playerPads: [13], tempoScale: 0.75 },
+      { name: 'Clap + toms', description: 'Clap on 2 and 4, toms answering into the next bar.', playerPads: [3, 9, 10], tempoScale: 0.8 },
+      { name: 'Shaker on top', description: 'Eighth-note shaker over the whole thing. One relaxed hand, no tension.', playerPads: [7], tempoScale: 0.85 },
+      perform('Full carnival engine at 160 — the bell should pull against the kick, not follow it.'),
+    ],
+    grid: {
+      1: rep(3, 'x...x...x...x...', 'x...x...x...x..x'),
+      3: '....x.......x...',
+      7: 's.s.s.s.s.s.s.s.',
+      9: '...........o..o.',
+      // Mid tom only shows up as a lead-in every fourth bar, so the fill
+      // arrives as a surprise rather than as part of the loop.
+      10: rep(3, '................', '.......o........'),
+      13: 'o..o..o...o..o..',
+    },
+  },
 
   // ---------------- Technique Workouts ----------------
   {
@@ -190,6 +218,31 @@ writeLessons([
       // Quarters for 4 bars, eighths for 2, then back — a build, not a wall.
       1: [...rep(4, 'x.......x.......'), 'x...x...x...x...', 'x...x...x...x...', 'x.......x.......', 'x.......x.......'],
       2: [...rep(4, '....x.......x...'), '..x...x...x...x.', '..x...x...x...x.', '....x.......x...', '....x.......x...'],
+    },
+  },
+  {
+    id: 'upbeat-trainer',
+    title: 'Upbeat Trainer',
+    course: 'technique',
+    genre: 'technique',
+    level: 2,
+    padCount: 8,
+    bpm: 88,
+    bars: 8,
+    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed' },
+    steps: [
+      { name: 'On the beat', description: 'Kick on 1 and 3, plus beat 4 every other bar, with a hat marking every beat. This is the reference you will play against.', playerPads: [1], tempoScale: 0.7 },
+      { name: 'Only the "and"', description: 'Snare on every upbeat — never on a beat. Each hit sits exactly halfway between two hat clicks.', playerPads: [2], tempoScale: 0.7 },
+      { name: 'Both at once', description: 'Kick on the beat, snare off it. The two hands pull toward each other; do not let them meet.', playerPads: [1, 2], tempoScale: 0.85 },
+      perform('Bars 5-8 add a sixteenth pickup before the last upbeat — the only note in the drill that is not an even eighth.'),
+    ],
+    grid: {
+      // Hats stay on quarters the whole way: a fixed reference, not a groove.
+      // Only the second half adds a sixteenth, so the drill stays about
+      // placement rather than density.
+      1: ['x.......x.......', 'x.......x...x...'],
+      2: [...rep(4, '..x...x...x...x.'), ...rep(4, '..x...x...x..xx.')],
+      5: 's...s...s...s...',
     },
   },
   {

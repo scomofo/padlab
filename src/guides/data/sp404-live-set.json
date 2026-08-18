@@ -1,0 +1,91 @@
+{
+  "id": "sp404-live-set",
+  "title": "Build a Live Set",
+  "course": "sp404-workshop",
+  "device": "Roland SP-404 MKII",
+  "blurb": "Turn finished loops into a set you can perform: sections on pads, chained patterns, and transitions you have actually rehearsed.",
+  "level": 3,
+  "minutes": 15,
+  "padCount": 16,
+  "bpm": 96,
+  "steps": [
+    {
+      "title": "Decide what a pad means",
+      "body": [
+        "Before touching the unit, decide how the set is laid out: one pad per section, one pad per stem, or patterns for the arrangement and pads for one-shots.",
+        "Mixing those approaches mid-set is what makes live sets fall apart — you reach for a pad and get the wrong kind of thing.",
+        "A workable default: bottom row for section loops, second row for drum one-shots you drop over the top, upper rows for vocals, stabs, and FX.",
+        "Write the layout down. You will not remember it under stage lights."
+      ],
+      "pads": [
+        { "pad": 1, "label": "Intro" },
+        { "pad": 2, "label": "Verse" },
+        { "pad": 3, "label": "Chorus" },
+        { "pad": 4, "label": "Break" },
+        { "pad": 13, "label": "FX" }
+      ],
+      "checkpoint": "You can say what every pad in the bank does without playing it.",
+      "tip": "Keep the same layout across every track in the set. Consistency beats cleverness once you are performing."
+    },
+    {
+      "title": "Print your sections",
+      "body": [
+        "Resample each section down to a single pad, so playing it live is one hit rather than four hands' worth of juggling.",
+        "Trim every section to loop seamlessly and check them at the tempo you will actually play at.",
+        "Keep the unprinted parts in another bank in case you need to rebuild a section later.",
+        "Set the loop and pad-play behaviour so a section holds until you change it, instead of stopping the moment you lift your finger."
+      ],
+      "keys": [["RESAMPLE"], ["LOOP"]],
+      "pads": [
+        { "pad": 1, "label": "Intro" },
+        { "pad": 2, "label": "Verse" },
+        { "pad": 3, "label": "Chorus" }
+      ],
+      "checkpoint": "Each section pad loops cleanly on its own and drops in on the downbeat.",
+      "tip": "Print sections a little longer than you think you need. Trimming a long loop live is impossible; extending a short one is worse."
+    },
+    {
+      "title": "Chain patterns for the parts you do not want to babysit",
+      "body": [
+        "Anything with a fixed arrangement — an intro that always runs eight bars, a fill before the drop — belongs in a pattern chain rather than in your hands.",
+        "Record those as patterns and chain them in playing order, then keep your hands free for the parts you want to perform.",
+        "The Pattern Sequencer guide covers recording and chaining in detail if you have not done it yet.",
+        "Leave the sections you improvise over as loose pads. A set that is entirely sequenced is a playback, not a performance."
+      ],
+      "keys": [["PATTERN SELECT"]],
+      "checkpoint": "The fixed parts play themselves in order while your hands stay on the pads.",
+      "tip": "Decide deliberately which half is sequenced and which half is played. Drifting into all-sequenced happens one convenient decision at a time."
+    },
+    {
+      "title": "Rehearse the transitions, not the loops",
+      "body": [
+        "Loops are the easy part — they already sound good. Sets fall over in the four bars where one section becomes another.",
+        "Practise only the changeovers: play the last two bars of one section and the first two of the next, then stop, then again.",
+        "Use a filter sweep or a delay throw on the Bus FX as the transition rather than a hard cut, and print the FX if you want it identical every time.",
+        "Count the change in out loud until it is automatic."
+      ],
+      "keys": [["BUS FX"]],
+      "pads": [
+        { "pad": 2, "label": "From" },
+        { "pad": 3, "label": "To" },
+        { "pad": 13, "label": "FX" }
+      ],
+      "checkpoint": "You can move between any two adjacent sections on the downbeat, ten times in a row, without looking.",
+      "tip": "This is the same skill the Pad Transitions lesson drills: knowing where your hand is going before it goes there."
+    },
+    {
+      "title": "Build a way out of trouble",
+      "body": [
+        "Keep one pad holding a simple drum loop at set tempo. If anything goes wrong, that pad buys you eight bars to fix it.",
+        "Know how to mute everything in one move and how to get back to a known-good state.",
+        "Run the whole set start to finish without stopping, including the bits you know you can play. That full pass is the rehearsal — the rest is practice.",
+        "Back the project up to your computer before you take it anywhere."
+      ],
+      "pads": [
+        { "pad": 8, "label": "Safety loop" }
+      ],
+      "checkpoint": "You have played the set end to end, once, without stopping to fix anything.",
+      "tip": "Something will go wrong live. The difference between a good and a bad set is entirely in how boring the recovery looks from the audience."
+    }
+  ]
+}
