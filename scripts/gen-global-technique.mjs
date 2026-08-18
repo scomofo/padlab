@@ -3,6 +3,12 @@
 import { writeLessons, perform } from './lib/chart.mjs'
 
 const rep = (n, p, ...tail) => [...Array(n).fill(p), ...tail]
+/** Build a 16-step bar string with 'x' at the given step indices. */
+const bar16 = (on) => {
+  const s = Array(16).fill('.')
+  for (const i of on) s[i] = 'x'
+  return s.join('')
+}
 
 writeLessons([
   // ---------------- Global Grooves ----------------
@@ -105,6 +111,63 @@ writeLessons([
       13: rep(3, 'o..o..o...o..o..', 'o..o..o...o..o.o'),
     },
   },
+  {
+    id: 'kuduro-drive',
+    title: 'Kuduro Drive',
+    course: 'global-grooves',
+    genre: 'kuduro',
+    level: 5,
+    padCount: 16,
+    bpm: 150,
+    bars: 8,
+    pads: { 1: 'kick', 3: 'clap', 4: 'rimshot', 7: 'shaker', 9: 'tomLow', 10: 'tomMid', 13: 'cowbell' },
+    steps: [
+      { name: 'Off-grid kick', description: 'The kick never lands where you expect. Trust the count, not your ear.', playerPads: [1], tempoScale: 0.7 },
+      { name: 'Clap + rim', description: 'Clap and rimshot trade sharp accents across the bar.', playerPads: [3, 4], tempoScale: 0.75 },
+      { name: 'Tom conversation', description: 'Low and mid toms answer each other in quick bursts.', playerPads: [9, 10], tempoScale: 0.8 },
+      { name: 'Bell + shaker', description: 'Cowbell cuts through a constant sixteenth shaker.', playerPads: [7, 13], tempoScale: 0.85 },
+      perform('The full kuduro engine — relentless and syncopated.'),
+    ],
+    grid: {
+      1: rep(3, 'x..x......x.....', 'x..x......x...x.'),
+      3: rep(3, '.......o........', '.......o....o...'),
+      4: rep(3, '....o.......o...', '....o....o..o...'),
+      7: '.s.s.s.s.s.s.s.s',
+      9: rep(3, '..........x.....', '..........x.x...'),
+      10: rep(7, '................', '.............o..'),
+      13: 'o.....o...o.....',
+    },
+  },
+  {
+    id: 'baile-funk-bounce',
+    title: 'Baile Funk Bounce',
+    course: 'global-grooves',
+    genre: 'baile funk',
+    level: 6,
+    padCount: 16,
+    bpm: 130,
+    bars: 8,
+    pads: { 1: 'kick', 3: 'clap', 4: 'rimshot', 7: 'shaker', 9: 'tomLow', 13: 'cowbell', 16: 'bass' },
+    steps: [
+      { name: 'Tamborzão kick', description: 'The signature broken kick pattern — syncopated, never straight.', playerPads: [1], tempoScale: 0.7 },
+      { name: 'Clap stack', description: 'Claps stack into a rolling accent across the bar.', playerPads: [3], tempoScale: 0.75 },
+      { name: 'Bell + rim', description: 'Cowbell and rimshot interlock in a tight call-and-response.', playerPads: [4, 13], tempoScale: 0.8 },
+      { name: 'Bass stabs', description: 'Sub bass punctuates the kick pattern without doubling it.', playerPads: [16], tempoScale: 0.85 },
+      perform('Full tamborzão at speed — the bounce has to feel physical.'),
+    ],
+    grid: {
+      // Each voice's bar-3/7 "surprise" note lands on a different offset —
+      // stacking them all on one step would pile up with the shaker, which
+      // is already on every odd sixteenth.
+      1: rep(3, 'x..x..x...x..x..', 'x..x..x...x..x.x'),
+      3: rep(3, '..x..x..x..x..x.', '..x..x..xx.x..x.'),
+      4: rep(3, '.......o........', '.......o.....o..'),
+      7: '.s.s.s.s.s.s.s.s',
+      9: rep(7, '................', '..........o.o...'),
+      13: rep(3, 'o...o...o...o...', 'o...o...o..oo...'),
+      16: rep(3, 'x..x......x.....', 'x..x.x....x.....'),
+    },
+  },
 
   // ---------------- Technique Workouts ----------------
   {
@@ -147,7 +210,18 @@ writeLessons([
       perform('Full drill — your dynamics should be audible from across the room.'),
     ],
     grid: {
-      1: 'x.......x.......',
+      // Base pulse on 1 and 3, plus syncopated pickups that vary bar to bar
+      // so the kick hand stays reactive instead of locking into autopilot.
+      1: [
+        bar16([0, 3, 8, 11]),
+        bar16([0, 5, 8, 13]),
+        bar16([0, 1, 8, 9]),
+        bar16([0, 7, 8, 15]),
+        bar16([0, 3, 8, 9]),
+        bar16([0, 1, 8, 13]),
+        bar16([0, 5, 8, 11]),
+        bar16([0, 7, 8, 9]),
+      ],
       2: rep(4, 'X.g.X.g.X.g.X.g.', ...rep(4, 'g.X.g.X.g.X.g.X.')),
       5: 's.s.s.s.s.s.s.s.',
     },
@@ -159,7 +233,7 @@ writeLessons([
     genre: 'technique',
     level: 4,
     padCount: 16,
-    bpm: 104,
+    bpm: 112,
     bars: 8,
     pads: { 1: 'kick', 2: 'snare', 9: 'tomLow', 10: 'tomMid', 11: 'tomHigh', 14: 'perc' },
     steps: [
@@ -196,18 +270,63 @@ writeLessons([
       perform('The full build: quarters to sixteenths across 8 bars, evenly.'),
     ],
     grid: {
-      1: 'x.......x.......',
-      2: '....x.......x...',
+      // Kick/snare pick up extra pushes in the quieter early bars, in the
+      // gaps the hat pattern leaves open, so the build has more going on
+      // underneath than just the widening roll.
+      1: [
+        bar16([0, 2, 7, 8, 11]),
+        bar16([0, 3, 6, 8, 10]),
+        bar16([0, 1, 7, 8, 13]),
+        bar16([0, 3, 8, 9, 15]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+        bar16([0, 8]),
+      ],
+      2: [
+        bar16([4, 5, 12, 13]),
+        bar16([4, 7, 12, 15]),
+        bar16([3, 4, 11, 12]),
+        bar16([4, 5, 12, 13]),
+        '....x.......x...',
+        '....x.......x...',
+        '....x.......x...',
+        '....x.......x...',
+      ],
       5: [
         's...s...s...s...',
         's...s...s...s...',
         's.s.s.s.s.s.s.s.',
         's.s.s.s.s.s.s.s.',
-        'ssssssss........',
         'ssssssssssssssss',
-        's.s.s.s.ssssssss',
+        'ssssssssssssssss',
+        'ssssssssssssssss',
         'ssssssssssssssss',
       ],
+    },
+  },
+  {
+    id: 'quad-independence',
+    title: 'Quad Independence',
+    course: 'technique',
+    genre: 'technique',
+    level: 6,
+    padCount: 16,
+    bpm: 130,
+    bars: 8,
+    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed', 9: 'tomLow' },
+    steps: [
+      { name: 'Kick + hat', description: 'Steady kick under steady eighth hats — your anchor.', playerPads: [1, 5], tempoScale: 0.7 },
+      { name: 'Cross-rhythm tom', description: 'Low tom hits every third sixteenth — it drifts against the beat on purpose.', playerPads: [9], tempoScale: 0.75 },
+      { name: 'Snare answers', description: 'Backbeat plus ghost pickups, landing in the gaps between the other three voices.', playerPads: [2], tempoScale: 0.8 },
+      { name: 'Three together', description: 'Kick, hat, and tom — the cross-rhythm must not pull your kick off the grid.', playerPads: [1, 5, 9], tempoScale: 0.85 },
+      perform('All four voices independent at once — this is the real test.'),
+    ],
+    grid: {
+      1: bar16([0, 8]),
+      2: '.g..x..g..xgxg..',
+      5: 's.s.s.s.s.s.s.s.',
+      9: bar16([0, 3, 6, 9, 12, 15]),
     },
   },
 ])

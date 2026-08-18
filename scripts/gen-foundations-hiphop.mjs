@@ -3,6 +3,12 @@ import { writeLessons, perform } from './lib/chart.mjs'
 
 /** Repeat a bar pattern n times, then append the given variation bars. */
 const rep = (n, p, ...tail) => [...Array(n).fill(p), ...tail]
+/** Build a 16-step bar string with 'x' at the given step indices. */
+const bar16 = (on) => {
+  const s = Array(16).fill('.')
+  for (const i of on) s[i] = 'x'
+  return s.join('')
+}
 
 writeLessons([
   // ---------------- Foundations ----------------
@@ -217,7 +223,7 @@ writeLessons([
     genre: 'boom bap',
     level: 4,
     padCount: 8,
-    bpm: 92,
+    bpm: 98,
     bars: 8,
     pads: { 1: 'kick', 2: 'snare', 4: 'rimshot', 5: 'hatClosed', 6: 'hatOpen' },
     steps: [
@@ -267,7 +273,7 @@ writeLessons([
     genre: 'neo-soul',
     level: 5,
     padCount: 16,
-    bpm: 86,
+    bpm: 108,
     bars: 8,
     pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed', 9: 'tomLow', 10: 'tomMid', 12: 'ride' },
     steps: [
@@ -278,12 +284,40 @@ writeLessons([
       perform('The whole kit — accents loud, ghosts barely there.'),
     ],
     grid: {
-      1: rep(3, 'x.....x...x.x...', 'x.....x...x.x..x'),
+      // Extra kick pickups and tom fills in the gaps the ghost carpet leaves
+      // open — the weave gets busier without crowding any single instant.
+      1: rep(3, 'xx....x...x.xx..', 'xx....x...x.xx.x'),
       2: rep(3, 'g.g.X.g.g.g.X.g.', 'g.g.X.g.g.g.X.gg'),
       5: '..s...s...s...s.',
-      9: rep(7, '................', '...........o....'),
-      10: rep(3, '..............o.', '.........o....o.'),
+      9: rep(7, '.....o...o......', '.....o.....o....'),
+      10: rep(3, '...o...o......o.', '...o...o.o....o.'),
       12: 'o...o...o...o...',
+    },
+  },
+  {
+    id: 'grime-skitter',
+    title: 'Grime Skitter',
+    course: 'hip-hop-lab',
+    genre: 'grime',
+    level: 6,
+    padCount: 16,
+    bpm: 150,
+    bars: 8,
+    pads: { 1: 'kick', 2: 'snare', 5: 'hatClosed', 6: 'hatOpen', 14: 'perc', 16: 'bass' },
+    steps: [
+      { name: 'Halftime snare', description: 'One hard snare per bar on beat 3. Everything else waits for it.', playerPads: [2], tempoScale: 0.75 },
+      { name: 'Sparse kick', description: 'The kick stays out of the snare’s way — dark and sparse.', playerPads: [1], tempoScale: 0.8 },
+      { name: 'Skittering hats', description: 'Hats and stray perc hits arrive in short, uneven bursts rather than a steady stream.', playerPads: [5, 6, 14], tempoScale: 0.85 },
+      { name: 'Sub stabs', description: 'Bass punctuates the kick pattern — heavy, not busy.', playerPads: [16], tempoScale: 0.9 },
+      perform('The full skeleton at speed — cold and mechanical.'),
+    ],
+    grid: {
+      1: rep(3, 'X.....x...x.....', 'X.....x...x...x.'),
+      2: rep(7, '........X.......', '.......gX.......'),
+      5: rep(3, 's.ss..s.s.ss..s.', 's.ss..s.s.ss.ss.'),
+      6: rep(3, '..............o.', '......o......o..'),
+      14: '.o...o...o.....o',
+      16: rep(3, 'x..x......x.....', 'x..x......x...x.'),
     },
   },
 ])

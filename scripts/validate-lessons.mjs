@@ -128,6 +128,17 @@ for (const file of readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'))) {
       err(`${d.doublePct}% of hits need two pads at once (level ${l.level} allows ${limit.doublePct}%)`)
     }
   }
+  // Floor: a chart shouldn't be easier than what's allowed two levels down —
+  // otherwise the level curve isn't monotonic and players see a "harder" tier
+  // that's actually a step back. Two levels of headroom (not one) keeps this
+  // from firing on ordinary adjacent-level overlap, which is expected.
+  const floorLimit = DIFFICULTY[l.level - 2]
+  if (floorLimit && d.effectiveHitsPerSec < floorLimit.hitsPerSec) {
+    warn(
+      `${d.effectiveHitsPerSec} effective hits/sec is below the level ${l.level - 2} ceiling of ` +
+        `${floorLimit.hitsPerSec} — too easy for level ${l.level}`,
+    )
+  }
 
   const count = (l.events ?? []).length
   if (count < 8) err(`only ${count} events`)

@@ -15,7 +15,7 @@ Use Chrome or Edge — Web MIDI is required for hardware controllers. Allow MIDI
 
 ## How it works
 
-- **Lessons** live in `src/lessons/data/*.json` — 39 original charts across levels 1-6, grouped into courses (`src/lessons/courses.json`): Foundations, Technique Workouts, Hip-Hop Lab, Four to the Floor, Breaks & Bass, and Global Grooves.
+- **Lessons** live in `src/lessons/data/*.json` — 46 original charts across levels 1-6, grouped into courses (`src/lessons/courses.json`): Foundations, Technique Workouts, Hip-Hop Lab, Four to the Floor, Breaks & Bass, and Global Grooves.
 - **Guides** live in `src/guides/data/*.json` — hardware walkthroughs rather than playable charts, shown as the **SP-404 MKII Workshop** course. They open in a step-by-step viewer with button-combo keycaps, a pad diagram per step, "you'll know it worked when" checkpoints, and a practice metronome. Covers resampling a first beat, chopping and shaping samples, the pattern sequencer, and Bus FX / printing effects. Your position in each guide is remembered. Each is a chart of `{t, pad, vel}` events plus **steps**: early steps give you one or two pads (the rest of the kit auto-plays as backing) at reduced tempo; the final **Perform** step is the whole kit at full speed and is what saves stars.
 - **Modes** — *Listen* (the app plays it), *Practice* (playback waits at each note until you hit the right pad), *Play* (scored: Perfect ±45 ms, Great ±90 ms, Good ±135 ms; extra hits cost you; 3 stars at 90 %).
 - **Sound** is a fully synthesized 16-voice drum kit (WebAudio — no samples), scheduled on the AudioContext clock with a lookahead scheduler, so timing doesn't wobble with the UI thread.
