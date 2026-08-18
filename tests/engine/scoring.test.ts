@@ -30,6 +30,27 @@ describe('starsForAccuracy', () => {
   })
 })
 
+describe('WINDOW_MS', () => {
+  /**
+   * Asserted as literals, not via WINDOW_MS itself: the tests below express
+   * their offsets in terms of the constant, so they would follow it if it
+   * changed. The README publishes these numbers to players, so a change to
+   * them is a product decision that should have to edit this line.
+   */
+  it('matches the windows the README documents', () => {
+    expect(WINDOW_MS).toEqual({ perfect: 45, great: 90, good: 135 })
+  })
+
+  it('judges hits at the documented millisecond values', () => {
+    expect(keeper().registerHit(1, beatsFromMs(45)).judgement).toBe('perfect')
+    expect(keeper().registerHit(1, beatsFromMs(46)).judgement).toBe('great')
+    expect(keeper().registerHit(1, beatsFromMs(90)).judgement).toBe('great')
+    expect(keeper().registerHit(1, beatsFromMs(91)).judgement).toBe('good')
+    expect(keeper().registerHit(1, beatsFromMs(135)).judgement).toBe('good')
+    expect(keeper().registerHit(1, beatsFromMs(136)).judgement).toBe('stray')
+  })
+})
+
 describe('ScoreKeeper.registerHit — timing windows', () => {
   it('judges a dead-on hit as perfect', () => {
     expect(keeper().registerHit(1, 0).judgement).toBe('perfect')
