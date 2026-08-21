@@ -65,13 +65,6 @@ so changing any of them shows up as an intentional diff. Grep
       denser. Pinned by `tests/scripts/difficulty.test.mjs` → *"a denser hat
       scores easier than a sparser one"*.
 
-- [ ] **`loadSettings` does no type validation.** `src/store/progress.ts` spreads
-      stored values over the defaults, so a corrupt or hand-edited
-      `padlab-settings-v1` puts a string straight into the timing maths —
-      `latencyMs` feeds beat arithmetic in `PlayerRuntime`. Wants a guard.
-      Pinned by `tests/store/progress.test.ts` → *"does not currently validate
-      stored value types"*.
-
 ## Untested surface
 
 The engine, validators, MIDI layer and persistence are at 90-100%. What is left

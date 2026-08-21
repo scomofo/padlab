@@ -13,6 +13,12 @@ export interface Settings {
 
 const DEFAULT_SETTINGS: Settings = { latencyMs: 20, volume: 0.9, metronome: true }
 
+// Bounds of the latency slider in DeviceSetup, which reads them from here so
+// the control and the clamp below cannot drift apart. Stored numbers outside
+// them are clamped rather than discarded, so a hand-edited value keeps its intent.
+export const LATENCY_MIN = -50
+export const LATENCY_MAX = 150
+
 function read<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key)
@@ -70,8 +76,34 @@ export function saveGuideProgress(
   return all
 }
 
+function numberOr(value: unknown, fallback: number, min: number, max: number): number {
+  // Number.isFinite also rejects NaN and +/-Infinity, which are `typeof number`
+  // but poison the beat arithmetic in PlayerRuntime just as badly as a string.
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.max(min, Math.min(max, value))
+}
+
+function booleanOr(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+/**
+ * Settings come back from localStorage, which anything can write to, so every
+ * field is checked against its declared type before it reaches the timing maths
+ * (`latencyMs`) or the audio graph (`volume`). Anything unusable falls back to
+ * its default; anything out of range is clamped; unknown keys are dropped.
+ */
 export function loadSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, ...(read<Partial<Settings>>(SETTINGS_KEY) ?? {}) }
+  const stored = read<unknown>(SETTINGS_KEY)
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
+    return { ...DEFAULT_SETTINGS }
+  }
+  const s = stored as Record<string, unknown>
+  return {
+    latencyMs: numberOr(s.latencyMs, DEFAULT_SETTINGS.latencyMs, LATENCY_MIN, LATENCY_MAX),
+    volume: numberOr(s.volume, DEFAULT_SETTINGS.volume, 0, 1),
+    metronome: booleanOr(s.metronome, DEFAULT_SETTINGS.metronome),
+  }
 }
 
 export function saveSettings(s: Settings): void {
