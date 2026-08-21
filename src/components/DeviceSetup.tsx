@@ -6,7 +6,7 @@ import { padSoundFor } from '../engine/kits'
 import { padBus } from '../input/inputBus'
 import { usePadKeyboard } from '../input/usePadKeyboard'
 import { PadGrid } from './PadGrid'
-import type { Settings } from '../store/progress'
+import { LATENCY_MAX, LATENCY_MIN, type Settings } from '../store/progress'
 
 interface DeviceSetupProps {
   settings: Settings
@@ -125,7 +125,7 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
           <label className="slider-row">
             <span>Input latency compensation: <strong>{settings.latencyMs} ms</strong></span>
             <input
-              type="range" min={-50} max={150} step={5}
+              type="range" min={LATENCY_MIN} max={LATENCY_MAX} step={5}
               value={settings.latencyMs}
               onChange={(e) => onChange({ ...settings, latencyMs: Number(e.target.value) })}
             />
