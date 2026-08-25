@@ -1,89 +1,109 @@
 # TODO
 
-Open work as of `main` @ `2455bef`. Each item says what it is, where it lives, and
-what "done" looks like — so none of it needs recovering from memory.
+Open work as of `main` @ `e7c580d` (2026-08-21). Core CI is green and there are
+no open pull requests or standalone issues. Remaining work is release acceptance,
+two explicit design decisions, targeted coverage, and repository hygiene.
+
+## Release-candidate gate
+
+PadLab is ready to call a release candidate when every item in this section passes.
+Automated checks are already green on `main`; these checks cover the physical and
+packaged-app surfaces CI cannot prove.
+
+### Real-controller acceptance
+
+Run the same checks on an **Akai MPK Mini MK4** and a **Roland SP-404 MKII**.
+Record pass/fail plus device firmware if available.
+
+- [ ] **Factory mapping:** pads trigger the expected PadLab sounds without MIDI
+      Learn. On the MPK, verify both pad banks (factory notes 36-43 / 44-51).
+      On the SP-404 MKII, verify all 16 pads (notes 36-51).
+- [ ] **MIDI Learn:** remap at least two pads and confirm the learned mapping is
+      used immediately and after reopening the app.
+- [ ] **Input isolation:** after MIDI Learn, keybed notes, knobs and transport
+      controls do not trigger pads or score hits.
+- [ ] **Latency compensation:** test at -50 ms, 20 ms and 150 ms. Judgement timing
+      should shift predictably and ordinary on-time hits must remain scoreable.
+- [ ] **Retrigger debounce:** on `amen-chop-science` (level 6), play repeated fast
+      same-pad strokes. Confirm intentional roll notes are not swallowed and pad
+      bounce does not create phantom scored hits.
+- [ ] **Hot-plug recovery:** disconnect and reconnect the controller while PadLab
+      is open; input should resume without a page/app restart.
+
+### Packaged macOS acceptance
+
+Use the DMG produced by the release workflow, not a dev-server build.
+
+- [ ] DMG opens and contains `PadLab.app`.
+- [ ] App can be copied to `/Applications` and launched by double-clicking.
+- [ ] Document the expected Gatekeeper flow for the current ad-hoc-signed build;
+      no unexplained blank window or silent failure is acceptable.
+- [ ] Main window renders the lesson browser and opens a lesson normally.
+- [ ] Web MIDI permission succeeds in the Electron shell and a connected physical
+      controller appears in Device Setup.
+- [ ] A lesson can be played from count-in through results with real MIDI input.
+- [ ] Quit and relaunch preserves progress and settings.
+
+### RC decision
+
+- [ ] **RC PASS:** all controller and packaged-macOS checks above pass with no P0/P1
+      defect and no recurring P2 defect that compromises scoring, input, startup,
+      persistence or lesson completion.
 
 ## Repo hygiene
 
-- [ ] **Delete stale branches.** Six remain, five of them dead:
+- [ ] **Delete stale branches.** Current comparison against `main` shows nine
+      non-main branches. Seven are strictly behind with zero commits ahead; two
+      are divergent but their intended work has already been superseded on main.
+      None should be merged as-is.
 
-      | Branch | State |
-      |---|---|
-      | `fix/scoring-stray-penalty` | **Delete first.** Its commit is already in `main` via cherry-pick, but the branch still carries a README from when there were 39 lessons and one workshop course. Merging it now would revert the 50-lesson docs and delete the MPK Mini Workshop section. |
-      | `fix/difficulty-calibration` | Merged into `main`, no unique work. |
-      | `claude/todo-implementation-3mwax4` | Merged (PR #1), no unique work. |
-      | `claude/project-state-detection-81tfdq` | Merged (PR #2), no unique work. |
-      | `claude/test-coverage-analysis-d9rvfq` | Merged (PRs #3 and #5), no unique work. |
-      | `claude/todo-file` | Merged (PR #6), no unique work. |
-
-## Needs hardware
-
-- [ ] **Smoke test on real controllers.** The only item that cannot be automated
-      from CI. Everything upstream of it now is.
-
-      On an **Akai MPK Mini MK4** (8 pads, factory notes 36-43 / 44-51) and a
-      **Roland SP-404 MKII** (16 pads, notes 36-51), check:
-
-      - Pads map to the right sounds out of the box, on both banks for the MPK.
-      - **MIDI Learn** records a mapping, and afterwards the keybed, knobs and
-        transport buttons trigger nothing. This is promised in the README and
-        covered by unit tests, but never verified against real firmware.
-      - The **input-latency slider** (-50..150 ms) shifts judging without turning
-        good hits into misses.
-      - **The retrigger debounce against real velocity pads.** This is the whole
-        reason the debounce exists — bouncy pads sending duplicate note-ons — and
-        it has only ever been tested against synthetic input. Play a fast roll on
-        the tightest chart (`amen-chop-science`, level 6) and confirm no notes
-        are dropped and no phantom hits appear.
-
-- [ ] **Launch the packaged macOS app.** The DMG is built and verified on a
-      macOS runner (it mounts, the signature verifies, the payload is present),
-      and the Electron shell is verified end-to-end under Linux Electron. What
-      no CI step covers is a human double-clicking it: Gatekeeper, the window
-      appearing, and Web MIDI seeing a real controller through the Electron
-      permission handler rather than the browser's.
+      | Branch | Compared with `main` | Action |
+      |---|---|---|
+      | `claude/fix-x64-signing` | 0 ahead / 6 behind | Delete; PR #9 is merged. |
+      | `claude/macos-release` | 0 ahead / 9 behind | Delete; PR #7 is merged. |
+      | `claude/project-state-detection-81tfdq` | 0 ahead / 27 behind | Delete; merged work only. |
+      | `claude/test-coverage-analysis-d9rvfq` | 0 ahead / 11 behind | Delete; PRs #3/#5 are merged. |
+      | `claude/todo-file` | 0 ahead / 15 behind | Delete; PR #6 is merged. |
+      | `claude/todo-implementation-3mwax4` | 0 ahead / 29 behind | Delete; merged work only. |
+      | `fix/difficulty-calibration` | 0 ahead / 32 behind | Delete; merged work only. |
+      | `fix/scoring-stray-penalty` | 1 ahead / 32 behind, diverged | Delete; its scoring intent was cherry-picked/adapted in PRs #4/#5. Do not merge this stale branch because it carries obsolete surrounding content. |
+      | `claude/todo-implementation-covl1b` | 1 ahead / 4 behind, diverged | Delete; this was an earlier settings-validation implementation superseded by PR #11. |
 
 ## Open design questions
 
 Each is pinned by a test that documents the behaviour rather than endorsing it,
-so changing any of them shows up as an intentional diff. Grep
+so changing either should be an explicit product decision. Grep
 `rather than endorsing it` in `tests/`.
 
-- [ ] **A step with no player notes scores 100% and 3 stars.**
-      `src/engine/scoring.ts` short-circuits when `total === 0`. Unreachable
-      today because the validator forces `playerPads: "all"` on the final scored
-      step — but it is one authoring change away from awarding free stars.
-      Pinned by `tests/engine/scoring.test.ts` → *"awards a full score for a step
-      with no player notes"*.
+- [ ] **Decide how a step with no player notes should score.**
+      `src/engine/scoring.ts` currently short-circuits when `total === 0`, awarding
+      100% and 3 stars. It is unreachable with today's validator because the final
+      scored step requires `playerPads: "all"`, but an authoring change could make
+      free stars reachable. Pinned by `tests/engine/scoring.test.ts` → *"awards a
+      full score for a step with no player notes"*.
+- [ ] **Make or explicitly accept the ostinato difficulty discontinuity.**
+      Crossing the 0.5-beat gap ceiling in `scripts/lib/difficulty.mjs` marks a pad
+      as ostinato and applies the 0.4 weight to all its instants. Adding notes can
+      therefore lower calculated difficulty (1.9 vs 3.0 effective hits/sec in the
+      pinned example). Pinned by `tests/scripts/difficulty.test.mjs` → *"a denser
+      hat scores easier than a sparser one"*.
 
-- [ ] **The ostinato discount is not monotonic in density.** Crossing the
-      0.5-beat gap ceiling in `scripts/lib/difficulty.mjs` flips a pad to
-      "ostinato" and applies the 0.4 weight to every instant it owns, so *adding*
-      notes can make a chart score easier — 1.9 vs 3.0 effective hits/sec on two
-      otherwise identical charts. Since that number is what the per-level ceiling
-      is checked against, a chart can be made to fit a lower tier by making it
-      denser. Pinned by `tests/scripts/difficulty.test.mjs` → *"a denser hat
-      scores easier than a sparser one"*.
+## Targeted coverage
 
-## Untested surface
+The engine, validators, MIDI layer and persistence are already heavily tested.
+Do not chase presentation-line coverage for its own sake; add tests where they
+protect behaviour or arithmetic.
 
-The engine, validators, MIDI layer and persistence are at 90-100%. What is left
-is ~1,500 lines at 0%, deliberately scoped out so far:
-
-| Area | Lines | Notes |
-|---|---|---|
-| `src/components/*.tsx` | 1,139 | Mostly presentational. `Highway.tsx` (268) is canvas drawing — expensive to test, low risk. |
-| `src/audio/*` | 245 | WebAudio synthesis; needs an audio-graph harness to assert anything meaningful. |
-| `src/App.tsx` | 81 | Top-level wiring. |
-| `src/input/usePadKeyboard.ts` | 21 | A React hook, so it needs Testing Library — the only reason it is not already covered. |
-
-- [ ] If any of this gets picked up, start with `LessonBrowser`'s progress
-      aggregation (`totalStars`, per-course `done`/`total`, and the
-      guide-vs-lesson branch) — it is the only component with real arithmetic in
-      it. Adding `@testing-library/react` would also unblock `usePadKeyboard`.
+- [ ] **LessonBrowser progress aggregation:** cover `totalStars`, per-course
+      `done`/`total`, completed-course state, and the guide-vs-lesson branch.
+- [ ] **`usePadKeyboard`:** add Testing Library coverage for keydown mapping,
+      ignored keys and cleanup/unmount behaviour.
+- [ ] **Top-level smoke test:** add one React integration test covering app start,
+      lesson selection and the Device Setup open/close path.
+- [ ] **WebAudio only if changing synth behaviour:** build an audio-graph harness
+      before asserting implementation details in `src/audio/*`.
 
 ---
 
-Conventions for anyone adding tests are in the README's **Tests** section — the
-fake-clock rule for engine tests and the negative-fixture rule for validator
-rules both matter and are easy to miss.
+Conventions for anyone adding tests are in the README's **Tests** section. Keep
+engine tests on the fake clock and validator rules backed by negative fixtures.
