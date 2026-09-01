@@ -94,8 +94,11 @@ The engine, validators, MIDI layer and persistence are already heavily tested.
 Do not chase presentation-line coverage for its own sake; add tests where they
 protect behaviour or arithmetic.
 
-- [ ] **LessonBrowser progress aggregation:** cover `totalStars`, per-course
+- [x] **LessonBrowser progress aggregation:** cover `totalStars`, per-course
       `done`/`total`, completed-course state, and the guide-vs-lesson branch.
+      Done by extraction: the arithmetic now lives in
+      `src/lessons/courseProgress.ts` (pure, mixed courses count both kinds)
+      and is covered by `tests/lessons/courseProgress.test.ts`.
 - [ ] **`usePadKeyboard`:** add Testing Library coverage for keydown mapping,
       ignored keys and cleanup/unmount behaviour.
 - [ ] **Top-level smoke test:** add one React integration test covering app start,
