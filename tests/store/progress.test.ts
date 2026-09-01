@@ -98,6 +98,79 @@ describe('guide progress', () => {
   })
 })
 
+/**
+ * Progress records feed `Math.max` on the next save and the star totals in the
+ * lesson browser, so garbage types would concatenate strings into the header
+ * or persist NaN. Unusable entries read as unearned rather than crashing.
+ */
+describe('lesson progress validation', () => {
+  it('drops an entry whose value is not an object', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ a: 'nope', b: 7, c: null }))
+    expect(loadProgress()).toEqual({})
+  })
+
+  it('reads a non-numeric field as unearned instead of letting it reach Math.max', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ a: { stars: '3', bestAccuracy: 'abc' } }))
+    expect(loadProgress().a).toEqual({ stars: 0, bestAccuracy: 0 })
+  })
+
+  it('clamps stars to 0-3 and accuracy to 0-100', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ a: { stars: 99, bestAccuracy: 250 } }))
+    expect(loadProgress().a).toEqual({ stars: 3, bestAccuracy: 100 })
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ a: { stars: -1, bestAccuracy: -5 } }))
+    expect(loadProgress().a).toEqual({ stars: 0, bestAccuracy: 0 })
+  })
+
+  it('rounds fractional values, which the scorer never writes', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ a: { stars: 2.6, bestAccuracy: 91.4 } }))
+    expect(loadProgress().a).toEqual({ stars: 3, bestAccuracy: 91 })
+  })
+
+  it('rejects non-finite numbers before they can persist through a save', () => {
+    localStorage.setItem(PROGRESS_KEY, '{"a": {"stars": 1e999, "bestAccuracy": 1e999}}')
+    expect(loadProgress().a).toEqual({ stars: 0, bestAccuracy: 0 })
+    saveLessonResult('a', 80, 2)
+    expect(loadProgress().a).toEqual({ stars: 2, bestAccuracy: 80 })
+  })
+
+  it('keeps one corrupt entry from discarding the others', () => {
+    localStorage.setItem(
+      PROGRESS_KEY,
+      JSON.stringify({ bad: 42, good: { stars: 2, bestAccuracy: 80 } }),
+    )
+    expect(loadProgress()).toEqual({ good: { stars: 2, bestAccuracy: 80 } })
+  })
+
+  it('returns empty when the stored value is not an object', () => {
+    for (const raw of ['42', '"hello"', 'null', 'true', '[1,2,3]']) {
+      localStorage.setItem(PROGRESS_KEY, raw)
+      expect(loadProgress()).toEqual({})
+    }
+  })
+})
+
+describe('guide progress validation', () => {
+  it('drops an entry whose value is not an object', () => {
+    localStorage.setItem(GUIDES_KEY, JSON.stringify({ g: 'step 3' }))
+    expect(loadGuideProgress()).toEqual({})
+  })
+
+  it('reads a non-numeric lastStep as the beginning', () => {
+    localStorage.setItem(GUIDES_KEY, JSON.stringify({ g: { lastStep: 'far', completed: false } }))
+    expect(loadGuideProgress().g).toEqual({ lastStep: 0, completed: false })
+  })
+
+  it('floors a fractional lastStep — it indexes an array', () => {
+    localStorage.setItem(GUIDES_KEY, JSON.stringify({ g: { lastStep: 2.7, completed: true } }))
+    expect(loadGuideProgress().g).toEqual({ lastStep: 2, completed: true })
+  })
+
+  it('reads a non-boolean completed flag as not completed', () => {
+    localStorage.setItem(GUIDES_KEY, JSON.stringify({ g: { lastStep: 1, completed: 'yes' } }))
+    expect(loadGuideProgress().g.completed).toBe(false)
+  })
+})
+
 describe('settings', () => {
   it('returns documented defaults when nothing is stored', () => {
     expect(loadSettings()).toEqual({ latencyMs: 20, volume: 0.9, metronome: true })
@@ -213,6 +286,39 @@ describe('custom MIDI map', () => {
   it('survives a corrupt stored map', () => {
     localStorage.setItem(MIDIMAP_KEY, 'garbage')
     expect(loadCustomMap()).toBeNull()
+  })
+
+  it('round-trips channel-aware keys', () => {
+    saveCustomMap({ '9:36': 1, '9:37': 2 })
+    expect(loadCustomMap()).toEqual({ '9:36': 1, '9:37': 2 })
+  })
+
+  it('drops entries whose pad is not a real pad number', () => {
+    localStorage.setItem(
+      MIDIMAP_KEY,
+      JSON.stringify({ 36: 999, 37: 0, 38: 2.5, 39: '4', 40: 5 }),
+    )
+    expect(loadCustomMap()).toEqual({ 40: 5 })
+  })
+
+  it('drops keys that are neither a note nor a channel:note pair', () => {
+    localStorage.setItem(
+      MIDIMAP_KEY,
+      JSON.stringify({ junk: 1, '200': 2, '16:36': 3, '9:200': 4, '9:36': 5, 36: 6 }),
+    )
+    expect(loadCustomMap()).toEqual({ '9:36': 5, 36: 6 })
+  })
+
+  it('keeps a stored map that sanitises to empty, since an empty map means "silence everything"', () => {
+    localStorage.setItem(MIDIMAP_KEY, JSON.stringify({ junk: 'junk' }))
+    expect(loadCustomMap()).toEqual({})
+  })
+
+  it('returns null when the stored value is not an object', () => {
+    for (const raw of ['42', '"hello"', 'true', '[1,2,3]']) {
+      localStorage.setItem(MIDIMAP_KEY, raw)
+      expect(loadCustomMap()).toBeNull()
+    }
   })
 })
 

@@ -201,7 +201,10 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
 
       // notes
       const noteH = Math.max(10, Math.min(18, ppb * 0.22))
-      const judged = rt?.score?.events ?? null
+      // Keyed once per frame; a find() per note per frame is O(n²) at 60 fps.
+      const judged = rt?.score
+        ? new Map(rt.score.events.map((j) => [`${j.t}|${j.pad}`, j]))
+        : null
       const drawNote = (t: number, pad: number, style: 'player' | 'backing' | 'hit' | 'missed') => {
         const li = laneIndex.get(pad)
         if (li === undefined) return
@@ -243,7 +246,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
           continue
         }
         if (judged) {
-          const je = judged.find((j) => j.t === e.t && j.pad === e.pad)
+          const je = judged.get(`${e.t}|${e.pad}`)
           if (je?.judgement === 'miss') drawNote(e.t, e.pad, 'missed')
           else if (je?.judgement) drawNote(e.t, e.pad, 'hit')
           else drawNote(e.t, e.pad, 'player')

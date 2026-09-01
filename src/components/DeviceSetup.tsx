@@ -17,7 +17,8 @@ interface DeviceSetupProps {
 interface LearnState {
   padCount: 8 | 16
   current: number // pad being learned (1-based)
-  map: Record<number, number>
+  /** "<channel>:<note>" -> pad, so a keybed key sharing a pad's note number stays separate. */
+  map: Record<string, number>
 }
 
 export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
@@ -42,11 +43,12 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
 
   // MIDI Learn: capture raw note-ons, one pad at a time.
   useEffect(() => {
-    return midi.onRaw((note) => {
+    return midi.onRaw((note, _velocity, channel) => {
       const st = learnRef.current
       if (!st) return
-      if (st.map[note] !== undefined) return // pad chatter / already assigned
-      const map = { ...st.map, [note]: st.current }
+      const key = `${channel}:${note}`
+      if (st.map[key] !== undefined) return // pad chatter / already assigned
+      const map = { ...st.map, [key]: st.current }
       if (st.current >= st.padCount) {
         learnRef.current = null
         midi.setCustomMap(map)

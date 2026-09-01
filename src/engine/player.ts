@@ -1,5 +1,5 @@
 import { Transport } from './transport'
-import { ScoreKeeper, type ScoreSummary } from './scoring'
+import { ScoreKeeper, WINDOW_MS, type ScoreSummary } from './scoring'
 import type { Judgement, Lesson, LessonStep, NoteEvent, SoundName } from './types'
 import { playSound, playClick } from '../audio/drumSynth'
 import { getAudioContext } from '../audio/audio'
@@ -55,6 +55,8 @@ export class PlayerRuntime {
   private timer: number | null = null
   private schedBeat = 0
   private finished = false
+  /** Pending pad-flash callbacks, cancelled on stop so lights die with the run. */
+  private readonly flashTimers = new Set<number>()
 
   constructor(opts: RuntimeOptions) {
     this.opts = opts
@@ -90,6 +92,8 @@ export class PlayerRuntime {
       clearInterval(this.timer)
       this.timer = null
     }
+    for (const id of this.flashTimers) window.clearTimeout(id)
+    this.flashTimers.clear()
     this.transport.stop()
   }
 
@@ -158,7 +162,11 @@ export class PlayerRuntime {
       if (this.opts.onAutoPlay) {
         const delayMs = Math.max(0, (at - ctx.currentTime) * 1000)
         const pad = e.pad
-        window.setTimeout(() => this.opts.onAutoPlay!(pad), delayMs)
+        const id = window.setTimeout(() => {
+          this.flashTimers.delete(id)
+          this.opts.onAutoPlay!(pad)
+        }, delayMs)
+        this.flashTimers.add(id)
       }
     }
   }
@@ -175,7 +183,14 @@ export class PlayerRuntime {
     const t = this.transport
     if (this.mode === 'play' && t.state === 'playing' && this.score) {
       const hitBeat = t.now() - this.opts.latencyMs / 1000 / t.secPerBeat
-      if (hitBeat < -0.5) return // jamming during count-in is free
+      // Jamming during the count-in is free, right up to the first note's
+      // judging window — from there a hit must reach the scorer, or an early
+      // strike at the first note could never claim it.
+      if (hitBeat < 0) {
+        const first = this.playerEvents[0]
+        const outerBeats = WINDOW_MS.good / 1000 / t.secPerBeat
+        if (!first || hitBeat < first.t - outerBeats) return
+      }
       if (hitBeat > this.totalBeats + 0.5) return
       const res = this.score.registerHit(pad, hitBeat)
       if (res.judgement !== 'ignored') {

@@ -3,6 +3,7 @@ import type { Lesson, LessonProgress } from '../engine/types'
 import type { Guide } from '../guides/types'
 import type { GuideProgress } from '../store/progress'
 import { COURSES } from '../lessons/courses'
+import { courseProgress, startedCount, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
 
 interface LessonBrowserProps {
@@ -55,14 +56,16 @@ export function LessonBrowser({
     return map
   }, [filteredGuides])
 
-  const totalStars = lessons.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
-  const started = lessons.filter((l) => (progress[l.id]?.stars ?? 0) > 0).length
+  const stars = totalStars(lessons, progress)
+  const started = startedCount(lessons, progress)
 
   const device = midi.inputs[0]
+  const extraInputs = midi.inputs.length - 1
   const deviceLabel =
     midi.status === 'unsupported' ? 'Web MIDI unavailable — use Chrome/Edge (keys still work)'
     : midi.status === 'denied' ? 'MIDI access blocked'
-    : device ? `${device.name} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
+    : device
+      ? `${device.name}${extraInputs > 0 ? ` +${extraInputs}` : ''} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
     : 'No MIDI device — keyboard & mouse work'
 
   return (
@@ -84,7 +87,7 @@ export function LessonBrowser({
         <span className="overview-stat"><strong>{guides.length}</strong> walkthroughs</span>
         <span className="overview-stat"><strong>{COURSES.length}</strong> courses</span>
         <span className="overview-stat"><strong>{started}</strong> started</span>
-        <span className="overview-stat gold">★ <strong>{totalStars}</strong> / {lessons.length * 3}</span>
+        <span className="overview-stat gold">★ <strong>{stars}</strong> / {lessons.length * 3}</span>
       </div>
 
       <div className="filter-row">
@@ -101,11 +104,7 @@ export function LessonBrowser({
         const courseLessons = byCourse.get(course.id) ?? []
         const courseGuides = guidesByCourse.get(course.id) ?? []
         if (!courseLessons.length && !courseGuides.length) return null
-        const done = courseGuides.length
-          ? courseGuides.filter((g) => guideProgress[g.id]?.completed).length
-          : courseLessons.filter((l) => (progress[l.id]?.stars ?? 0) >= 3).length
-        const total = courseGuides.length || courseLessons.length
-        const pct = total ? Math.round((done / total) * 100) : 0
+        const cp = courseProgress(courseLessons, courseGuides, progress, guideProgress)
         return (
           <section className="course" key={course.id}>
             <div className="course-head">
@@ -114,11 +113,11 @@ export function LessonBrowser({
                 <div className="muted">{course.blurb}</div>
               </div>
               <span className="course-count muted">
-                {done}/{total} {courseGuides.length ? 'complete' : 'mastered'}
+                {cp.done}/{cp.total} {cp.noun}
               </span>
             </div>
             <div className="course-progress">
-              <div className={pct === 100 ? 'course-progress-fill maxed' : 'course-progress-fill'} style={{ width: `${pct}%` }} />
+              <div className={cp.pct === 100 ? 'course-progress-fill maxed' : 'course-progress-fill'} style={{ width: `${cp.pct}%` }} />
             </div>
             <div className="lesson-grid">
               {courseGuides.map((g) => {

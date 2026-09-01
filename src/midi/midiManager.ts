@@ -10,8 +10,22 @@ export interface ConnectedInput {
 }
 
 type PadListener = (pad: number, velocity: number) => void
-type RawListener = (note: number, velocity: number, inputName: string) => void
+type RawListener = (note: number, velocity: number, channel: number, inputName: string) => void
 type StatusListener = () => void
+
+/**
+ * A learned mapping is keyed by "<channel>:<note>" (channel 0-based), so a
+ * keybed key sharing a note number with a pad on another channel can never
+ * collide. Maps recorded before channels were stored used the bare note as the
+ * key; those still match on any channel rather than forcing a re-learn.
+ */
+export function customMapLookup(
+  map: Record<string, number>,
+  note: number,
+  channel: number,
+): number | null {
+  return map[`${channel}:${note}`] ?? map[note] ?? null
+}
 
 /**
  * Owns Web MIDI access. Note-ons are mapped to pad numbers through a per-device
@@ -20,8 +34,8 @@ type StatusListener = () => void
 class MidiManager {
   status: MidiStatus = 'idle'
   inputs: ConnectedInput[] = []
-  /** note -> pad override recorded by MIDI Learn (applies to all inputs). */
-  customMap: Record<number, number> | null = loadCustomMap()
+  /** "channel:note" -> pad override recorded by MIDI Learn (applies to all inputs). */
+  customMap: Record<string, number> | null = loadCustomMap()
 
   private access: MIDIAccess | null = null
   private padListeners = new Set<PadListener>()
@@ -62,23 +76,24 @@ class MidiManager {
     const data = e.data
     if (!data || data.length < 3) return
     const type = data[0] & 0xf0
+    const channel = data[0] & 0x0f
     const note = data[1]
     const velocity = data[2]
     if (type !== 0x90 || velocity === 0) return // note-on only
 
-    for (const l of this.rawListeners) l(note, velocity, inputName)
+    for (const l of this.rawListeners) l(note, velocity, channel, inputName)
 
     // A learned mapping is authoritative: notes outside it (keybed, transport
     // buttons) are ignored rather than falling back to the profile.
     const pad = this.customMap
-      ? this.customMap[note] ?? null
-      : profileForInput(inputName).noteToPad(note)
+      ? customMapLookup(this.customMap, note, channel)
+      : profileForInput(inputName).noteToPad(note, channel)
     if (pad !== null) {
       for (const l of this.padListeners) l(pad, velocity)
     }
   }
 
-  setCustomMap(map: Record<number, number> | null): void {
+  setCustomMap(map: Record<string, number> | null): void {
     this.customMap = map
     saveCustomMap(map)
     this.notifyStatus()

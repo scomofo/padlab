@@ -38,7 +38,8 @@ export default function App() {
       window.removeEventListener('pointerdown', unlock)
       window.removeEventListener('keydown', unlock)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Deliberately mount-only: settings.volume is read once here; later changes
+    // are applied live by DeviceSetup, and re-running would re-bind MIDI.
   }, [])
 
   const updateSettings = (s: Settings) => {

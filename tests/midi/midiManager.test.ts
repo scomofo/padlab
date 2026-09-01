@@ -21,6 +21,9 @@ async function freshMidi() {
   return mod.midi
 }
 
+/** The MPK's factory pad channel (0-based); channel 0 is its keybed. */
+const MPK_PAD_CH = 9
+
 beforeEach(() => {
   localStorage.clear()
 })
@@ -138,7 +141,7 @@ describe('message filtering', () => {
     expect(pads).not.toHaveBeenCalled()
   })
 
-  it('accepts note-ons on any MIDI channel', async () => {
+  it('accepts note-ons on any MIDI channel when no keybed shares the port', async () => {
     const pads = vi.fn()
     midi.onPad(pads)
     input.send(noteOn(38, 100, 5))
@@ -150,8 +153,23 @@ describe('message filtering', () => {
     access.connect(mpk)
     const pads = vi.fn()
     midi.onPad(pads)
-    mpk.send(noteOn(60)) // outside both MPK banks
+    mpk.send(noteOn(60, 100, MPK_PAD_CH)) // outside both MPK banks
     expect(pads).not.toHaveBeenCalled()
+  })
+
+  /**
+   * The MPK keybed's factory channel is 1 and its lower octaves overlap the
+   * Bank B pad notes 44-51. Playing low keys must not score phantom pad hits.
+   */
+  it('ignores MPK keybed notes even when they share a pad note number', async () => {
+    const mpk = fakeInput('MPK Mini MK4')
+    access.connect(mpk)
+    const pads = vi.fn()
+    midi.onPad(pads)
+    mpk.send(noteOn(48, 100, 0)) // keybed C, same note as Bank B pad 5
+    expect(pads).not.toHaveBeenCalled()
+    mpk.send(noteOn(48, 100, MPK_PAD_CH)) // the actual pad
+    expect(pads).toHaveBeenCalledWith(5, 100)
   })
 })
 
@@ -169,7 +187,7 @@ describe('MIDI Learn (custom mapping)', () => {
   it('routes through the learned map instead of the profile', async () => {
     const pads = vi.fn()
     midi.onPad(pads)
-    midi.setCustomMap({ 60: 1, 62: 2 })
+    midi.setCustomMap({ '0:60': 1, '0:62': 2 })
     input.send(noteOn(60))
     expect(pads).toHaveBeenCalledWith(1, 100)
   })
@@ -182,17 +200,35 @@ describe('MIDI Learn (custom mapping)', () => {
   it('ignores notes outside the learned map rather than falling back', async () => {
     const pads = vi.fn()
     midi.onPad(pads)
-    midi.setCustomMap({ 60: 1 })
-    input.send(noteOn(36)) // pad 1 under the MPK profile, but not in the map
+    midi.setCustomMap({ '0:60': 1 })
+    input.send(noteOn(36, 100, MPK_PAD_CH)) // pad 1 under the MPK profile, but not in the map
     expect(pads).not.toHaveBeenCalled()
+  })
+
+  it('matches the channel as well as the note, so a keybed key cannot claim a learned pad', async () => {
+    const pads = vi.fn()
+    midi.onPad(pads)
+    midi.setCustomMap({ '9:48': 5 }) // learned from the pad, which sends on ch 10
+    input.send(noteOn(48, 100, 0)) // keybed key with the same note number
+    expect(pads).not.toHaveBeenCalled()
+    input.send(noteOn(48, 100, 9))
+    expect(pads).toHaveBeenCalledWith(5, 100)
+  })
+
+  it('honours a map learned before channels were stored, on any channel', async () => {
+    const pads = vi.fn()
+    midi.onPad(pads)
+    midi.setCustomMap({ 60: 3 }) // legacy shape: bare note as the key
+    input.send(noteOn(60, 100, 7))
+    expect(pads).toHaveBeenCalledWith(3, 100)
   })
 
   it('restores the profile when the map is cleared', async () => {
     const pads = vi.fn()
     midi.onPad(pads)
-    midi.setCustomMap({ 60: 1 })
+    midi.setCustomMap({ '0:60': 1 })
     midi.setCustomMap(null)
-    input.send(noteOn(36))
+    input.send(noteOn(36, 100, MPK_PAD_CH))
     expect(pads).toHaveBeenCalledWith(1, 100)
   })
 
@@ -229,12 +265,12 @@ describe('listeners', () => {
     await midi.init()
   })
 
-  it('gives raw listeners every note-on, mapped or not', async () => {
+  it('gives raw listeners every note-on with its channel, mapped or not', async () => {
     const raw = vi.fn()
     midi.onRaw(raw)
     midi.setCustomMap({}) // nothing maps to a pad
-    input.send(noteOn(60, 77))
-    expect(raw).toHaveBeenCalledWith(60, 77, 'SP-404 MKII')
+    input.send(noteOn(60, 77, 4))
+    expect(raw).toHaveBeenCalledWith(60, 77, 4, 'SP-404 MKII')
   })
 
   it('stops calling listeners after they unsubscribe', async () => {

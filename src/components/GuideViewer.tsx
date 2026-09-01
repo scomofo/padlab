@@ -30,7 +30,9 @@ export function GuideViewer({ guide, startStep = 0, onExit, onProgressChange }: 
   useEffect(() => {
     saveGuideProgress(guide.id, index, index === guide.steps.length - 1)
     onProgressChange()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // onProgressChange is deliberately not a dependency: the parent passes an
+    // inline closure whose identity changes every render, and depending on it
+    // would re-save (and re-notify) on every render instead of per step.
   }, [guide.id, index])
 
   const toggleClick = useCallback(() => {
