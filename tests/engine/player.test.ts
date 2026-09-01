@@ -286,6 +286,18 @@ describe('audio scheduling', () => {
     expect(h.autoPlayed.sort()).toEqual(makeLesson().events.map((e) => e.pad).sort())
   })
 
+  it('cancels pending pad flashes on stop, so lights die with the run', () => {
+    const { runtime, advance, autoPlayed } = harness({ mode: 'listen' })
+    runtime.start()
+    // 2.0 s in, the first chart note (0.1 s away) is scheduled but its flash
+    // callback has not fired yet.
+    advance(2.0)
+    expect(autoPlayed).toEqual([])
+    runtime.stop()
+    vi.advanceTimersByTime(1000)
+    expect(autoPlayed).toEqual([])
+  })
+
   it('passes each note’s velocity through to the synth', () => {
     const lesson = makeLesson({ events: [note(0, 1, 50), note(2, 2, 122)] })
     const h = harness({ lesson, mode: 'listen' })

@@ -60,10 +60,12 @@ export function LessonBrowser({
   const started = startedCount(lessons, progress)
 
   const device = midi.inputs[0]
+  const extraInputs = midi.inputs.length - 1
   const deviceLabel =
     midi.status === 'unsupported' ? 'Web MIDI unavailable — use Chrome/Edge (keys still work)'
     : midi.status === 'denied' ? 'MIDI access blocked'
-    : device ? `${device.name} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
+    : device
+      ? `${device.name}${extraInputs > 0 ? ` +${extraInputs}` : ''} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
     : 'No MIDI device — keyboard & mouse work'
 
   return (

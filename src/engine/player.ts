@@ -55,6 +55,8 @@ export class PlayerRuntime {
   private timer: number | null = null
   private schedBeat = 0
   private finished = false
+  /** Pending pad-flash callbacks, cancelled on stop so lights die with the run. */
+  private readonly flashTimers = new Set<number>()
 
   constructor(opts: RuntimeOptions) {
     this.opts = opts
@@ -90,6 +92,8 @@ export class PlayerRuntime {
       clearInterval(this.timer)
       this.timer = null
     }
+    for (const id of this.flashTimers) window.clearTimeout(id)
+    this.flashTimers.clear()
     this.transport.stop()
   }
 
@@ -158,7 +162,11 @@ export class PlayerRuntime {
       if (this.opts.onAutoPlay) {
         const delayMs = Math.max(0, (at - ctx.currentTime) * 1000)
         const pad = e.pad
-        window.setTimeout(() => this.opts.onAutoPlay!(pad), delayMs)
+        const id = window.setTimeout(() => {
+          this.flashTimers.delete(id)
+          this.opts.onAutoPlay!(pad)
+        }, delayMs)
+        this.flashTimers.add(id)
       }
     }
   }
