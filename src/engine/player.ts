@@ -1,5 +1,5 @@
 import { Transport } from './transport'
-import { ScoreKeeper, type ScoreSummary } from './scoring'
+import { ScoreKeeper, WINDOW_MS, type ScoreSummary } from './scoring'
 import type { Judgement, Lesson, LessonStep, NoteEvent, SoundName } from './types'
 import { playSound, playClick } from '../audio/drumSynth'
 import { getAudioContext } from '../audio/audio'
@@ -175,7 +175,14 @@ export class PlayerRuntime {
     const t = this.transport
     if (this.mode === 'play' && t.state === 'playing' && this.score) {
       const hitBeat = t.now() - this.opts.latencyMs / 1000 / t.secPerBeat
-      if (hitBeat < -0.5) return // jamming during count-in is free
+      // Jamming during the count-in is free, right up to the first note's
+      // judging window — from there a hit must reach the scorer, or an early
+      // strike at the first note could never claim it.
+      if (hitBeat < 0) {
+        const first = this.playerEvents[0]
+        const outerBeats = WINDOW_MS.good / 1000 / t.secPerBeat
+        if (!first || hitBeat < first.t - outerBeats) return
+      }
       if (hitBeat > this.totalBeats + 0.5) return
       const res = this.score.registerHit(pad, hitBeat)
       if (res.judgement !== 'ignored') {

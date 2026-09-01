@@ -334,6 +334,28 @@ describe('play mode scoring', () => {
     expect(runtime.score?.stray).toBe(0)
   })
 
+  it('keeps the whole count-in free, right up to the first note\'s window', () => {
+    // With the transport's 0.1 s anchor offset, 1.85 s in is half a beat
+    // before the chart. The "good" window is only 0.27 beats at 120 BPM, so
+    // this hit cannot claim anything — it must be free, not a stray.
+    const { runtime, advance } = harness({ mode: 'play' })
+    runtime.start()
+    advance(1.85)
+    runtime.handlePad(1)
+    expect(runtime.score?.stray).toBe(0)
+  })
+
+  it('judges an early strike at the first note instead of ignoring it', () => {
+    const { runtime, advance } = harness({ mode: 'play' })
+    runtime.start()
+    // The transport anchors 0.1 s ahead, so 2.0 s in is 0.2 beats before the
+    // chart — inside beat 0's ±0.27-beat window at 120 BPM.
+    advance(2.0)
+    runtime.handlePad(1) // pad 1 has a note at t=0
+    expect(runtime.score?.stray).toBe(0)
+    expect(runtime.score?.events.find((e) => e.t === 0 && e.pad === 1)?.judgement).toBeDefined()
+  })
+
   it('records feedback for the highway', () => {
     const { runtime, advance } = harness({ mode: 'play' })
     runtime.start()
