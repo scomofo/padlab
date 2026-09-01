@@ -36,8 +36,33 @@ function write(key: string, value: unknown): void {
   }
 }
 
+/**
+ * Everything below comes back from localStorage, which anything can write to,
+ * so each shape is checked before it reaches arithmetic or the UI — the same
+ * treatment `loadSettings` gives settings. A record whose value is unusable is
+ * dropped (as if never saved); a salvageable field is clamped, not discarded.
+ */
+function sanitizeRecord<T>(stored: unknown, entry: (v: unknown) => T | null): Record<string, T> {
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return {}
+  const out: Record<string, T> = {}
+  for (const [k, v] of Object.entries(stored)) {
+    const e = entry(v)
+    if (e !== null) out[k] = e
+  }
+  return out
+}
+
 export function loadProgress(): Record<string, LessonProgress> {
-  return read<Record<string, LessonProgress>>(PROGRESS_KEY) ?? {}
+  return sanitizeRecord<LessonProgress>(read<unknown>(PROGRESS_KEY), (v) => {
+    if (typeof v !== 'object' || v === null) return null
+    const p = v as Record<string, unknown>
+    // A corrupt field would flow through Math.max on the next save and the
+    // star totals in the browser; 0 (unearned) is the safe reading of garbage.
+    return {
+      stars: Math.round(numberOr(p.stars, 0, 0, 3)),
+      bestAccuracy: Math.round(numberOr(p.bestAccuracy, 0, 0, 100)),
+    }
+  })
 }
 
 export function saveLessonResult(lessonId: string, accuracy: number, stars: number): Record<string, LessonProgress> {
@@ -58,7 +83,16 @@ export interface GuideProgress {
 }
 
 export function loadGuideProgress(): Record<string, GuideProgress> {
-  return read<Record<string, GuideProgress>>(GUIDES_KEY) ?? {}
+  return sanitizeRecord<GuideProgress>(read<unknown>(GUIDES_KEY), (v) => {
+    if (typeof v !== 'object' || v === null) return null
+    const p = v as Record<string, unknown>
+    // GuideViewer clamps the resume step to the guide's length, so the cap
+    // here only needs to keep the number finite and non-negative.
+    return {
+      lastStep: Math.floor(numberOr(p.lastStep, 0, 0, 10_000)),
+      completed: booleanOr(p.completed, false),
+    }
+  })
 }
 
 export function saveGuideProgress(
@@ -110,9 +144,26 @@ export function saveSettings(s: Settings): void {
   write(SETTINGS_KEY, s)
 }
 
-/** Keys are "<channel>:<note>", or a bare note from maps learned before channels were stored. */
+/** A key is "<channel>:<note>", or a bare note from maps learned before channels were stored. */
+const MAP_KEY_SHAPE = /^(?:(\d|1[0-5]):)?(\d{1,3})$/
+
+/**
+ * Null when nothing was learned; an empty map is meaningful (it silences every
+ * note), so a stored object is kept even if all its entries are dropped.
+ * Entries must be a legal key shape mapping to a real pad number, or a
+ * corrupted map could emit pads no lesson or grid position can have.
+ */
 export function loadCustomMap(): Record<string, number> | null {
-  return read<Record<string, number>>(MIDIMAP_KEY)
+  const stored = read<unknown>(MIDIMAP_KEY)
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return null
+  const out: Record<string, number> = {}
+  for (const [k, v] of Object.entries(stored)) {
+    const m = MAP_KEY_SHAPE.exec(k)
+    if (!m || Number(m[2]) > 127) continue
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 1 || v > 16) continue
+    out[k] = v
+  }
+  return out
 }
 
 export function saveCustomMap(map: Record<string, number> | null): void {
