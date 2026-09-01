@@ -40,20 +40,45 @@ function createWindow() {
     return { action: 'deny' }
   })
 
+  // Same reason: the window must never navigate off the bundled app.
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('padlab://')) event.preventDefault()
+  })
+
   return win
 }
 
+// Chromium gates all Web MIDI behind the sysex permission internally (since
+// ~M124), so 'midiSysex' must stay allowed even though the renderer asks for
+// sysex: false — dropping it kills hardware input in the packaged app.
 const ALLOWED = new Set(['midi', 'midiSysex'])
 
+// Belt-and-braces for a fully local app: everything the page uses is bundled,
+// so nothing needs a network origin. Inline styles stay allowed — React style
+// props render as style attributes.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ')
+
 app.whenReady().then(() => {
-  protocol.handle('padlab', (request) => {
+  protocol.handle('padlab', async (request) => {
     const { pathname } = new URL(request.url)
     const target = path.normalize(path.join(WEB_ROOT, decodeURIComponent(pathname)))
     // Never serve anything outside the bundled web root.
     if (target !== WEB_ROOT && !target.startsWith(WEB_ROOT + path.sep)) {
       return new Response('Forbidden', { status: 403 })
     }
-    return net.fetch(pathToFileURL(target).toString())
+    const res = await net.fetch(pathToFileURL(target).toString())
+    const headers = new Headers(res.headers)
+    headers.set('Content-Security-Policy', CSP)
+    return new Response(res.body, { status: res.status, headers })
   })
 
   // Without this the renderer's requestMIDIAccess() is rejected and the app
