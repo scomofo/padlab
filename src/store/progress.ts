@@ -110,11 +110,12 @@ export function saveSettings(s: Settings): void {
   write(SETTINGS_KEY, s)
 }
 
-export function loadCustomMap(): Record<number, number> | null {
-  return read<Record<number, number>>(MIDIMAP_KEY)
+/** Keys are "<channel>:<note>", or a bare note from maps learned before channels were stored. */
+export function loadCustomMap(): Record<string, number> | null {
+  return read<Record<string, number>>(MIDIMAP_KEY)
 }
 
-export function saveCustomMap(map: Record<number, number> | null): void {
+export function saveCustomMap(map: Record<string, number> | null): void {
   if (map === null) {
     try {
       localStorage.removeItem(MIDIMAP_KEY)
