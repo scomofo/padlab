@@ -20,7 +20,8 @@ Use Chrome or Edge — Web MIDI is required for hardware controllers. Allow MIDI
 - **Modes** — *Listen* (the app plays it), *Practice* (playback waits at each note until you hit the right pad), *Play* (scored: Perfect ±45 ms, Great ±90 ms, Good ±135 ms; 3 stars at 90 %). Extra hits cost accuracy proportionally, capped at 20 points, so sloppiness can't wipe out a run where you hit every note. Repeat hits on the same pad within 30 ms are treated as one hit, since velocity pads bounce and some controllers send duplicate note-ons.
 - **Sound** is a fully synthesized 16-voice drum kit (WebAudio — no samples), scheduled on the AudioContext clock with a lookahead scheduler, so timing doesn't wobble with the UI thread.
 - **Devices** — MPK Mini pads map from factory notes 36-43 (bank A) / 44-51 (bank B); SP-404 MKII pads from notes 36-51. Mapping is channel-aware: the MPK profile ignores everything on the keybed's factory channel (1), because the keybed's lower octaves reuse the Bank B note numbers and would otherwise score phantom pad hits. If your unit sends anything else, open the device panel (chip in the top-right of the lesson list) and run **MIDI Learn** — tap your pads in order once and the mapping is saved. A learned mapping is authoritative and remembers the channel along with the note: anything outside it (keybed, knobs, transport buttons) is ignored, so nothing but your pads can trigger a sound. There's also an input-latency slider if hits feel systematically late — it shifts both judging *and* miss detection, so raising it never turns a good hit into a miss.
-- **Progress** (best accuracy + stars per lesson) and settings persist in localStorage.
+- **Daily loop** — the home screen leads with **Continue** (the next unmastered lesson, auto-starts) and a **Daily groove** (one chart a day in your current level band, +60 XP). A scored Perform grows a streak, awards XP toward ranks (Rookie → Legend), and unlocks badges. Practice steps still pay a little XP so they feel like play; only Perform counts for stars, streak, and the daily bonus.
+- **Progress** (best accuracy + stars per lesson, plus XP / streak / rank in `padlab-profile-v1`) and settings persist in localStorage.
 
 ## Add a lesson
 
@@ -89,8 +90,9 @@ npm run check       # typecheck + build, validate, test — what CI runs
 
 Tests live in `tests/`, mirroring the source layout. They cover the scoring
 and timing engine, the transport, the player runtime, device profiles and MIDI
-handling, saved progress, the difficulty model, the chart authoring helper, and
-both validators. The React components and the WebAudio synth are not covered.
+handling, saved progress, the XP/streak/rank loop, next-lesson and daily-groove
+picks, the difficulty model, the chart authoring helper, and both validators.
+The React components and the WebAudio synth are not covered.
 
 Two things worth knowing when adding tests:
 

@@ -11,9 +11,11 @@ interface PadGridProps {
   lesson?: Lesson | null
   /** Pads charted in the current lesson (get their lane color); others render dim. */
   activePads?: Set<number>
+  /** Smaller pads for the home warmup strip. */
+  compact?: boolean
 }
 
-export function PadGrid({ padCount, lesson = null, activePads }: PadGridProps) {
+export function PadGrid({ padCount, lesson = null, activePads, compact = false }: PadGridProps) {
   const gridRef = useRef<HTMLDivElement>(null)
   const timeouts = useRef<Map<number, number>>(new Map())
 
@@ -51,7 +53,7 @@ export function PadGrid({ padCount, lesson = null, activePads }: PadGridProps) {
   }, [])
 
   return (
-    <div ref={gridRef} className={`pad-grid pads-${padCount}`}>
+    <div ref={gridRef} className={`pad-grid pads-${padCount}${compact ? ' compact' : ''}`}>
       {rows.map((row, ri) => (
         <div className="pad-row" key={ri}>
           {row.map((pad) => {
