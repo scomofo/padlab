@@ -13,12 +13,20 @@ import { PadGrid } from './PadGrid'
 import { Results } from './Results'
 import type { Settings } from '../store/progress'
 import { loadProgress, saveLessonResult } from '../store/progress'
+import { applyRun, type Profile, type RunAward } from '../store/profile'
+import { nextInCourse } from '../lib/curriculum'
+import { LESSONS } from '../lessons'
 
 interface LessonPlayerProps {
   lesson: Lesson
   settings: Settings
+  profile: Profile
+  isDaily?: boolean
+  autoStart?: boolean
   onExit: () => void
   onProgressChange: () => void
+  onProfile: (p: Profile) => void
+  onOpenLesson: (lesson: Lesson) => void
 }
 
 const MODES: { id: PlayMode; label: string }[] = [
@@ -27,20 +35,33 @@ const MODES: { id: PlayMode; label: string }[] = [
   { id: 'play', label: 'Play' },
 ]
 
-export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: LessonPlayerProps) {
+export function LessonPlayer({
+  lesson,
+  settings,
+  profile,
+  isDaily,
+  autoStart = false,
+  onExit,
+  onProgressChange,
+  onProfile,
+  onOpenLesson,
+}: LessonPlayerProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [mode, setMode] = useState<PlayMode>('listen')
+  const [mode, setMode] = useState<PlayMode>(autoStart ? 'play' : 'listen')
   const [tempoPct, setTempoPct] = useState(100)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
-  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean } | null>(null)
+  const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
+  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null } | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
+  const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
   const [, bump] = useState(0)
 
   const step = lesson.steps[stepIndex]
   const isLastStep = stepIndex === lesson.steps.length - 1
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
+  const nextLesson = nextInCourse(LESSONS, lesson, loadProgress())
 
   const stopRun = useCallback(() => {
     runtimeRef.current?.stop()
@@ -53,6 +74,7 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
     unlockAudio()
     runtimeRef.current?.stop()
     setResults(null)
+    startedAt.current = performance.now()
     const rt = new PlayerRuntime({
       lesson,
       stepIndex,
@@ -66,13 +88,25 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
         setPlaying(false)
         if (summary) {
           let newBest = false
+          const prev = loadProgress()[lesson.id]
+          const firstClear = isLastStep && (prev?.stars ?? 0) === 0
           if (isLastStep) {
-            const prev = loadProgress()[lesson.id]
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
             saveLessonResult(lesson.id, summary.accuracy, summary.stars)
             onProgressChange()
           }
-          setResults({ summary, newBest })
+          const award = applyRun({
+            profile,
+            lessonId: lesson.id,
+            summary,
+            scored: isLastStep,
+            firstClear,
+            isDaily: Boolean(isDaily) && isLastStep,
+            durationSec: (performance.now() - startedAt.current) / 1000,
+            prevXp: profile.xp,
+          })
+          onProfile(award.profile)
+          setResults({ summary, newBest, award })
         }
         bump((n) => n + 1)
       },
@@ -81,10 +115,22 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange])
+  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, isDaily, onProfile])
 
-  // Any config change stops the current run.
-  useEffect(() => stopRun, [stepIndex, mode, tempoPct, stopRun])
+  const skipInitialStop = useRef(true)
+  useEffect(() => {
+    if (skipInitialStop.current) {
+      skipInitialStop.current = false
+      return
+    }
+    stopRun()
+  }, [stepIndex, mode, tempoPct, stopRun])
+  useEffect(() => {
+    if (!autoStart) return
+    startRun()
+    // Mount-only: Continue / Daily / next-lesson should roll immediately.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(() => () => runtimeRef.current?.stop(), [])
 
   // Pad input: always audible, and routed into the active run.
@@ -98,6 +144,21 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
   }, [lesson])
 
   usePadKeyboard(lesson.padCount)
+
+  useEffect(() => {
+    if (!playing) return
+    let raf = 0
+    const tick = () => {
+      const rt = runtimeRef.current
+      if (rt?.score) {
+        const s = rt.score.summary()
+        setHud({ combo: rt.score.combo, acc: s.accuracy, judged: s.perfect + s.great + s.good + s.miss })
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [playing])
 
   // Space toggles the run.
   useEffect(() => {
@@ -116,11 +177,12 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
   return (
     <div className="player">
       <header className="player-bar">
-        <button className="btn ghost" onClick={() => { stopRun(); onExit() }}>‹ Lessons</button>
+        <button className="btn ghost" onClick={() => { stopRun(); onExit() }}>‹ Studio</button>
         <div className="player-title">
           <h1>{lesson.title}</h1>
           <span className="muted">
             {lesson.genre} · {lesson.bpm} BPM · Level {lesson.level} · {lesson.padCount} pads
+            {isDaily ? ' · Daily' : ''}
           </span>
         </div>
         <div className="player-controls">
@@ -175,7 +237,22 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
         <span className="step-desc muted">{step.description ?? ''}</span>
       </div>
 
-      <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} />
+      <div className="player-stage">
+        <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} />
+        {playing && mode === 'play' && hud.judged > 0 && (
+          <div className="play-hud">
+            <span>{hud.acc}%</span>
+            {hud.combo >= 2 && <span className="combo">{hud.combo}x</span>}
+          </div>
+        )}
+        {!playing && !results && (
+          <button className="play-curtain" onClick={startRun}>
+            <span className="play-orb">▶</span>
+            <strong>Play</strong>
+            <span className="muted">Hit the pads as notes reach the line · space to start</span>
+          </button>
+        )}
+      </div>
 
       <PadGrid padCount={lesson.padCount} lesson={lesson} activePads={chartedPads} />
 
@@ -186,8 +263,16 @@ export function LessonPlayer({ lesson, settings, onExit, onProgressChange }: Les
           lessonTitle={lesson.title}
           stepName={step.name}
           scored={isLastStep}
+          award={results.award}
+          nextLesson={isLastStep ? nextLesson : null}
           onRetry={() => { setResults(null); startRun() }}
-          onNext={!isLastStep ? () => { setResults(null); setStepIndex(stepIndex + 1) } : undefined}
+          onNext={
+            !isLastStep
+              ? () => { setResults(null); setStepIndex(stepIndex + 1) }
+              : nextLesson
+                ? () => { setResults(null); onOpenLesson(nextLesson) }
+                : undefined
+          }
           onExit={() => { setResults(null); onExit() }}
         />
       )}

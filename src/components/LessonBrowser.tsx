@@ -2,16 +2,25 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Lesson, LessonProgress } from '../engine/types'
 import type { Guide } from '../guides/types'
 import type { GuideProgress } from '../store/progress'
+import type { Profile } from '../store/profile'
+import { goalMetToday } from '../store/profile'
 import { COURSES } from '../lessons/courses'
-import { courseProgress, startedCount, totalStars } from '../lessons/courseProgress'
+import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
+import { dailyLesson, recommendLesson, weekDots } from '../lib/curriculum'
+import { rankForXp } from '../lib/ranks'
+import { PadGrid } from './PadGrid'
+import { usePadKeyboard } from '../input/usePadKeyboard'
+import { padBus } from '../input/inputBus'
+import { unlockAudio } from '../audio/audio'
 
 interface LessonBrowserProps {
   lessons: Lesson[]
   guides: Guide[]
   progress: Record<string, LessonProgress>
   guideProgress: Record<string, GuideProgress>
-  onOpen: (lesson: Lesson) => void
+  profile: Profile
+  onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean }) => void
   onOpenGuide: (guide: Guide) => void
   onOpenSetup: () => void
 }
@@ -19,12 +28,15 @@ interface LessonBrowserProps {
 type Filter = 'all' | 8 | 16
 
 export function LessonBrowser({
-  lessons, guides, progress, guideProgress, onOpen, onOpenGuide, onOpenSetup,
+  lessons, guides, progress, guideProgress, profile, onOpen, onOpenGuide, onOpenSetup,
 }: LessonBrowserProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const [, bump] = useState(0)
+  const [jammed, setJammed] = useState(false)
 
   useEffect(() => midi.onStatusChange(() => bump((n) => n + 1)), [])
+  useEffect(() => padBus.subscribe(() => setJammed(true)), [])
+  usePadKeyboard(8)
 
   const filtered = useMemo(
     () => lessons.filter((l) => filter === 'all' || l.padCount === filter),
@@ -56,24 +68,31 @@ export function LessonBrowser({
     return map
   }, [filteredGuides])
 
+  const next = recommendLesson(lessons, progress, profile.lastLessonId)
+  const daily = dailyLesson(lessons, progress)
+  const fresh = profile.xp === 0 && Object.keys(progress).length === 0
+  const startLesson = fresh ? lessons.find((l) => l.id === 'first-taps') ?? next : next
+  const rank = rankForXp(profile.xp)
   const stars = totalStars(lessons, progress)
-  const started = startedCount(lessons, progress)
+  const goal = goalMetToday(profile)
+  const dots = weekDots(profile.week)
+  const minutes = Math.round(profile.secondsPracticed / 60)
 
   const device = midi.inputs[0]
   const extraInputs = midi.inputs.length - 1
   const deviceLabel =
     midi.status === 'unsupported' ? 'Web MIDI unavailable — use Chrome/Edge (keys still work)'
-    : midi.status === 'denied' ? 'MIDI access blocked'
+    : midi.status === 'denied' ? 'MIDI access blocked — keys & pads still work'
     : device
       ? `${device.name}${extraInputs > 0 ? ` +${extraInputs}` : ''} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
-    : 'No MIDI device — keyboard & mouse work'
+    : 'No MIDI device — keyboard & pads work'
 
   return (
     <div className="browser">
       <header className="browser-head">
         <div>
           <div className="logo">Pad<span>Lab</span></div>
-          <div className="muted tagline">Finger drumming, one step at a time</div>
+          <div className="muted tagline">Finger drumming. One groove at a time.</div>
         </div>
         <button className="device-chip" onClick={onOpenSetup}>
           <span className={device ? 'dot on' : 'dot'} />
@@ -82,13 +101,61 @@ export function LessonBrowser({
         </button>
       </header>
 
-      <div className="overview">
-        <span className="overview-stat"><strong>{lessons.length}</strong> lessons</span>
-        <span className="overview-stat"><strong>{guides.length}</strong> walkthroughs</span>
-        <span className="overview-stat"><strong>{COURSES.length}</strong> courses</span>
-        <span className="overview-stat"><strong>{started}</strong> started</span>
-        <span className="overview-stat gold">★ <strong>{stars}</strong> / {lessons.length * 3}</span>
+      <section className="hub-stats">
+        <div className="stat-card">
+          <div className="stat-label">{goal && profile.streak > 0 ? '🔥 Streak' : 'Streak'}</div>
+          <div className="stat-value">{profile.streak > 0 ? `${profile.streak}d` : '—'}</div>
+          <div className="muted">{goal ? 'Goal done today' : 'Play a Perform step'}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">{rank.current.name}</div>
+          <div className="stat-value">{profile.xp} XP</div>
+          <div className="muted">{rank.next ? `${rank.next.xp - profile.xp} to ${rank.next.name}` : 'Max rank'}</div>
+          <div className="stat-bar"><span style={{ width: `${Math.round(rank.into * 100)}%` }} /></div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Stars</div>
+          <div className="stat-value">{stars}</div>
+          <div className="muted">{minutes} min on pads</div>
+        </div>
+      </section>
+
+      <div className="week-dots" aria-label="Last seven days">
+        {dots.map((on, i) => (
+          <span key={i} className={on ? (i === 6 ? 'week-dot on today' : 'week-dot on') : (i === 6 ? 'week-dot today' : 'week-dot')} />
+        ))}
       </div>
+
+      <section className="hub-actions">
+        <button
+          className="continue-card"
+          onClick={() => {
+            void unlockAudio()
+            onOpen(startLesson, { autoStart: true })
+          }}
+        >
+          <span className="muted kicker">{fresh ? 'Start here' : 'Continue'}</span>
+          <h2>{fresh ? 'First Taps' : next.title}</h2>
+          <p className="muted">
+            {fresh ? 'One kick. Four beats. Land on the click.' : `${next.genre} · ${next.bpm} BPM · LV ${next.level}`}
+          </p>
+          <span className="btn primary play-now">{fresh ? 'Play now ›' : 'Keep going ›'}</span>
+        </button>
+        <button
+          className="daily-card"
+          onClick={() => {
+            void unlockAudio()
+            onOpen(daily, { daily: true, autoStart: true })
+          }}
+        >
+          <span className="muted kicker">Daily groove</span>
+          <h2>{daily.title}</h2>
+          <p className="muted">{daily.genre} · {daily.bpm} BPM · +60 XP bonus</p>
+          <span className={profile.dailyChallengeDone ? 'daily-status done' : 'daily-status'}>
+            {profile.dailyChallengeDone ? 'Cleared today' : 'Take it on ›'}
+          </span>
+        </button>
+      </section>
 
       <div className="filter-row">
         {([['all', 'All lessons'], [8, '8 pads · MPK Mini'], [16, '16 pads · SP-404']] as [Filter, string][]).map(
@@ -170,6 +237,18 @@ export function LessonBrowser({
       {filtered.length === 0 && filteredGuides.length === 0 && (
         <div className="muted empty">No lessons for this filter yet.</div>
       )}
+
+      <section className="warmup">
+        <div className="warmup-head">
+          <div>
+            <h2>Warm up</h2>
+            <p className="muted">
+              {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too.'}
+            </p>
+          </div>
+        </div>
+        <PadGrid padCount={8} compact />
+      </section>
     </div>
   )
 }
