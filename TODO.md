@@ -52,22 +52,13 @@ Use the DMG produced by the release workflow, not a dev-server build.
 
 ## Repo hygiene
 
-- [ ] **Delete stale branches.** Current comparison against `main` shows nine
-      non-main branches. Seven are strictly behind with zero commits ahead; two
-      are divergent but their intended work has already been superseded on main.
-      None should be merged as-is.
-
-      | Branch | Compared with `main` | Action |
-      |---|---|---|
-      | `claude/fix-x64-signing` | 0 ahead / 6 behind | Delete; PR #9 is merged. |
-      | `claude/macos-release` | 0 ahead / 9 behind | Delete; PR #7 is merged. |
-      | `claude/project-state-detection-81tfdq` | 0 ahead / 27 behind | Delete; merged work only. |
-      | `claude/test-coverage-analysis-d9rvfq` | 0 ahead / 11 behind | Delete; PRs #3/#5 are merged. |
-      | `claude/todo-file` | 0 ahead / 15 behind | Delete; PR #6 is merged. |
-      | `claude/todo-implementation-3mwax4` | 0 ahead / 29 behind | Delete; merged work only. |
-      | `fix/difficulty-calibration` | 0 ahead / 32 behind | Delete; merged work only. |
-      | `fix/scoring-stray-penalty` | 1 ahead / 32 behind, diverged | Delete; its scoring intent was cherry-picked/adapted in PRs #4/#5. Do not merge this stale branch because it carries obsolete surrounding content. |
-      | `claude/todo-implementation-covl1b` | 1 ahead / 4 behind, diverged | Delete; this was an earlier settings-validation implementation superseded by PR #11. |
+- [x] **Delete stale branches.** Done 2026-09-02: all nine non-main branches
+      were re-verified against `main` before deletion — seven had zero commits
+      ahead, and the single unique commit on each of the two divergent ones
+      (`fix/scoring-stray-penalty`'s stray-penalty/debounce work, landed in
+      fuller form via PRs #4/#5, and `claude/todo-implementation-covl1b`'s
+      settings validation, superseded by PR #11) was confirmed already on
+      `main`. `main` is now the repository's only branch.
 
 ## Open design questions
 
