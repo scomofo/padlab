@@ -2,8 +2,8 @@
 
 Open work as of `main` @ `95d29ed` (2026-09-02), plus the coverage/hygiene
 follow-up on `chore/rc-hygiene`. PR #13 (`feat/sticky-daily-loop`) is merged.
-Core CI is green. Remaining work is physical-device acceptance, two pinned
-design decisions, and cutting a release that matches current `main`.
+Core CI is green. The two pinned design questions are decided. Remaining work
+is physical-device acceptance and cutting a release that matches current `main`.
 
 ## Release-candidate gate
 
@@ -77,24 +77,20 @@ Use the DMG produced by the release workflow, not a dev-server build.
       PR #12; 0 unique commits ahead of current `main` that are not already in
       history. Safe to delete.
 
-## Open design questions
+## Design decisions
 
-Each is pinned by a test that documents the behaviour rather than endorsing it,
-so changing either should be an explicit product decision. Grep
-`rather than endorsing it` in `tests/`.
-
-- [ ] **Decide how a step with no player notes should score.**
-      `src/engine/scoring.ts` currently short-circuits when `total === 0`, awarding
-      100% and 3 stars. It is unreachable with today's validator because the final
-      scored step requires `playerPads: "all"`, but an authoring change could make
-      free stars reachable. Pinned by `tests/engine/scoring.test.ts` → *"awards a
-      full score for a step with no player notes"*.
-- [ ] **Make or explicitly accept the ostinato difficulty discontinuity.**
-      Crossing the 0.5-beat gap ceiling in `scripts/lib/difficulty.mjs` marks a pad
-      as ostinato and applies the 0.4 weight to all its instants. Adding notes can
-      therefore lower calculated difficulty (1.9 vs 3.0 effective hits/sec in the
-      pinned example). Pinned by `tests/scripts/difficulty.test.mjs` → *"a denser
-      hat scores easier than a sparser one"*.
+- [x] **Empty player part scores 0% / 0\u2605.** `ScoreKeeper.summary()` short-circuits
+      `total === 0` to accuracy 0 (was 100 / 3 stars). Still unreachable on a
+      valid chart because the final step requires `playerPads: "all"`, but an
+      authoring slip can no longer mint a clean pass. Pinned by
+      `tests/engine/scoring.test.ts` → *"awards no score for a step with no
+      player notes"*.
+- [x] **Ostinato difficulty cliff is accepted.** A locked-in hat/shaker hand is
+      easier than the same rate on four pads. Crossing the 0.5-beat gap ceiling
+      marks the pad ostinato (0.4 weight), so a denser hat can rate easier
+      (1.9 vs 3.0 effective hits/sec). That is the product. Pinned by
+      `tests/scripts/difficulty.test.mjs` → *"a denser hat scores easier than a
+      sparser one"*.
 
 ## Targeted coverage
 
