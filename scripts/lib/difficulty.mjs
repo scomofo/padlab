@@ -4,6 +4,10 @@
 // stream — a 16th-note shaker is one relaxed hand in a fixed motion, nothing
 // like the same rate scattered across four pads. So we detect those "ostinato"
 // voices and discount instants that contain nothing else.
+//
+// The 0.5-beat gap ceiling is a cliff on purpose: crossing it can make a
+// denser chart rate easier. That is accepted product behaviour, pinned by
+// tests/scripts/difficulty.test.mjs.
 
 /** Weight of an instant made up purely of ostinato notes. */
 const OSTINATO_WEIGHT = 0.4
