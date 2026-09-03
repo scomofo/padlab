@@ -5,7 +5,7 @@ export default defineConfig({
     // Most of what's worth testing is pure logic; files that need DOM or
     // localStorage opt in with a `@vitest-environment jsdom` docblock.
     environment: 'node',
-    include: ['tests/**/*.test.{ts,mjs}'],
+    include: ['tests/**/*.test.{ts,tsx,mjs}'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}', 'scripts/lib/**/*.mjs', 'scripts/validators/**/*.mjs'],
