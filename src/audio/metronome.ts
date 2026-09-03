@@ -33,6 +33,13 @@ export class Metronome {
   private tick(): void {
     const ctx = getAudioContext()
     const secPerBeat = 60 / this.bpm
+    // Throttle catch-up: backgrounded tab leaves nextTime seconds behind —
+    // skip missed beats instead of bursting them all at once on return.
+    if (this.nextTime < ctx.currentTime - 0.25) {
+      const missed = Math.ceil((ctx.currentTime - this.nextTime) / secPerBeat)
+      this.nextBeat += missed
+      this.nextTime += missed * secPerBeat
+    }
     while (this.nextTime < ctx.currentTime + LOOKAHEAD_SEC) {
       playClick(this.nextTime, this.nextBeat % 4 === 0)
       this.nextBeat++

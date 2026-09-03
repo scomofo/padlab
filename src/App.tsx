@@ -49,13 +49,15 @@ export default function App() {
   }, [])
 
   // Home warmup pads share the kit so tapping them is immediately audible.
+  // Paused while DeviceSetup is open — it owns its own 16-pad test audio,
+  // otherwise one keydown would sound twice.
   useEffect(() => {
-    if (lesson || guide) return
+    if (lesson || guide || showSetup) return
     return padBus.subscribe((e) => {
       const sound = padSoundFor(null, 8, e.pad)
       if (sound) playSound(sound, undefined, e.velocity)
     })
-  }, [lesson, guide])
+  }, [lesson, guide, showSetup])
 
   const updateSettings = (s: Settings) => {
     setSettings(s)
@@ -78,6 +80,7 @@ export default function App() {
           profile={profile}
           isDaily={daily}
           autoStart={autoStart}
+          progress={progress}
           onExit={() => {
             setLesson(null)
             setDaily(false)
@@ -104,6 +107,7 @@ export default function App() {
           onOpen={openLesson}
           onOpenGuide={setGuide}
           onOpenSetup={() => setShowSetup(true)}
+          keyboardEnabled={!showSetup}
         />
       )}
       {showSetup && (

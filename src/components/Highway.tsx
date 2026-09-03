@@ -89,6 +89,11 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
     let lastCombo = 0
     let comboPulseUntil = 0
     let missFlashUntil = 0
+    // Judged-map cache: ScoreKeeper mutates judgements in place, but every
+    // judgement also pushes feedback — so feedback length is a cheap version.
+    let judgedCache: Map<string, { judgement?: string }> | null = null
+    let judgedCacheEvents: object | null = null
+    let judgedCacheVersion = -1
 
     const spawnBurst = (x: number, y: number, color: string) => {
       const n = 10
@@ -201,10 +206,24 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
 
       // notes
       const noteH = Math.max(10, Math.min(18, ppb * 0.22))
-      // Keyed once per frame; a find() per note per frame is O(n²) at 60 fps.
-      const judged = rt?.score
-        ? new Map(rt.score.events.map((j) => [`${j.t}|${j.pad}`, j]))
-        : null
+      // Cached judged-map: rebuild only when judgements can have changed
+      // (feedback length = version). Avoids O(n) alloc every frame at 60fps.
+      let judged: Map<string, { judgement?: string }> | null = null
+      if (rt?.score) {
+        const version = rt.feedback.length
+        if (judgedCache && judgedCacheEvents === rt.score.events && judgedCacheVersion === version) {
+          judged = judgedCache
+        } else {
+          judgedCache = new Map(rt.score.events.map((j) => [`${j.t}|${j.pad}`, j]))
+          judgedCacheEvents = rt.score.events
+          judgedCacheVersion = version
+          judged = judgedCache
+        }
+      } else {
+        judgedCache = null
+        judgedCacheEvents = null
+        judgedCacheVersion = -1
+      }
       const drawNote = (t: number, pad: number, style: 'player' | 'backing' | 'hit' | 'missed') => {
         const li = laneIndex.get(pad)
         if (li === undefined) return
@@ -250,7 +269,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
           if (je?.judgement === 'miss') drawNote(e.t, e.pad, 'missed')
           else if (je?.judgement) drawNote(e.t, e.pad, 'hit')
           else drawNote(e.t, e.pad, 'player')
-        } else if (rt && rt.mode === 'practice' && rt.practiceDone.has(e)) {
+        } else if (rt && rt.mode === 'practice' && rt.isPracticeDone(e.t, e.pad)) {
           drawNote(e.t, e.pad, 'hit')
         } else {
           drawNote(e.t, e.pad, 'player')
@@ -296,7 +315,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
       // judgement popups
       if (rt) {
         const nowWall = performance.now()
-        rt.feedback = rt.feedback.filter((f) => nowWall - f.wall < 700)
+        rt.pruneFeedback(700, nowWall)
         for (const f of rt.feedback) {
           const li = laneIndex.get(f.pad)
           if (li === undefined) continue

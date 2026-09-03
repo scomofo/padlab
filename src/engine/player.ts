@@ -48,8 +48,21 @@ export class PlayerRuntime {
   /** Pads currently blocking progress in practice (wait) mode. */
   waitingPads: Set<number> | null = null
   waitBeat = 0
-  /** Player events already satisfied in practice mode. */
-  readonly practiceDone = new Set<NoteEvent>()
+  /**
+   * Player events already satisfied in practice mode, keyed by `${t}|${pad}`.
+   * Keyed (not object identity) so views like Highway can test membership
+   * with their own sorted copies of the events.
+   */
+  readonly practiceDone = new Set<string>()
+
+  /** Stable key for practiceDone — shared with Highway. */
+  static practiceKey(t: number, pad: number): string {
+    return `${t}|${pad}`
+  }
+
+  isPracticeDone(t: number, pad: number): boolean {
+    return this.practiceDone.has(PlayerRuntime.practiceKey(t, pad))
+  }
 
   private readonly opts: RuntimeOptions
   private timer: number | null = null
@@ -102,6 +115,11 @@ export class PlayerRuntime {
     this.opts.metronome = on
   }
 
+  /** Drop expired judgement popups. Called by the view; keeps mutation in the engine. */
+  pruneFeedback(maxAgeMs = 700, nowWall = performance.now()): void {
+    this.feedback = this.feedback.filter((f) => nowWall - f.wall < maxAgeMs)
+  }
+
   private tick(): void {
     const t = this.transport
     if (t.state !== 'playing') return
@@ -110,11 +128,11 @@ export class PlayerRuntime {
     // Practice (wait) mode: pause the moment an unplayed note reaches the line.
     let nextPending: NoteEvent | undefined
     if (this.mode === 'practice') {
-      nextPending = this.playerEvents.find((e) => !this.practiceDone.has(e))
+      nextPending = this.playerEvents.find((e) => !this.isPracticeDone(e.t, e.pad))
       if (nextPending && now >= nextPending.t) {
         const pads = new Set<number>()
         for (const e of this.playerEvents) {
-          if (!this.practiceDone.has(e) && Math.abs(e.t - nextPending.t) < 1e-6) pads.add(e.pad)
+          if (!this.isPracticeDone(e.t, e.pad) && Math.abs(e.t - nextPending.t) < 1e-6) pads.add(e.pad)
         }
         this.waitingPads = pads
         this.waitBeat = nextPending.t
@@ -202,8 +220,8 @@ export class PlayerRuntime {
       if (t.state === 'paused' && this.waitingPads) {
         if (!this.waitingPads.has(pad)) return
         for (const e of this.playerEvents) {
-          if (e.pad === pad && !this.practiceDone.has(e) && Math.abs(e.t - this.waitBeat) < 1e-6) {
-            this.practiceDone.add(e)
+          if (e.pad === pad && !this.isPracticeDone(e.t, e.pad) && Math.abs(e.t - this.waitBeat) < 1e-6) {
+            this.practiceDone.add(PlayerRuntime.practiceKey(e.t, e.pad))
             break
           }
         }
@@ -219,14 +237,14 @@ export class PlayerRuntime {
         let best: NoteEvent | null = null
         let bestDist = Infinity
         for (const e of this.playerEvents) {
-          if (e.pad !== pad || this.practiceDone.has(e)) continue
+          if (e.pad !== pad || this.isPracticeDone(e.t, e.pad)) continue
           const d = Math.abs(e.t - now)
           if (d <= win && d < bestDist) {
             best = e
             bestDist = d
           }
         }
-        if (best) this.practiceDone.add(best)
+        if (best) this.practiceDone.add(PlayerRuntime.practiceKey(best.t, best.pad))
       }
     }
   }

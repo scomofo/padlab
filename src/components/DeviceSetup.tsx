@@ -41,6 +41,18 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
     setLearn(null)
   }
 
+  const backLearn = () => {
+    const st = learnRef.current
+    if (!st || st.current <= 1) return
+    // Drop the last assigned key (highest pad number) and step back one.
+    const entries = Object.entries(st.map)
+    const lastPad = st.current - 1
+    const reduced = Object.fromEntries(entries.filter(([, pad]) => pad !== lastPad))
+    const next: LearnState = { padCount: st.padCount, current: lastPad, map: reduced }
+    learnRef.current = next
+    setLearn(next)
+  }
+
   // MIDI Learn: capture raw note-ons, one pad at a time.
   useEffect(() => {
     return midi.onRaw((note, _velocity, channel) => {
@@ -103,7 +115,12 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
             <div className="learn-box">
               <strong>Tap pad {learn.current} of {learn.padCount} on your controller</strong>
               <p className="muted">Pad 1 is bottom-left. Going row by row, left to right, bottom to top.</p>
-              <button className="btn" onClick={cancelLearn}>Cancel</button>
+              <div className="row gap">
+                {learn.current > 1 && (
+                  <button className="btn ghost" onClick={backLearn}>← Back</button>
+                )}
+                <button className="btn" onClick={cancelLearn}>Cancel</button>
+              </div>
             </div>
           ) : (
             <div className="row gap">

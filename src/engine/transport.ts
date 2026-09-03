@@ -12,6 +12,19 @@ export class Transport {
   tempoScale = 1
   state: TransportState = 'stopped'
 
+  /**
+   * Preferred mutator: tempo must only change while stopped — the anchor
+   * mapping is fixed at start(). Throws mid-run to prevent desync.
+   * Direct field writes remain for construction (PlayerRuntime) and tests.
+   */
+  setTempo(bpm: number, tempoScale = 1): void {
+    if (this.state !== 'stopped') {
+      throw new Error('Transport.setTempo: stop first — tempo is anchored at start()')
+    }
+    this.bpm = bpm
+    this.tempoScale = tempoScale
+  }
+
   private anchorBeat = 0
   private anchorCtxTime = 0
 

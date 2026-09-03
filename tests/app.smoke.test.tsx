@@ -73,10 +73,9 @@ describe('App smoke', () => {
     expect(host.textContent).toContain('Daily groove')
     expect(host.textContent).toContain('First Taps')
 
-    const deviceChip = [...host.querySelectorAll('button')].find((b) =>
-      (b.textContent ?? '').includes('No MIDI device'),
-    )
+    const deviceChip = host.querySelector<HTMLButtonElement>('button.device-chip')
     expect(deviceChip).toBeTruthy()
+    expect(deviceChip!.textContent).toMatch(/MIDI|device|keyboard/i)
 
     await act(async () => {
       deviceChip!.click()
@@ -92,7 +91,7 @@ describe('App smoke', () => {
     expect(host.textContent).not.toContain('Device & settings')
     expect(host.textContent).toContain('Daily groove')
 
-    const lessonCard = [...host.querySelectorAll('button.lesson-card')].find((b) =>
+    const lessonCard = [...host.querySelectorAll<HTMLButtonElement>('button.lesson-card')].find((b) =>
       (b.textContent ?? '').includes('First Taps'),
     )
     expect(lessonCard).toBeTruthy()

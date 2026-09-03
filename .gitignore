@@ -1,6 +1,15 @@
 node_modules
 dist
 *.local
+.env
+.env.*
+*.pem
+*.key
+*.p12
+npm-debug.log*
+*.log
 coverage
 release
 __pycache__
+.DS_Store
+.vscode/
