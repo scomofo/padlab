@@ -91,8 +91,10 @@ npm run check       # typecheck + build, validate, test — what CI runs
 Tests live in `tests/`, mirroring the source layout. They cover the scoring
 and timing engine, the transport, the player runtime, device profiles and MIDI
 handling, saved progress, the XP/streak/rank loop, next-lesson and daily-groove
-picks, the difficulty model, the chart authoring helper, and both validators.
-The React components and the WebAudio synth are not covered.
+picks, the difficulty model, the chart authoring helper, both validators, the
+computer-keyboard pad map (`usePadKeyboard`), and one React smoke test that
+boots the studio, opens Device Setup, and enters a lesson. The WebAudio synth
+and the rest of the presentation layer are not covered.
 
 Two things worth knowing when adding tests:
 
