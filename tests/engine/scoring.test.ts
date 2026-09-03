@@ -1,1 +1,521 @@
-PLACEHOLDER
+import { describe, expect, it } from 'vitest'
+import {
+  RETRIGGER_DEBOUNCE_MS,
+  ScoreKeeper,
+  WINDOW_MS,
+  starsForAccuracy,
+} from '../../src/engine/scoring'
+import { beatsFromMs, note, secPerBeat } from '../helpers/chart'
+
+const SPB = secPerBeat(120)
+
+/** A keeper over one note on pad 1 at beat 0, unless told otherwise. */
+function keeper(events = [note(0, 1)], bpm = 120) {
+  return new ScoreKeeper(events, secPerBeat(bpm))
+}
+
+describe('starsForAccuracy', () => {
+  it('awards stars at the documented thresholds', () => {
+    expect(starsForAccuracy(100)).toBe(3)
+    expect(starsForAccuracy(90)).toBe(3)
+    expect(starsForAccuracy(89)).toBe(2)
+    expect(starsForAccuracy(75)).toBe(2)
+    expect(starsForAccuracy(74)).toBe(1)
+    expect(starsForAccuracy(55)).toBe(1)
+    expect(starsForAccuracy(54)).toBe(0)
+    expect(starsForAccuracy(0)).toBe(0)
+  })
+
+  it('treats each threshold as inclusive', () => {
+    // The README promises "3 stars at 90 %" — exactly 90 must qualify.
+    for (const [acc, stars] of [[90, 3], [75, 2], [55, 1]] as const) {
+      expect(starsForAccuracy(acc)).toBe(stars)
+      expect(starsForAccuracy(acc - 0.5)).toBeLessThan(stars)
+    }
+  })
+})
+
+describe('WINDOW_MS', () => {
+  /**
+   * Asserted as literals, not via WINDOW_MS itself: the tests below express
+   * their offsets in terms of the constant, so they would follow it if it
+   * changed. The README publishes these numbers to players, so a change to
+   * them is a product decision that should have to edit this line.
+   */
+  it('matches the windows the README documents', () => {
+    expect(WINDOW_MS).toEqual({ perfect: 45, great: 90, good: 135 })
+  })
+
+  it('judges hits at the documented millisecond values', () => {
+    expect(keeper().registerHit(1, beatsFromMs(45)).judgement).toBe('perfect')
+    expect(keeper().registerHit(1, beatsFromMs(46)).judgement).toBe('great')
+    expect(keeper().registerHit(1, beatsFromMs(90)).judgement).toBe('great')
+    expect(keeper().registerHit(1, beatsFromMs(91)).judgement).toBe('good')
+    expect(keeper().registerHit(1, beatsFromMs(135)).judgement).toBe('good')
+    expect(keeper().registerHit(1, beatsFromMs(136)).judgement).toBe('stray')
+  })
+})
+
+describe('ScoreKeeper.registerHit — timing windows', () => {
+  it('judges a dead-on hit as perfect', () => {
+    expect(keeper().registerHit(1, 0).judgement).toBe('perfect')
+  })
+
+  it.each([
+    ['perfect', 0],
+    ['perfect', WINDOW_MS.perfect],
+    ['great', WINDOW_MS.perfect + 1],
+    ['great', WINDOW_MS.great],
+    ['good', WINDOW_MS.great + 1],
+    ['good', WINDOW_MS.good],
+    ['stray', WINDOW_MS.good + 1],
+  ])('judges %s at %d ms late', (expected, ms) => {
+    expect(keeper().registerHit(1, beatsFromMs(ms)).judgement).toBe(expected)
+  })
+
+  it.each([
+    ['perfect', WINDOW_MS.perfect],
+    ['great', WINDOW_MS.great],
+    ['good', WINDOW_MS.good],
+    ['stray', WINDOW_MS.good + 1],
+  ])('judges %s at %d ms early, symmetrically', (expected, ms) => {
+    expect(keeper().registerHit(1, beatsFromMs(-ms)).judgement).toBe(expected)
+  })
+
+  it('window edges are inclusive', () => {
+    // `<=` in the judgement chain: exactly 45 ms is still perfect, not great.
+    expect(keeper().registerHit(1, beatsFromMs(WINDOW_MS.perfect)).judgement).toBe('perfect')
+    expect(keeper().registerHit(1, beatsFromMs(WINDOW_MS.great)).judgement).toBe('great')
+  })
+
+  it('reports signed deltaMs — negative early, positive late', () => {
+    expect(keeper().registerHit(1, beatsFromMs(-30)).deltaMs).toBeCloseTo(-30, 6)
+    expect(keeper().registerHit(1, beatsFromMs(30)).deltaMs).toBeCloseTo(30, 6)
+  })
+})
+
+describe('ScoreKeeper.registerHit — tempo independence', () => {
+  // Windows are in ms but matching happens in beats. The same wall-clock error
+  // must earn the same judgement at any tempo, or fast charts get easier.
+  it.each([60, 90, 120, 174])('applies the same ms windows at %d BPM', (bpm) => {
+    const spb = secPerBeat(bpm)
+    const k = () => new ScoreKeeper([note(4, 1)], spb)
+    expect(k().registerHit(1, 4 + beatsFromMs(40, bpm)).judgement).toBe('perfect')
+    expect(k().registerHit(1, 4 + beatsFromMs(80, bpm)).judgement).toBe('great')
+    expect(k().registerHit(1, 4 + beatsFromMs(120, bpm)).judgement).toBe('good')
+    expect(k().registerHit(1, 4 + beatsFromMs(200, bpm)).judgement).toBe('stray')
+  })
+
+  it('converts deltaMs back to wall-clock at any tempo', () => {
+    for (const bpm of [60, 120, 174]) {
+      const k = new ScoreKeeper([note(4, 1)], secPerBeat(bpm))
+      expect(k.registerHit(1, 4 + beatsFromMs(37, bpm)).deltaMs).toBeCloseTo(37, 6)
+    }
+  })
+})
+
+describe('ScoreKeeper.registerHit — event matching', () => {
+  it('counts a hit on an uncharted pad as a stray', () => {
+    const k = keeper()
+    expect(k.registerHit(7, 0).judgement).toBe('stray')
+    expect(k.stray).toBe(1)
+  })
+
+  it('claims the nearest candidate when two same-pad notes are in range', () => {
+    // 0.2 beats apart = 100 ms at 120 BPM: both are inside the 135 ms window
+    // of a hit between them, so "nearest" is the only thing separating them.
+    const k = keeper([note(0, 1), note(0.2, 1)])
+    const res = k.registerHit(1, 0.12)
+    expect(res.event?.t).toBe(0.2)
+    expect(k.events.find((e) => e.t === 0)?.judgement).toBeUndefined()
+  })
+
+  it('leaves the passed-over note still hittable', () => {
+    // Hits arrive in time order, so the earlier note is claimed by an earlier
+    // tap; the retrigger debounce would swallow a hit that went backwards.
+    const k = keeper([note(0, 1), note(0.2, 1)])
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, 0.2).event?.t).toBe(0.2)
+    expect(k.summary().miss).toBe(0)
+  })
+
+  it('does not re-award a note that was already judged', () => {
+    const k = keeper()
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    // Second tap, clear of the debounce, has nothing left to claim.
+    const later = beatsFromMs(RETRIGGER_DEBOUNCE_MS + 10)
+    expect(k.registerHit(1, later).judgement).toBe('stray')
+    expect(k.summary().perfect).toBe(1)
+  })
+
+  it('matches only the pad that was hit', () => {
+    const k = keeper([note(0, 1), note(0, 2)])
+    expect(k.registerHit(2, 0).event?.pad).toBe(2)
+    expect(k.events.find((e) => e.pad === 1)?.judgement).toBeUndefined()
+  })
+
+  it('finds notes regardless of the order they were supplied in', () => {
+    // The constructor sorts; the search relies on that to break out early.
+    const k = keeper([note(8, 1), note(0, 1), note(4, 1)])
+    expect(k.events.map((e) => e.t)).toEqual([0, 4, 8])
+    for (const t of [0, 4, 8]) expect(k.registerHit(1, t).judgement).toBe('perfect')
+  })
+
+  it('does not mutate the caller’s event objects', () => {
+    const source = [note(0, 1)]
+    const k = keeper(source)
+    k.registerHit(1, 0)
+    expect(source[0]).not.toHaveProperty('judgement')
+  })
+})
+
+describe('ScoreKeeper — combo tracking', () => {
+  it('counts consecutive hits and remembers the peak', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1)])
+    k.registerHit(1, 0)
+    k.registerHit(1, 1)
+    k.registerHit(1, 2)
+    expect(k.combo).toBe(3)
+    expect(k.maxCombo).toBe(3)
+  })
+
+  it('resets the combo on a stray but keeps the peak', () => {
+    const k = keeper([note(0, 1), note(1, 1)])
+    k.registerHit(1, 0)
+    k.registerHit(1, 1)
+    k.registerHit(4, 1) // uncharted pad
+    expect(k.combo).toBe(0)
+    expect(k.maxCombo).toBe(2)
+  })
+
+  it('resets the combo on a swept miss', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1)])
+    k.registerHit(1, 0)
+    k.sweepMisses(2)
+    expect(k.combo).toBe(0)
+    expect(k.maxCombo).toBe(1)
+  })
+})
+
+describe('ScoreKeeper.sweepMisses', () => {
+  it('does not miss a note whose window is still open', () => {
+    const k = keeper()
+    expect(k.sweepMisses(beatsFromMs(WINDOW_MS.good))).toEqual([])
+  })
+
+  it('misses a note once its window has fully passed', () => {
+    const k = keeper()
+    const missed = k.sweepMisses(beatsFromMs(WINDOW_MS.good) + 0.01)
+    expect(missed).toHaveLength(1)
+    expect(missed[0].judgement).toBe('miss')
+  })
+
+  it('reports each miss exactly once', () => {
+    const k = keeper([note(0, 1), note(1, 1)])
+    expect(k.sweepMisses(4)).toHaveLength(2)
+    expect(k.sweepMisses(8)).toHaveLength(0)
+  })
+
+  it('leaves already-hit notes alone', () => {
+    const k = keeper()
+    k.registerHit(1, 0)
+    expect(k.sweepMisses(8)).toEqual([])
+    expect(k.summary().perfect).toBe(1)
+  })
+
+  it('sweeping backwards in time misses nothing', () => {
+    // The runtime sweeps at a latency-compensated position that can sit behind
+    // the transport; that must never retroactively miss anything.
+    const k = keeper([note(4, 1)])
+    expect(k.sweepMisses(0)).toEqual([])
+    expect(k.sweepMisses(-1)).toEqual([])
+  })
+
+  it('a late-but-valid hit still scores if the sweep has not passed it', () => {
+    // Guards the invariant in player.ts: raising input latency must never turn
+    // a hit that is inside the window into a miss.
+    const k = keeper()
+    const lateButValid = beatsFromMs(WINDOW_MS.good - 5)
+    expect(k.sweepMisses(lateButValid)).toEqual([])
+    expect(k.registerHit(1, lateButValid).judgement).toBe('good')
+  })
+})
+
+describe('ScoreKeeper.summary', () => {
+  it('scores a flawless run at 100% and 3 stars', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1), note(3, 1)])
+    for (const t of [0, 1, 2, 3]) k.registerHit(1, t)
+    const s = k.summary()
+    expect(s).toMatchObject({ perfect: 4, great: 0, good: 0, miss: 0, stray: 0, total: 4 })
+    expect(s.accuracy).toBe(100)
+    expect(s.stars).toBe(3)
+  })
+
+  it('weights great at 0.85 and good at 0.5', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1), note(3, 1)])
+    k.registerHit(1, 0) // perfect  1.0
+    k.registerHit(1, 1 + beatsFromMs(80)) // great  0.85
+    k.registerHit(1, 2 + beatsFromMs(120)) // good   0.5
+    k.sweepMisses(8) // miss    0
+    const s = k.summary()
+    expect(s).toMatchObject({ perfect: 1, great: 1, good: 1, miss: 1 })
+    expect(s.accuracy).toBe(Math.round(((1 + 0.85 + 0.5) / 4) * 100)) // 59
+  })
+
+  it('counts unjudged notes as misses', () => {
+    const k = keeper([note(0, 1), note(1, 1)])
+    k.registerHit(1, 0)
+    // No sweep — the second note was never judged at all.
+    expect(k.summary().miss).toBe(1)
+    expect(k.summary().total).toBe(2)
+  })
+
+  it('never reports negative accuracy', () => {
+    const k = keeper([note(0, 1)])
+    for (let i = 0; i < 500; i++) k.registerHit(7, 0)
+    expect(k.summary().accuracy).toBeGreaterThanOrEqual(0)
+  })
+
+  it('penalises stray hits', () => {
+    const clean = keeper([note(0, 1), note(1, 1)])
+    clean.registerHit(1, 0)
+    clean.registerHit(1, 1)
+
+    const sloppy = keeper([note(0, 1), note(1, 1)])
+    sloppy.registerHit(1, 0)
+    sloppy.registerHit(1, 1)
+    sloppy.registerHit(7, 0.5)
+
+    expect(sloppy.summary().stray).toBe(1)
+    expect(sloppy.summary().accuracy).toBeLessThan(clean.summary().accuracy)
+  })
+
+  it('penalises more strays more heavily, monotonically', () => {
+    const accuracyWith = (strays: number) => {
+      const k = keeper([note(0, 1), note(1, 1), note(2, 1), note(3, 1)])
+      for (const t of [0, 1, 2, 3]) k.registerHit(1, t)
+      for (let i = 0; i < strays; i++) k.registerHit(7, 0.5)
+      return k.summary().accuracy
+    }
+    const accuracies = [0, 1, 2, 3].map(accuracyWith)
+    for (let i = 1; i < accuracies.length; i++) {
+      expect(accuracies[i]).toBeLessThanOrEqual(accuracies[i - 1])
+    }
+  })
+
+  it('reports maxCombo alongside the counts', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1)])
+    k.registerHit(1, 0)
+    k.registerHit(1, 1)
+    k.registerHit(7, 1.5) // stray breaks the combo
+    k.registerHit(1, 2)
+    expect(k.summary().maxCombo).toBe(2)
+  })
+})
+
+describe('ScoreKeeper.summary — empty player part', () => {
+  /**
+   * Decided: a step the player owns no notes in scores 0% / 0\u2605.
+   * Unreachable on a valid chart today (final step is `playerPads: "all"`,
+   * and every listed pad must have events), but if authoring ever lets an
+   * empty player part through it must not mint a clean pass.
+   */
+  it('awards no score for a step with no player notes', () => {
+    const s = new ScoreKeeper([], SPB).summary()
+    expect(s.total).toBe(0)
+    expect(s.accuracy).toBe(0)
+    expect(s.stars).toBe(0)
+  })
+
+  it('does not divide by zero when penalising strays on an empty step', () => {
+    const k = new ScoreKeeper([], SPB)
+    k.registerHit(1, 0)
+    const s = k.summary()
+    expect(Number.isFinite(s.accuracy)).toBe(true)
+    expect(s.accuracy).toBe(0)
+    expect(s.stars).toBe(0)
+  })
+
+})
+
+describe('ScoreKeeper — stray penalty', () => {
+  /** A flawless run of `noteCount` notes, then `strays` extra taps. */
+  const runWith = (noteCount: number, strays: number) => {
+    const events = Array.from({ length: noteCount }, (_, i) => note(i, 1))
+    const k = keeper(events)
+    for (let i = 0; i < noteCount; i++) k.registerHit(1, i)
+    // Spaced past the debounce so each counts as its own extra hit.
+    for (let i = 0; i < strays; i++) k.registerHit(7, i * 0.25)
+    return k.summary()
+  }
+
+  it('scales the penalty with the share of the chart the strays represent', () => {
+    // Half a point per stray as a percentage of chart length: the same 12
+    // extra taps cost far more on a short chart than a long one.
+    expect(runWith(100, 12).accuracy).toBe(94)
+    expect(runWith(200, 12).accuracy).toBe(97)
+  })
+
+  /**
+   * The point of the fix: a run where every note was hit should never be
+   * driven to zero by extra taps, however many there are.
+   */
+  it('caps the penalty so sloppiness cannot wipe out a clean run', () => {
+    for (const strays of [50, 200, 1000]) {
+      const s = runWith(100, strays)
+      expect(s.miss).toBe(0)
+      expect(s.accuracy).toBe(80) // 100 - the 20-point ceiling
+    }
+  })
+
+  it('still ranks a cleaner run above a sloppier one', () => {
+    const accuracies = [0, 2, 5, 10].map((n) => runWith(100, n).accuracy)
+    for (let i = 1; i < accuracies.length; i++) {
+      expect(accuracies[i]).toBeLessThan(accuracies[i - 1])
+    }
+  })
+
+  it('counts the strays it penalised', () => {
+    expect(runWith(100, 12).stray).toBe(12)
+  })
+})
+
+describe('ScoreKeeper — retrigger debounce', () => {
+  it('treats a duplicate note-on as one physical hit, not a stray', () => {
+    // Velocity pads bounce and some controllers send duplicate note-ons.
+    const k = keeper()
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(5)).judgement).toBe('ignored')
+    expect(k.stray).toBe(0)
+    expect(k.ignored).toBe(1)
+  })
+
+  it('scores a flawless run at 100% even when every hit arrives tripled', () => {
+    const events = Array.from({ length: 33 }, (_, i) => note(i, 1))
+    const k = keeper(events)
+    for (let i = 0; i < 33; i++) {
+      k.registerHit(1, i)
+      k.registerHit(1, i + beatsFromMs(4))
+      k.registerHit(1, i + beatsFromMs(8))
+    }
+    const s = k.summary()
+    expect(s.accuracy).toBe(100)
+    expect(s.stars).toBe(3)
+    expect(s.stray).toBe(0)
+  })
+
+  it('does not swallow a genuine fast roll', () => {
+    // The tightest same-pad interval any shipped chart uses is 43 ms.
+    const k = keeper([note(0, 1), note(beatsFromMs(43), 1)])
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(43)).judgement).not.toBe('ignored')
+    expect(k.summary().miss).toBe(0)
+  })
+
+  /**
+   * Exact-time play keeps a fast roll clear of the debounce, but real play
+   * compresses it. On amen-chop-science two pad-2 notes sit a 32nd apart at
+   * 174 BPM — 43.1 ms. Hitting the first 10 ms late and the second 10 ms early
+   * puts the two note-ons 23.1 ms apart, inside the window, even though each
+   * is independently a Perfect on a distinct note.
+   */
+  it('scores both notes of a fast roll when the player’s timing compresses it', () => {
+    const bpm = 174
+    const gap = 0.125 // a 32nd, the validator's minimum spacing
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+
+    const first = k.registerHit(1, beatsFromMs(10, bpm))
+    const second = k.registerHit(1, gap - beatsFromMs(10, bpm))
+
+    expect(first.judgement).toBe('perfect')
+    expect(second.judgement).toBe('perfect')
+    expect(second.event?.t).toBe(gap)
+
+    expect(k.ignored).toBe(0)
+    const s = k.summary()
+    expect(s.miss).toBe(0)
+    expect(s.accuracy).toBe(100)
+  })
+
+  /**
+   * A bounce is defined by how soon it follows the strike, so it must stay a
+   * bounce however late that strike was. An earlier version measured from the
+   * charted note instead, which made the threshold move with the player's
+   * timing error: a 1 ms duplicate was scored as a real stroke once the stroke
+   * itself was 21 ms late — ordinary Perfect-window playing.
+   */
+  it.each([1, 2, 4, 6, 8, 10])(
+    'treats a %d ms duplicate as a bounce however late the stroke was',
+    (bounceMs) => {
+      const bpm = 174
+      const gap = 0.125 // 43.1 ms, the tightest interval in the library
+      for (let lateMs = 0; lateMs <= 40; lateMs += 2) {
+        const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+        k.registerHit(1, beatsFromMs(lateMs, bpm))
+        const bounce = k.registerHit(1, beatsFromMs(lateMs + bounceMs, bpm))
+        expect(bounce.judgement, `stroke ${lateMs} ms late`).toBe('ignored')
+      }
+    },
+  )
+
+  /**
+   * The residual ambiguity, and why it sits where it does. Two note-ons closer
+   * together than the second is to the note it would claim are read as one
+   * strike. On the tightest chart that means arrivals under ~12 ms — roughly
+   * 90 Hz on a single pad, which no hand produces, so a bounce is the only
+   * physical explanation left. The limit is a property of arrival spacing, not
+   * of where the player sits relative to the beat.
+   */
+  it('reads note-ons closer together than a hand can strike as one hit', () => {
+    const bpm = 174
+    const gap = 0.125
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+    k.registerHit(1, beatsFromMs(20, bpm)) // stroke 20 ms late
+    const second = k.registerHit(1, beatsFromMs(31, bpm)) // 11 ms later
+    expect(second.judgement).toBe('ignored')
+  })
+
+  it('still swallows a bounce that lands nearer the note just played', () => {
+    // Same chart spacing, but the second note-on is 4 ms after the first —
+    // far closer to the note already claimed than to the next one.
+    const bpm = 174
+    const gap = 0.125
+    const k = new ScoreKeeper([note(0, 1), note(gap, 1)], secPerBeat(bpm))
+
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(1, beatsFromMs(4, bpm)).judgement).toBe('ignored')
+    // The second note is still there to be played.
+    expect(k.registerHit(1, gap).judgement).toBe('perfect')
+    expect(k.summary().miss).toBe(0)
+  })
+
+  it('debounces per pad, not globally', () => {
+    const k = keeper([note(0, 1), note(0, 2)])
+    expect(k.registerHit(1, 0).judgement).toBe('perfect')
+    expect(k.registerHit(2, beatsFromMs(5)).judgement).toBe('perfect')
+  })
+
+  it('measures the window in milliseconds, not beats, so tempo cannot change it', () => {
+    for (const bpm of [60, 174]) {
+      const k = new ScoreKeeper([note(0, 1)], secPerBeat(bpm))
+      k.registerHit(1, 0)
+      expect(k.registerHit(1, beatsFromMs(RETRIGGER_DEBOUNCE_MS - 5, bpm)).judgement).toBe('ignored')
+      expect(k.registerHit(1, beatsFromMs(RETRIGGER_DEBOUNCE_MS + 5, bpm)).judgement).not.toBe('ignored')
+    }
+  })
+
+  it('ignores an out-of-order retrigger by distance, not by sign', () => {
+    // The live runtime feeds hits in time order, so this cannot happen through
+    // handlePad; the unit should not depend on the caller for correctness.
+    const k = keeper([note(0, 1), note(0.2, 1)])
+    k.registerHit(1, 0.2)
+    expect(k.registerHit(1, 0).judgement).toBe('perfect') // 100 ms earlier, not a retrigger
+  })
+
+  it('leaves the stray path intact for genuinely extra hits', () => {
+    const k = keeper()
+    k.registerHit(1, 0)
+    expect(k.registerHit(7, beatsFromMs(200)).judgement).toBe('stray')
+    expect(k.stray).toBe(1)
+  })
+})
