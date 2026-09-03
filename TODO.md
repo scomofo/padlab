@@ -1,14 +1,27 @@
 # TODO
 
-Open work as of `main` @ `e7c580d` (2026-08-21). Core CI is green and there are
-no open pull requests or standalone issues. Remaining work is release acceptance,
-two explicit design decisions, targeted coverage, and repository hygiene.
+Open work as of `main` @ `95d29ed` (2026-09-02), plus the coverage/hygiene
+follow-up on `chore/rc-hygiene`. PR #13 (`feat/sticky-daily-loop`) is merged.
+Core CI is green. The two pinned design questions are decided. Remaining work
+is physical-device acceptance and cutting a release that matches current `main`.
 
 ## Release-candidate gate
 
 PadLab is ready to call a release candidate when every item in this section passes.
 Automated checks are already green on `main`; these checks cover the physical and
 packaged-app surfaces CI cannot prove.
+
+A `v0.1.0` **pre-release** already exists (2026-08-18). Current `main` is well
+past that tag — daily loop, channel-aware MIDI, mixed-course progress, Electron
+CSP. Do **not** reuse `v0.1.0` for the next DMG. After the acceptance checks
+below pass:
+
+1. Bump `package.json` `version` if the next cut is not `0.1.0` (the release
+   workflow refuses a tag that does not match).
+2. Run **Release (macOS)** from the Actions tab with tag `v0.1.1` (or
+   `v0.1.0-rc.1` if you want to keep 0.1.0 and mark it prerelease), **or**
+   `git tag vX.Y.Z && git push origin vX.Y.Z`.
+3. Confirm the workflow publishes both arm64 and x64 DMGs and `SHA256SUMS.txt`.
 
 ### Real-controller acceptance
 
@@ -29,6 +42,9 @@ Record pass/fail plus device firmware if available.
       bounce does not create phantom scored hits.
 - [ ] **Hot-plug recovery:** disconnect and reconnect the controller while PadLab
       is open; input should resume without a page/app restart.
+- [ ] **Daily loop on hardware:** Continue auto-starts Play; a scored Perform
+      grows the streak and awards XP; Daily groove marks "Cleared today" only
+      after the Perform step.
 
 ### Packaged macOS acceptance
 
@@ -38,11 +54,14 @@ Use the DMG produced by the release workflow, not a dev-server build.
 - [ ] App can be copied to `/Applications` and launched by double-clicking.
 - [ ] Document the expected Gatekeeper flow for the current ad-hoc-signed build;
       no unexplained blank window or silent failure is acceptable.
-- [ ] Main window renders the lesson browser and opens a lesson normally.
+      Known step: `xattr -dr com.apple.quarantine /Applications/PadLab.app`.
+- [ ] Main window renders the studio (Continue / Daily groove / warmup pads)
+      and opens a lesson normally.
 - [ ] Web MIDI permission succeeds in the Electron shell and a connected physical
       controller appears in Device Setup.
 - [ ] A lesson can be played from count-in through results with real MIDI input.
-- [ ] Quit and relaunch preserves progress and settings.
+- [ ] Quit and relaunch preserves progress, settings, streak, and XP
+      (`padlab-profile-v1` in localStorage).
 
 ### RC decision
 
@@ -52,59 +71,57 @@ Use the DMG produced by the release workflow, not a dev-server build.
 
 ## Repo hygiene
 
-- [ ] **Delete stale branches.** Current comparison against `main` shows nine
-      non-main branches. Seven are strictly behind with zero commits ahead; two
-      are divergent but their intended work has already been superseded on main.
-      None should be merged as-is.
+- [x] **Stale branches from the 2026-08-21 TODO.** The nine listed branches are
+      gone from the remote.
+- [ ] **Delete leftover `claude/app-deep-inspection-review-pr5wgb`.** Merged as
+      PR #12; 0 unique commits ahead of current `main` that are not already in
+      history. Safe to delete.
 
-      | Branch | Compared with `main` | Action |
-      |---|---|---|
-      | `claude/fix-x64-signing` | 0 ahead / 6 behind | Delete; PR #9 is merged. |
-      | `claude/macos-release` | 0 ahead / 9 behind | Delete; PR #7 is merged. |
-      | `claude/project-state-detection-81tfdq` | 0 ahead / 27 behind | Delete; merged work only. |
-      | `claude/test-coverage-analysis-d9rvfq` | 0 ahead / 11 behind | Delete; PRs #3/#5 are merged. |
-      | `claude/todo-file` | 0 ahead / 15 behind | Delete; PR #6 is merged. |
-      | `claude/todo-implementation-3mwax4` | 0 ahead / 29 behind | Delete; merged work only. |
-      | `fix/difficulty-calibration` | 0 ahead / 32 behind | Delete; merged work only. |
-      | `fix/scoring-stray-penalty` | 1 ahead / 32 behind, diverged | Delete; its scoring intent was cherry-picked/adapted in PRs #4/#5. Do not merge this stale branch because it carries obsolete surrounding content. |
-      | `claude/todo-implementation-covl1b` | 1 ahead / 4 behind, diverged | Delete; this was an earlier settings-validation implementation superseded by PR #11. |
+## Design decisions
 
-## Open design questions
-
-Each is pinned by a test that documents the behaviour rather than endorsing it,
-so changing either should be an explicit product decision. Grep
-`rather than endorsing it` in `tests/`.
-
-- [ ] **Decide how a step with no player notes should score.**
-      `src/engine/scoring.ts` currently short-circuits when `total === 0`, awarding
-      100% and 3 stars. It is unreachable with today's validator because the final
-      scored step requires `playerPads: "all"`, but an authoring change could make
-      free stars reachable. Pinned by `tests/engine/scoring.test.ts` → *"awards a
-      full score for a step with no player notes"*.
-- [ ] **Make or explicitly accept the ostinato difficulty discontinuity.**
-      Crossing the 0.5-beat gap ceiling in `scripts/lib/difficulty.mjs` marks a pad
-      as ostinato and applies the 0.4 weight to all its instants. Adding notes can
-      therefore lower calculated difficulty (1.9 vs 3.0 effective hits/sec in the
-      pinned example). Pinned by `tests/scripts/difficulty.test.mjs` → *"a denser
-      hat scores easier than a sparser one"*.
+- [x] **Empty player part scores 0% / 0\u2605.** `ScoreKeeper.summary()` short-circuits
+      `total === 0` to accuracy 0 (was 100 / 3 stars). Still unreachable on a
+      valid chart because the final step requires `playerPads: "all"`, but an
+      authoring slip can no longer mint a clean pass. Pinned by
+      `tests/engine/scoring.test.ts` → *"awards no score for a step with no
+      player notes"*.
+- [x] **Ostinato difficulty cliff is accepted.** A locked-in hat/shaker hand is
+      easier than the same rate on four pads. Crossing the 0.5-beat gap ceiling
+      marks the pad ostinato (0.4 weight), so a denser hat can rate easier
+      (1.9 vs 3.0 effective hits/sec). That is the product. Pinned by
+      `tests/scripts/difficulty.test.mjs` → *"a denser hat scores easier than a
+      sparser one"*.
 
 ## Targeted coverage
 
-The engine, validators, MIDI layer and persistence are already heavily tested.
-Do not chase presentation-line coverage for its own sake; add tests where they
-protect behaviour or arithmetic.
+The engine, validators, MIDI layer, persistence, and the daily-loop arithmetic
+are already heavily tested. Do not chase presentation-line coverage for its own
+sake; add tests where they protect behaviour or arithmetic.
 
 - [x] **LessonBrowser progress aggregation:** cover `totalStars`, per-course
       `done`/`total`, completed-course state, and the guide-vs-lesson branch.
       Done by extraction: the arithmetic now lives in
       `src/lessons/courseProgress.ts` (pure, mixed courses count both kinds)
       and is covered by `tests/lessons/courseProgress.test.ts`.
-- [ ] **`usePadKeyboard`:** add Testing Library coverage for keydown mapping,
-      ignored keys and cleanup/unmount behaviour.
-- [ ] **Top-level smoke test:** add one React integration test covering app start,
-      lesson selection and the Device Setup open/close path.
+- [x] **`usePadKeyboard`:** keydown mapping, ignored keys / modifiers /
+      auto-repeat / form fields, `maxPad` clamp, and unmount cleanup.
+      `tests/input/usePadKeyboard.test.ts`.
+- [x] **Top-level smoke test:** app start, Device Setup open/close, lesson
+      open/back. `tests/app.smoke.test.tsx`.
 - [ ] **WebAudio only if changing synth behaviour:** build an audio-graph harness
       before asserting implementation details in `src/audio/*`.
+
+## Known follow-ups (not blocking RC)
+
+- Home `LessonBrowser` mounts `usePadKeyboard(8)` while `DeviceSetup` (overlay)
+  mounts `usePadKeyboard(16)`. Opening Device Setup from the studio installs two
+  window listeners, so one keydown emits twice. Harmless for scoring (no run is
+  active) but the warmup / setup test kit can double-trigger. Hoist the hook to
+  `App` or make the listener singleton before this becomes a scored-path bug.
+- `dailyLesson` can pick the same chart as Continue. Fine for a small catalog;
+  revisit if the daily card should always be a different groove.
+- Results / Continue auto-start Play. Confirm on a real controller that the
+  count-in is long enough after the click.
 
 ---
 

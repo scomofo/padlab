@@ -156,8 +156,9 @@ export class ScoreKeeper {
       counts[ev.judgement ?? 'miss']++
     }
     const total = this.events.length
+    // No player notes → no score. 0% / 0★, not a free clean pass.
     const raw = total === 0
-      ? 100
+      ? 0
       : ((counts.perfect + counts.great * 0.85 + counts.good * 0.5) / total) * 100
     // Proportional and capped: extra hits cost you, but never everything.
     const strayPenalty = total === 0

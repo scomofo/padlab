@@ -155,13 +155,11 @@ describe('analyzeLesson', () => {
 
 describe('analyzeLesson — the ostinato discount is not monotonic in density', () => {
   /**
-   * Documents a real edge in the model rather than endorsing it. Crossing the
-   * 0.5-beat gap ceiling flips a pad into "ostinato" and applies the 0.4 weight
-   * to every instant it owns, so *adding* notes can make a chart score easier.
-   * Since `effectiveHitsPerSec` is what the validator compares against the
-   * per-level ceiling, a chart can be made to fit a lower tier by making it
-   * denser. If the model is ever retuned, this test should be the one that
-   * fails first.
+   * Accepted: a locked-in hat/shaker hand is easier than the same rate on
+   * four pads, and the 0.5-beat cliff is how we detect that. Crossing it
+   * flips the pad to ostinato (0.4 weight), so adding notes can lower
+   * `effectiveHitsPerSec` (1.9 vs 3.0 in this fixture). That is the product,
+   * not a bug. If the four constants are retuned, this test should fail first.
    */
   it('a denser hat scores easier than a sparser one', () => {
     const dense = analyzeLesson(lesson([...KICK_ON_EACH_BAR, ...stream(0.5, 16)]))
