@@ -3,8 +3,9 @@ import { KEY_TO_PAD, padBus } from './inputBus'
 import { unlockAudio } from '../audio/audio'
 
 /** Mounts the computer-keyboard pad mapping for pads 1..maxPad. */
-export function usePadKeyboard(maxPad: number): void {
+export function usePadKeyboard(maxPad: number, enabled = true): void {
   useEffect(() => {
+    if (!enabled) return
     const down = (ev: KeyboardEvent) => {
       if (ev.repeat || ev.metaKey || ev.ctrlKey || ev.altKey) return
       const target = ev.target as HTMLElement | null
@@ -17,5 +18,5 @@ export function usePadKeyboard(maxPad: number): void {
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
-  }, [maxPad])
+  }, [maxPad, enabled])
 }

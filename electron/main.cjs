@@ -1,10 +1,24 @@
 // PadLab desktop shell. Serves the built Vite app over a privileged internal
 // scheme and grants the Web MIDI permission the trainer needs to see hardware.
-const { app, BrowserWindow, net, protocol, session, shell } = require('electron')
+const { app, BrowserWindow, Menu, net, protocol, session, shell } = require('electron')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
 const WEB_ROOT = path.join(__dirname, 'web')
+
+const MIME_BY_EXT = new Map([
+  ['.html', 'text/html; charset=utf-8'],
+  ['.js', 'text/javascript; charset=utf-8'],
+  ['.mjs', 'text/javascript; charset=utf-8'],
+  ['.css', 'text/css; charset=utf-8'],
+  ['.json', 'application/json; charset=utf-8'],
+  ['.svg', 'image/svg+xml'],
+  ['.png', 'image/png'],
+  ['.ico', 'image/x-icon'],
+  ['.woff2', 'font/woff2'],
+  ['.woff', 'font/woff'],
+  ['.ttf', 'font/ttf'],
+])
 
 // The bundle is ES modules, which Chromium refuses to load over file:// because
 // that origin is opaque to CORS. A registered standard scheme gives the app a
@@ -21,6 +35,17 @@ protocol.registerSchemesAsPrivileged([
 app.commandLine.appendSwitch('disable-background-timer-throttling')
 app.commandLine.appendSwitch('disable-renderer-backgrounding')
 
+// Single instance: second DMG launch focuses the first window instead of
+// opening a competing localStorage writer.
+if (!app.requestSingleInstanceLock()) app.quit()
+app.on('second-instance', () => {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win) {
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  }
+})
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1360,
@@ -29,7 +54,13 @@ function createWindow() {
     minHeight: 640,
     title: 'PadLab',
     backgroundColor: '#0b0e1a',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webviewTag: false,
+      devTools: !app.isPackaged,
+    },
   })
 
   win.loadURL('padlab://app/index.html')
@@ -41,9 +72,11 @@ function createWindow() {
   })
 
   // Same reason: the window must never navigate off the bundled app.
-  win.webContents.on('will-navigate', (event, url) => {
+  const pinToApp = (event, url) => {
     if (!url.startsWith('padlab://')) event.preventDefault()
-  })
+  }
+  win.webContents.on('will-navigate', pinToApp)
+  win.webContents.on('will-redirect', pinToApp)
 
   return win
 }
@@ -68,16 +101,34 @@ const CSP = [
 ].join('; ')
 
 app.whenReady().then(() => {
+  if (app.isPackaged) Menu.setApplicationMenu(null)
+  // Defence in depth: no <webview> today — deny if one ever appears.
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('will-attach-webview', (e) => e.preventDefault())
+  })
   protocol.handle('padlab', async (request) => {
-    const { pathname } = new URL(request.url)
-    const target = path.normalize(path.join(WEB_ROOT, decodeURIComponent(pathname)))
+    let pathname = '/index.html'
+    try {
+      pathname = new URL(request.url).pathname
+    } catch {
+      return new Response('Bad Request', { status: 400, headers: { 'Content-Security-Policy': CSP } })
+    }
+    let decoded = ''
+    try {
+      decoded = decodeURIComponent(pathname)
+    } catch {
+      return new Response('Bad Request', { status: 400, headers: { 'Content-Security-Policy': CSP } })
+    }
+    const target = path.normalize(path.join(WEB_ROOT, decoded))
     // Never serve anything outside the bundled web root.
     if (target !== WEB_ROOT && !target.startsWith(WEB_ROOT + path.sep)) {
-      return new Response('Forbidden', { status: 403 })
+      return new Response('Forbidden', { status: 403, headers: { 'Content-Security-Policy': CSP } })
     }
     const res = await net.fetch(pathToFileURL(target).toString())
     const headers = new Headers(res.headers)
     headers.set('Content-Security-Policy', CSP)
+    const mime = MIME_BY_EXT.get(path.extname(target).toLowerCase())
+    if (mime) headers.set('Content-Type', mime)
     return new Response(res.body, { status: res.status, headers })
   })
 

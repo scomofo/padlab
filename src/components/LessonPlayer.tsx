@@ -23,6 +23,8 @@ interface LessonPlayerProps {
   profile: Profile
   isDaily?: boolean
   autoStart?: boolean
+  /** Passed from App to avoid localStorage reads every render; falls back to load. */
+  progress?: Record<string, import('../engine/types').LessonProgress>
   onExit: () => void
   onProgressChange: () => void
   onProfile: (p: Profile) => void
@@ -41,6 +43,7 @@ export function LessonPlayer({
   profile,
   isDaily,
   autoStart = false,
+  progress,
   onExit,
   onProgressChange,
   onProfile,
@@ -61,17 +64,21 @@ export function LessonPlayer({
   const step = lesson.steps[stepIndex]
   const isLastStep = stepIndex === lesson.steps.length - 1
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
-  const nextLesson = nextInCourse(LESSONS, lesson, loadProgress())
+  const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
 
   const stopRun = useCallback(() => {
     runtimeRef.current?.stop()
     runtimeRef.current = null
     setPlaying(false)
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     bump((n) => n + 1)
   }, [])
 
   const startRun = useCallback(() => {
     unlockAudio()
+    // Space-to-start focus trap: Start button keeps focus, so Space would
+    // hit the button instead of toggling. Blur so the window handler owns Space.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     runtimeRef.current?.stop()
     setResults(null)
     startedAt.current = performance.now()
@@ -88,7 +95,7 @@ export function LessonPlayer({
         setPlaying(false)
         if (summary) {
           let newBest = false
-          const prev = loadProgress()[lesson.id]
+          const prev = (progress ?? loadProgress())[lesson.id]
           const firstClear = isLastStep && (prev?.stars ?? 0) === 0
           if (isLastStep) {
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
@@ -115,7 +122,7 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, isDaily, onProfile])
+  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, isDaily, onProfile, progress])
 
   const skipInitialStop = useRef(true)
   useEffect(() => {
@@ -148,11 +155,20 @@ export function LessonPlayer({
   useEffect(() => {
     if (!playing) return
     let raf = 0
+    let lastHud = { combo: -1, acc: -1, judged: -1 }
+    let lastPush = 0
     const tick = () => {
       const rt = runtimeRef.current
       if (rt?.score) {
         const s = rt.score.summary()
-        setHud({ combo: rt.score.combo, acc: s.accuracy, judged: s.perfect + s.great + s.good + s.miss })
+        const next = { combo: rt.score.combo, acc: s.accuracy, judged: s.perfect + s.great + s.good + s.miss }
+        const now = performance.now()
+        // HUD at most ~10Hz and only on change — summary() is O(n).
+        if ((next.combo !== lastHud.combo || next.acc !== lastHud.acc || next.judged !== lastHud.judged) && now - lastPush > 100) {
+          lastHud = next
+          lastPush = now
+          setHud(next)
+        }
       }
       raf = requestAnimationFrame(tick)
     }

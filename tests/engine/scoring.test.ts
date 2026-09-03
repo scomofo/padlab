@@ -313,27 +313,16 @@ describe('ScoreKeeper.summary', () => {
   })
 })
 
-describe('ScoreKeeper.summary — edge cases worth a decision', () => {
-  /**
-   * Pins current behaviour rather than endorsing it: a step the player owns no
-   * notes in short-circuits to 100% and 3 stars. Unreachable today because the
-   * validator forces `playerPads: "all"` on the final (scored) step, but it is
-   * one authoring change away from awarding free stars.
-   */
-  it('awards a full score for a step with no player notes', () => {
-    const s = new ScoreKeeper([], SPB).summary()
-    expect(s.total).toBe(0)
-    expect(s.accuracy).toBe(100)
-    expect(s.stars).toBe(3)
-  })
-
+describe('ScoreKeeper.summary — empty step guard', () => {
+  // Decided: empty player part scores 0% / 0 stars, not a free clean pass.
+  // Canonical pin lives in tests/engine/emptyPlayerPart.test.ts.
   it('does not divide by zero when penalising strays on an empty step', () => {
     const k = new ScoreKeeper([], SPB)
     k.registerHit(1, 0)
     const s = k.summary()
     expect(Number.isFinite(s.accuracy)).toBe(true)
-    expect(s.accuracy).toBeGreaterThanOrEqual(0)
-    expect(s.accuracy).toBeLessThanOrEqual(100)
+    expect(s.accuracy).toBe(0)
+    expect(s.stars).toBe(0)
   })
 
 })

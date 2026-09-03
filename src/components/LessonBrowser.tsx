@@ -23,12 +23,15 @@ interface LessonBrowserProps {
   onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean }) => void
   onOpenGuide: (guide: Guide) => void
   onOpenSetup: () => void
+  /** False while DeviceSetup overlay is open — its own 16-pad listener owns keys. */
+  keyboardEnabled?: boolean
 }
 
 type Filter = 'all' | 8 | 16
 
 export function LessonBrowser({
   lessons, guides, progress, guideProgress, profile, onOpen, onOpenGuide, onOpenSetup,
+  keyboardEnabled = true,
 }: LessonBrowserProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const [, bump] = useState(0)
@@ -36,7 +39,7 @@ export function LessonBrowser({
 
   useEffect(() => midi.onStatusChange(() => bump((n) => n + 1)), [])
   useEffect(() => padBus.subscribe(() => setJammed(true)), [])
-  usePadKeyboard(8)
+  usePadKeyboard(8, keyboardEnabled)
 
   const filtered = useMemo(
     () => lessons.filter((l) => filter === 'all' || l.padCount === filter),

@@ -83,7 +83,7 @@ Use the DMG produced by the release workflow, not a dev-server build.
       `total === 0` to accuracy 0 (was 100 / 3 stars). Still unreachable on a
       valid chart because the final step requires `playerPads: "all"`, but an
       authoring slip can no longer mint a clean pass. Pinned by
-      `tests/engine/scoring.test.ts` → *"awards no score for a step with no
+      `tests/engine/emptyPlayerPart.test.ts` → *"awards no score for a step with no
       player notes"*.
 - [x] **Ostinato difficulty cliff is accepted.** A locked-in hat/shaker hand is
       easier than the same rate on four pads. Crossing the 0.5-beat gap ceiling
