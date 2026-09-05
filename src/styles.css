@@ -710,6 +710,64 @@ kbd {
 .chip.stray { color: #a34554; }
 .results-actions { display: flex; gap: 10px; margin-top: 10px; }
 
+/* ---------- Personal practice loop ---------- */
+
+.replay-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.replay-copy { flex: 1; min-width: 0; }
+.replay-kicker { font-size: 12px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.08em; }
+.replay-card h2 { font-size: 20px; margin: 4px 0; }
+.replay-card p { font-size: 14px; line-height: 1.5; color: #b8c1da; }
+.replay-card > .btn { flex-shrink: 0; }
+.performance-trail { list-style: none; display: flex; justify-content: center; gap: 10px; min-width: 0; }
+.performance-trail li { flex: 1; max-width: 64px; min-width: 34px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
+.trail-track { height: 36px; display: flex; align-items: flex-end; margin: 4px 0; border-bottom: 1px solid var(--line); }
+.trail-track > div { width: 100%; background: #626dc1; border-radius: 3px 3px 0 0; }
+.latest .trail-track > div { background: var(--accent); }
+.trail-label { font-size: 12px; color: #b8c1da; white-space: nowrap; }
+.performance-comparison { width: 100%; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+.performance-comparison strong { font-size: 16px; }
+.performance-comparison > span { font-size: 14px; color: #b8c1da; }
+.performance-comparison .performance-trail { margin-top: 4px; }
+.focus-suggestion { width: 100%; border: 1px solid rgba(129, 140, 248, 0.45); border-radius: 12px; padding: 14px; background: rgba(129, 140, 248, 0.08); }
+.focus-suggestion strong { font-size: 16px; }
+.focus-suggestion p { margin-top: 6px; font-size: 14px; line-height: 1.5; color: #c3cbe0; }
+.focus-suggestion .btn { width: 100%; margin-top: 12px; }
+.focus-note { font-size: 14px; line-height: 1.5; color: #c3cbe0; }
+.focus-banner { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: rgba(129, 140, 248, 0.12); }
+.focus-banner strong { display: block; font-size: 16px; color: #b3bcff; }
+.focus-banner span { display: block; margin-top: 4px; font-size: 14px; color: #c3cbe0; }
+.focus-banner .btn { flex-shrink: 0; }
+.results-actions { flex-wrap: wrap; justify-content: center; width: 100%; }
+.results-card { width: min(480px, 100%); min-width: 0; max-width: 480px; }
+.results-card .btn, .replay-card .btn, .focus-banner .btn { min-height: 44px; font-size: 14px; }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (max-width: 720px) {
+  .replay-card { flex-wrap: wrap; gap: 16px; }
+  .replay-copy { flex-basis: 100%; }
+  .replay-card .performance-trail { flex: 1; justify-content: flex-start; }
+  .focus-banner { flex-wrap: wrap; gap: 8px; }
+}
+@media (max-width: 480px) {
+  .overlay { padding: 12px; }
+  .results-card { padding: 20px 16px; }
+  .replay-card > .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stars.big .star.pop, .logo span { animation: none; }
+  .rank-bar span, .goal-bar span { transition: none; }
+}
+
 /* ---------- Device setup ---------- */
 
 .setup-card {

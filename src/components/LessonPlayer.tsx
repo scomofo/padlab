@@ -18,6 +18,8 @@ import { nextInCourse, performScored, resumeStep, stepDone } from '../lib/curric
 import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
 import { LADDER_RUNGS, bestRung, ladderUnlocked, nextRung, rungCleared, tempoChoices } from '../lib/ladder'
 import { LESSONS } from '../lessons'
+import { createFocusLesson, findFocusPhrase, focusTempo, FOCUS_REPEATS, phraseLabel, type FocusPhrase } from '../lib/focus'
+import { comparableRuns, savePerformance, type PerformanceRun } from '../store/history'
 
 interface LessonPlayerProps {
   lesson: Lesson
@@ -25,8 +27,12 @@ interface LessonPlayerProps {
   profile: Profile
   isDaily?: boolean
   autoStart?: boolean
+  startAtPerform?: boolean
+  initialTempoPct?: number
   /** Passed from App to avoid localStorage reads every render; falls back to load. */
   progress?: Record<string, import('../engine/types').LessonProgress>
+  history: PerformanceRun[]
+  onHistory: (history: PerformanceRun[]) => void
   onExit: () => void
   onProgressChange: () => void
   onProfile: (p: Profile) => void
@@ -45,7 +51,11 @@ export function LessonPlayer({
   profile,
   isDaily,
   autoStart = false,
+  startAtPerform = false,
+  initialTempoPct = 100,
   progress,
+  history,
+  onHistory,
   onExit,
   onProgressChange,
   onProfile,
@@ -56,26 +66,34 @@ export function LessonPlayer({
     () => (isDaily ? dailyModifier(progress ?? loadProgress()) : null),
   )
   // Open on the first step not yet done, so a card's checkmarks pick up where they left off.
-  const [stepIndex, setStepIndex] = useState(() => resumeStep(lesson, (progress ?? loadProgress())[lesson.id]))
+  const [stepIndex, setStepIndex] = useState(() => startAtPerform ? lesson.steps.length - 1 : resumeStep(lesson, (progress ?? loadProgress())[lesson.id]))
   const [mode, setMode] = useState<PlayMode>(autoStart ? 'play' : 'listen')
-  const [tempoPct, setTempoPct] = useState(modifier?.tempoPct ?? 100)
+  const [tempoPct, setTempoPct] = useState(modifier?.tempoPct ?? initialTempoPct)
+  const [focus, setFocus] = useState<{ phrase: FocusPhrase; lesson: Lesson; returnTempo: number } | null>(null)
+  const [pendingStart, setPendingStart] = useState(false)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
   const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
-  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean; stepCleared: boolean; newRung: number | null } | null>(null)
+  const [results, setResults] = useState<{
+    summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean
+    stepCleared: boolean; newRung: number | null; phrase: FocusPhrase | null
+    performances: PerformanceRun[]
+  } | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
   const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
   const [, bump] = useState(0)
 
-  const step = lesson.steps[stepIndex]
+  const activeLesson = focus?.lesson ?? lesson
+  const activeStepIndex = focus ? 0 : stepIndex
+  const step = activeLesson.steps[activeStepIndex]
   const isLastStep = stepIndex === lesson.steps.length - 1
   // A slowed-down Perform is practice: it shows results but saves nothing.
-  const scored = performScored(isLastStep, tempoPct)
+  const scored = !focus && performScored(isLastStep, tempoPct)
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
   const lessonProgress = (progress ?? loadProgress())[lesson.id]
-  const ladderOn = isLastStep && ladderUnlocked(lessonProgress)
+  const ladderOn = !focus && isLastStep && ladderUnlocked(lessonProgress)
   const rungNext = nextRung(lessonProgress)
 
   const stopRun = useCallback(() => {
@@ -93,10 +111,11 @@ export function LessonPlayer({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     runtimeRef.current?.stop()
     setResults(null)
+    setHud({ combo: 0, acc: 0, judged: 0 })
     startedAt.current = performance.now()
     const rt = new PlayerRuntime({
-      lesson,
-      stepIndex,
+      lesson: activeLesson,
+      stepIndex: activeStepIndex,
       mode,
       tempoPct,
       metronome,
@@ -105,7 +124,7 @@ export function LessonPlayer({
       onFinish: (summary) => {
         runtimeRef.current = null
         setPlaying(false)
-        if (!summary && mode === 'practice' && !isLastStep) {
+        if (!summary && mode === 'practice' && !isLastStep && !focus) {
           // A finished Practice run means every note was hit: the step is done.
           saveStepDone(lesson.id, stepIndex)
           onProgressChange()
@@ -115,12 +134,21 @@ export function LessonPlayer({
           const prev = (progress ?? loadProgress())[lesson.id]
           const firstClear = scored && (prev?.stars ?? 0) === 0
           // A practice step is done at one star or better; Perform is tracked by stars.
-          const stepCleared = !isLastStep && summary.stars >= 1
+          const stepCleared = !focus && !isLastStep && summary.stars >= 1
           const newRung = rungCleared(prev, { tempoPct, stars: summary.stars, isLastStep: scored })
+          let performances: PerformanceRun[] = []
           if (scored) {
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
             saveLessonResult(lesson.id, summary.accuracy, summary.stars, tempoPct)
             onProgressChange()
+            const run: PerformanceRun = {
+              lessonId: lesson.id, completedAt: new Date().toISOString(), tempoPct,
+              variant: modifier?.id ?? 'standard', accuracy: summary.accuracy,
+              maxCombo: summary.maxCombo, misses: summary.miss, total: summary.total,
+            }
+            const nextHistory = savePerformance(run, history)
+            performances = comparableRuns(nextHistory, run)
+            onHistory(nextHistory)
           } else if (stepCleared) {
             saveStepDone(lesson.id, stepIndex)
             onProgressChange()
@@ -139,7 +167,8 @@ export function LessonPlayer({
             prevXp: profile.xp,
           })
           onProfile(award.profile)
-          setResults({ summary, newBest, award, dailyMet, stepCleared, newRung })
+          const phrase = focus ? null : findFocusPhrase(lesson, rt.score?.events ?? [])
+          setResults({ summary, newBest, award, dailyMet, stepCleared, newRung, phrase, performances })
         }
         bump((n) => n + 1)
       },
@@ -148,7 +177,26 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored])
+  }, [lesson, stepIndex, activeLesson, activeStepIndex, focus, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored, history, onHistory])
+
+  const startFocus = (phrase: FocusPhrase) => {
+    stopRun()
+    setResults(null)
+    setFocus({ phrase, lesson: createFocusLesson(lesson, stepIndex, phrase), returnTempo: tempoPct })
+    setTempoPct(focusTempo(tempoPct))
+    setMode('play')
+    setPendingStart(true)
+  }
+
+  const returnFromFocus = () => {
+    if (!focus) return
+    stopRun()
+    setResults(null)
+    setTempoPct(focus.returnTempo)
+    setFocus(null)
+    setMode('play')
+    setPendingStart(true)
+  }
 
   const skipInitialStop = useRef(true)
   useEffect(() => {
@@ -157,7 +205,14 @@ export function LessonPlayer({
       return
     }
     stopRun()
-  }, [stepIndex, mode, tempoPct, stopRun])
+  }, [stepIndex, mode, tempoPct, focus, stopRun])
+  // Configuration must commit before constructing a new runtime. This also
+  // handles a drill launched while already at the minimum practice tempo.
+  useEffect(() => {
+    if (!pendingStart) return
+    setPendingStart(false)
+    startRun()
+  }, [pendingStart, startRun])
   useEffect(() => {
     if (!autoStart) return
     startRun()
@@ -204,6 +259,7 @@ export function LessonPlayer({
 
   // Space toggles the run.
   useEffect(() => {
+    if (results) return
     const down = (ev: KeyboardEvent) => {
       if (ev.repeat || ev.key !== ' ') return
       const target = ev.target as HTMLElement | null
@@ -214,7 +270,7 @@ export function LessonPlayer({
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
-  }, [startRun, stopRun])
+  }, [startRun, stopRun, results])
 
   return (
     <div className="player">
@@ -224,9 +280,9 @@ export function LessonPlayer({
           <h1>{lesson.title}</h1>
           <span className="muted">
             {lesson.genre} · {lesson.bpm} BPM · Level {lesson.level} · {lesson.padCount} pads
-            {modifier ? ` · Daily${modifier.id === 'standard' ? '' : `: ${modifier.name}`}` : ''}
+            {!focus && modifier ? ` · Daily${modifier.id === 'standard' ? '' : `: ${modifier.name}`}` : ''}
           </span>
-          {modifier && modifier.id !== 'standard' && (
+          {!focus && modifier && modifier.id !== 'standard' && (
             <span className="daily-rule">{modifier.rule}</span>
           )}
         </div>
@@ -248,7 +304,7 @@ export function LessonPlayer({
             onChange={(e) => setTempoPct(Number(e.target.value))}
             title="Tempo"
           >
-            {tempoChoices(ladderOn ? lessonProgress : undefined, modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
+            {tempoChoices(ladderOn ? lessonProgress : undefined, !focus && modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -269,7 +325,14 @@ export function LessonPlayer({
         </div>
       </header>
 
-      <div className="step-strip">
+      {focus ? (
+        <div className="focus-banner" role="status">
+          <div><strong>Focus practice · {phraseLabel(focus.phrase)}</strong>
+            <span>{FOCUS_REPEATS} repeats · {Math.round(lesson.bpm * (step.tempoScale ?? 1) * tempoPct / 100)} BPM · Stars and daily clears come from the full groove.</span>
+          </div>
+          <button className="btn" onClick={returnFromFocus}>Back to {lesson.steps[stepIndex].name} ›</button>
+        </div>
+      ) : <div className="step-strip">
         {lesson.steps.map((s, i) => {
           const done = stepDone(lesson, (progress ?? loadProgress())[lesson.id], i)
           return (
@@ -284,7 +347,7 @@ export function LessonPlayer({
           )
         })}
         <span className="step-desc muted">{step.description ?? ''}</span>
-      </div>
+      </div>}
 
       {ladderOn && (
         <div className="ladder" aria-label="Tempo ladder">
@@ -309,7 +372,7 @@ export function LessonPlayer({
       )}
 
       <div className="player-stage">
-        <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={modifier?.fadeBeats ?? 0} />
+        <Highway lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={focus ? 0 : modifier?.fadeBeats ?? 0} />
         {playing && mode === 'play' && hud.judged > 0 && (
           <div className="play-hud">
             <span>{hud.acc}%</span>
@@ -334,7 +397,13 @@ export function LessonPlayer({
           lessonTitle={lesson.title}
           stepName={step.name}
           scored={scored}
-          slowed={isLastStep && !scored}
+          slowed={!focus && isLastStep && !scored}
+          focusPractice={Boolean(focus)}
+          focusPhrase={results.phrase}
+          onFocus={startFocus}
+          onReturnFromFocus={returnFromFocus}
+          returnStepName={lesson.steps[stepIndex].name}
+          performances={results.performances}
           stepCleared={results.stepCleared}
           stepNumber={stepIndex + 1}
           stepCount={lesson.steps.length}
@@ -342,11 +411,11 @@ export function LessonPlayer({
           newRung={results.newRung}
           nextRung={nextRung((progress ?? loadProgress())[lesson.id])}
           award={results.award}
-          daily={modifier ? { modifier, cleared: results.dailyMet } : null}
-          nextLesson={isLastStep ? nextLesson : null}
+          daily={!focus && modifier ? { modifier, cleared: results.dailyMet } : null}
+          nextLesson={!focus && isLastStep ? nextLesson : null}
           onRetry={() => { setResults(null); startRun() }}
           onNext={
-            !isLastStep
+            focus ? undefined : !isLastStep
               ? () => { setResults(null); setStepIndex(stepIndex + 1) }
               : nextLesson
                 ? () => { setResults(null); onOpenLesson(nextLesson) }
