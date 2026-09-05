@@ -379,3 +379,20 @@ describe('daily bonus', () => {
     expect(a.profile.dailyChallengeDone).toBe(false)
   })
 })
+
+describe('tempo ladder badges', () => {
+  it('unlocks Up the ladder on the first rung and Full speed at 120', () => {
+    const first = applyRun({
+      profile: empty(), lessonId: 'a', summary: summary(), scored: true, firstClear: false,
+      dailyBonusXp: 0, tempoPct: 105, newRung: 105, durationSec: 8, prevXp: 0,
+    })
+    expect(first.newBadges).toContain('ladder-first')
+    expect(first.newBadges).not.toContain('ladder-120')
+    const top = applyRun({
+      profile: first.profile, lessonId: 'a', summary: summary(), scored: true, firstClear: false,
+      dailyBonusXp: 0, tempoPct: 120, newRung: 120, durationSec: 8, prevXp: first.profile.xp,
+    })
+    expect(top.newBadges).toEqual(['ladder-120'])
+    expect(top.xpGained).toBeGreaterThan(first.xpGained)
+  })
+})

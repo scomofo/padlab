@@ -14,6 +14,16 @@ interface ResultsProps {
   stepName: string
   /** Whether this run counted toward saved progress (Perform step). */
   scored: boolean
+  /** Practice step finished at one star or better, so its checkmark is saved. */
+  stepCleared?: boolean
+  stepNumber?: number
+  stepCount?: number
+  /** Tempo the run was played at; shown when it is not 100. */
+  tempoPct?: number
+  /** Tempo-ladder rung this run cleared, if any. */
+  newRung?: number | null
+  /** Next rung still open after this run, for the nudge line. */
+  nextRung?: number | null
   award: RunAward | null
   /** Set when this visit is the daily groove: which twist, and whether this run cleared it. */
   daily?: { modifier: DailyModifier; cleared: boolean } | null
@@ -56,7 +66,8 @@ const BUCKET_LABEL: Record<string, string> = {
 }
 
 export function Results({
-  summary, newBest, lessonTitle, stepName, scored, award, daily = null, nextLesson, onRetry, onNext, onExit,
+  summary, newBest, lessonTitle, stepName, scored, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
+  newRung = null, nextRung = null, award, daily = null, nextLesson, onRetry, onNext, onExit,
 }: ResultsProps) {
   const title =
     summary.stars >= 3 ? 'Clean'
@@ -78,7 +89,7 @@ export function Results({
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="results-title">
       <div className="results-card">
-        <span className="muted">{lessonTitle} — {stepName}</span>
+        <span className="muted">{lessonTitle} — {stepName}{tempoPct !== 100 ? ` · ${tempoPct}%` : ''}</span>
         <h2 id="results-title" className="results-title">{title}</h2>
         <div className="stars big">
           {[1, 2, 3].map((s) => (
@@ -87,6 +98,10 @@ export function Results({
         </div>
         <div className="accuracy">{summary.accuracy}%</div>
         {newBest && <div className="new-best">New best!</div>}
+        {newRung && <div className="new-best">⚡ {newRung}% mastered{nextRung ? ` — next rung ${nextRung}%` : ' — full speed, ladder topped out'}</div>}
+        {!newRung && scored && summary.stars >= 3 && nextRung && (
+          <div className="results-hook ladder-nudge">Mastered. Try the ladder: 3 stars at {nextRung}%</div>
+        )}
         {daily && scored && (
           <div className={daily.cleared ? 'daily-result cleared' : 'daily-result'}>
             {daily.cleared
@@ -148,7 +163,12 @@ export function Results({
             )}
           </div>
         )}
-        {!scored && <div className="muted">Practice steps aren’t scored toward progress — finish with Perform.</div>}
+        {!scored && stepCleared && (
+          <div className="step-cleared">✓ Step {stepNumber}{stepCount ? ` of ${stepCount}` : ''} done — Perform is where the stars are</div>
+        )}
+        {!scored && !stepCleared && (
+          <div className="muted">One star ticks this step off. Stars, streak and the daily come from Perform.</div>
+        )}
         <div className="judge-row">
           <span className="chip perfect">Perfect {summary.perfect}</span>
           <span className="chip great">Great {summary.great}</span>

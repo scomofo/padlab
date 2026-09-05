@@ -60,3 +60,28 @@ export function weekDots(week: Record<string, number>, today = new Date()): bool
   }
   return dots
 }
+
+/** Whether step `i` of a lesson is done: practice steps via stepsDone, the final step via stars. */
+export function stepDone(lesson: Lesson, p: LessonProgress | undefined, i: number): boolean {
+  if (i === lesson.steps.length - 1) return (p?.stars ?? 0) > 0
+  return p?.stepsDone?.includes(i) ?? false
+}
+
+/** Number of steps done, out of lesson.steps.length. */
+export function stepsDoneCount(lesson: Lesson, p: LessonProgress | undefined): number {
+  let n = 0
+  for (let i = 0; i < lesson.steps.length; i++) if (stepDone(lesson, p, i)) n++
+  return n
+}
+
+/**
+ * Where to open a lesson: the first step not yet done. A lesson whose every
+ * step is done (Perform cleared) opens straight on Perform, since that is the
+ * step that still pays stars.
+ */
+export function resumeStep(lesson: Lesson, p: LessonProgress | undefined): number {
+  for (let i = 0; i < lesson.steps.length; i++) {
+    if (!stepDone(lesson, p, i)) return i
+  }
+  return lesson.steps.length - 1
+}

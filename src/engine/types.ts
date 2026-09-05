@@ -57,4 +57,15 @@ export type Judgement = 'perfect' | 'great' | 'good' | 'miss'
 export interface LessonProgress {
   stars: number
   bestAccuracy: number
+  /**
+   * Indices of practice steps completed (a finished Practice run, or a Play run
+   * at one star or better). The final Perform step is tracked by `stars`, not
+   * here. Omitted when empty so older saves and fixtures compare unchanged.
+   */
+  stepsDone?: number[]
+  /**
+   * Tempo ladder: highest tempo percent (105-120) at which Perform scored
+   * 3 stars. Omitted until a rung above 100% is cleared.
+   */
+  bestTempoPct?: number
 }
