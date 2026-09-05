@@ -164,6 +164,8 @@ export interface RunAward {
   freezeUsed: boolean
   /** Freezes earned by this run (0 or 1). */
   freezesEarned: number
+  /** This run cleared today's daily groove (bonus paid unless already cleared today). */
+  dailyCleared: boolean
 }
 
 function unlock(p: Profile, id: string, fresh: string[]): void {
@@ -178,7 +180,11 @@ export function applyRun(opts: {
   summary: ScoreSummary
   scored: boolean
   firstClear: boolean
-  isDaily: boolean
+  /**
+   * XP for clearing today's daily groove with this run (0 = not a clearing
+   * run). Paid once per day: a second clear the same day earns nothing extra.
+   */
+  dailyBonusXp: number
   durationSec: number
   prevXp: number
 }): RunAward {
@@ -188,13 +194,15 @@ export function applyRun(opts: {
     badges: [...opts.profile.badges],
     week: { ...opts.profile.week },
   }
+  const alreadyCleared = p.dailyChallengeDone && p.dailyChallengeDate === today
+  const dailyClear = opts.scored && opts.dailyBonusXp > 0
   const xpGained = xpForRun({
     accuracy: opts.summary.accuracy,
     stars: opts.summary.stars,
     maxCombo: opts.summary.maxCombo,
     scored: opts.scored,
     firstClear: opts.firstClear,
-    dailyBonus: opts.isDaily && opts.scored,
+    dailyBonus: dailyClear && !alreadyCleared ? opts.dailyBonusXp : 0,
   })
   p.xp += xpGained
   p.notesHit += opts.summary.perfect + opts.summary.great + opts.summary.good
@@ -237,7 +245,7 @@ export function applyRun(opts: {
       }
     }
   }
-  if (opts.isDaily && opts.scored) {
+  if (dailyClear) {
     p.dailyChallengeDone = true
     p.dailyChallengeDate = today
   }
@@ -261,6 +269,7 @@ export function applyRun(opts: {
     dailyGoalHit,
     freezeUsed,
     freezesEarned,
+    dailyCleared: dailyClear,
   }
 }
 

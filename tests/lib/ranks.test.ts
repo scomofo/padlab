@@ -30,24 +30,24 @@ describe('rankForXp', () => {
 
 describe('xpForRun', () => {
   it('pays a small consolation for practice steps so they still feel like play', () => {
-    expect(xpForRun({ accuracy: 80, stars: 0, maxCombo: 4, scored: false, firstClear: false, dailyBonus: false })).toBe(10)
+    expect(xpForRun({ accuracy: 80, stars: 0, maxCombo: 4, scored: false, firstClear: false, dailyBonus: 0 })).toBe(10)
   })
 
   it('never pays less than 4 XP on an unscored run', () => {
-    expect(xpForRun({ accuracy: 0, stars: 0, maxCombo: 0, scored: false, firstClear: false, dailyBonus: false })).toBe(4)
+    expect(xpForRun({ accuracy: 0, stars: 0, maxCombo: 0, scored: false, firstClear: false, dailyBonus: 0 })).toBe(4)
   })
 
   it('adds first-clear and daily bonuses only on scored Perform', () => {
-    const base = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: false, dailyBonus: false })
-    const first = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: true, dailyBonus: false })
-    const daily = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: false, dailyBonus: true })
+    const base = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: false, dailyBonus: 0 })
+    const first = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: true, dailyBonus: 0 })
+    const daily = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: true, firstClear: false, dailyBonus: 60 })
     expect(first - base).toBe(40)
     expect(daily - base).toBe(60)
   })
 
   it('ignores first-clear and daily bonuses on practice steps', () => {
-    const a = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: true, dailyBonus: true })
-    const b = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: false, dailyBonus: false })
+    const a = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: true, dailyBonus: 60 })
+    const b = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: false, dailyBonus: 0 })
     expect(a).toBe(b)
   })
 })

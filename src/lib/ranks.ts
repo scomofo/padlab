@@ -32,12 +32,13 @@ export function xpForRun(opts: {
   maxCombo: number
   scored: boolean
   firstClear: boolean
-  dailyBonus: boolean
+  /** XP awarded for clearing the daily groove with this run; 0 when it did not. */
+  dailyBonus: number
 }): number {
   if (!opts.scored) return Math.max(4, Math.round(opts.accuracy * 0.12))
   let xp = opts.accuracy + opts.maxCombo * 2 + opts.stars * 22
   if (opts.stars === 3) xp += 35
   if (opts.firstClear) xp += 40
-  if (opts.dailyBonus) xp += 60
+  xp += Math.max(0, opts.dailyBonus)
   return Math.round(xp)
 }
