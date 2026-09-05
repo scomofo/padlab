@@ -16,6 +16,7 @@ import { loadProgress, saveLessonResult, saveStepDone } from '../store/progress'
 import { applyRun, type Profile, type RunAward } from '../store/profile'
 import { nextInCourse, resumeStep, stepDone } from '../lib/curriculum'
 import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
+import { LADDER_RUNGS, bestRung, ladderUnlocked, nextRung, rungCleared, tempoChoices } from '../lib/ladder'
 import { LESSONS } from '../lessons'
 
 interface LessonPlayerProps {
@@ -61,7 +62,7 @@ export function LessonPlayer({
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
   const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
-  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean; stepCleared: boolean } | null>(null)
+  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean; stepCleared: boolean; newRung: number | null } | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
   const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
@@ -71,6 +72,9 @@ export function LessonPlayer({
   const isLastStep = stepIndex === lesson.steps.length - 1
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
+  const lessonProgress = (progress ?? loadProgress())[lesson.id]
+  const ladderOn = isLastStep && ladderUnlocked(lessonProgress)
+  const rungNext = nextRung(lessonProgress)
 
   const stopRun = useCallback(() => {
     runtimeRef.current?.stop()
@@ -110,9 +114,10 @@ export function LessonPlayer({
           const firstClear = isLastStep && (prev?.stars ?? 0) === 0
           // A practice step is done at one star or better; Perform is tracked by stars.
           const stepCleared = !isLastStep && summary.stars >= 1
+          const newRung = rungCleared(prev, { tempoPct, stars: summary.stars, isLastStep })
           if (isLastStep) {
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
-            saveLessonResult(lesson.id, summary.accuracy, summary.stars)
+            saveLessonResult(lesson.id, summary.accuracy, summary.stars, tempoPct)
             onProgressChange()
           } else if (stepCleared) {
             saveStepDone(lesson.id, stepIndex)
@@ -126,11 +131,13 @@ export function LessonPlayer({
             scored: isLastStep,
             firstClear,
             dailyBonusXp: dailyMet && modifier ? modifier.bonusXp : 0,
+            tempoPct,
+            newRung,
             durationSec: (performance.now() - startedAt.current) / 1000,
             prevXp: profile.xp,
           })
           onProfile(award.profile)
-          setResults({ summary, newBest, award, dailyMet, stepCleared })
+          setResults({ summary, newBest, award, dailyMet, stepCleared, newRung })
         }
         bump((n) => n + 1)
       },
@@ -239,7 +246,7 @@ export function LessonPlayer({
             onChange={(e) => setTempoPct(Number(e.target.value))}
             title="Tempo"
           >
-            {(modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
+            {tempoChoices(ladderOn ? lessonProgress : undefined, modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -277,6 +284,28 @@ export function LessonPlayer({
         <span className="step-desc muted">{step.description ?? ''}</span>
       </div>
 
+      {ladderOn && (
+        <div className="ladder" aria-label="Tempo ladder">
+          <span className="ladder-title">⚡ Tempo ladder</span>
+          {LADDER_RUNGS.map((r) => {
+            const done = r <= bestRung(lessonProgress)
+            return (
+              <button
+                key={r}
+                className={`rung${done ? ' done' : ''}${tempoPct === r ? ' on' : ''}${r === rungNext ? ' next' : ''}`}
+                onClick={() => setTempoPct(r)}
+                title={done ? `${r}% mastered` : `Play Perform at ${r}% for 3 stars`}
+              >
+                {done ? '✓ ' : ''}{r}%
+              </button>
+            )
+          })}
+          <span className="muted ladder-hint">
+            {rungNext ? `Next rung: 3 stars at ${rungNext}%` : 'Topped out — full speed mastered'}
+          </span>
+        </div>
+      )}
+
       <div className="player-stage">
         <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={modifier?.fadeBeats ?? 0} />
         {playing && mode === 'play' && hud.judged > 0 && (
@@ -306,6 +335,9 @@ export function LessonPlayer({
           stepCleared={results.stepCleared}
           stepNumber={stepIndex + 1}
           stepCount={lesson.steps.length}
+          tempoPct={tempoPct}
+          newRung={results.newRung}
+          nextRung={nextRung((progress ?? loadProgress())[lesson.id])}
           award={results.award}
           daily={modifier ? { modifier, cleared: results.dailyMet } : null}
           nextLesson={isLastStep ? nextLesson : null}

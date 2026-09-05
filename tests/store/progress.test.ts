@@ -370,3 +370,35 @@ describe('step progress', () => {
     expect(p.b).toEqual({ stars: 0, bestAccuracy: 0 })
   })
 })
+
+describe('tempo ladder progress', () => {
+  it('records the best 3-star tempo above 100 and keeps it across slower runs', () => {
+    saveLessonResult('a', 95, 3)
+    expect(loadProgress().a.bestTempoPct).toBeUndefined()
+    saveLessonResult('a', 91, 3, 110)
+    expect(loadProgress().a.bestTempoPct).toBe(110)
+    saveLessonResult('a', 70, 1, 120) // not 3 stars: no rung
+    saveLessonResult('a', 99, 3, 105) // slower rung: keep 110
+    saveLessonResult('a', 60, 1)
+    expect(loadProgress().a).toEqual({ bestAccuracy: 99, stars: 3, bestTempoPct: 110 })
+  })
+
+  it('clamps stored values to the transport ceiling and drops junk', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+      a: { stars: 3, bestAccuracy: 95, bestTempoPct: 500 },
+      b: { stars: 3, bestAccuracy: 95, bestTempoPct: 'fast' },
+      c: { stars: 3, bestAccuracy: 95, bestTempoPct: 100 },
+    }))
+    const p = loadProgress()
+    expect(p.a.bestTempoPct).toBe(120)
+    expect(p.b.bestTempoPct).toBeUndefined()
+    expect(p.c.bestTempoPct).toBeUndefined()
+  })
+
+  it('survives a step save', async () => {
+    const { saveStepDone } = await import('../../src/store/progress')
+    saveLessonResult('a', 95, 3, 115)
+    saveStepDone('a', 0)
+    expect(loadProgress().a.bestTempoPct).toBe(115)
+  })
+})

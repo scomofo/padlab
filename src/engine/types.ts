@@ -63,4 +63,9 @@ export interface LessonProgress {
    * here. Omitted when empty so older saves and fixtures compare unchanged.
    */
   stepsDone?: number[]
+  /**
+   * Tempo ladder: highest tempo percent (105-120) at which Perform scored
+   * 3 stars. Omitted until a rung above 100% is cleared.
+   */
+  bestTempoPct?: number
 }

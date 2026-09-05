@@ -64,6 +64,8 @@ export function loadProgress(): Record<string, LessonProgress> {
     }
     const steps = sanitizeSteps(p.stepsDone)
     if (steps.length) out.stepsDone = steps
+    const tempo = Math.round(numberOr(p.bestTempoPct, 100, 100, 120))
+    if (tempo > 100) out.bestTempoPct = tempo
     return out
   })
 }
@@ -87,18 +89,32 @@ export function saveStepDone(lessonId: string, stepIndex: number): Record<string
     bestAccuracy: prev?.bestAccuracy ?? 0,
     stars: prev?.stars ?? 0,
     ...(steps.length ? { stepsDone: steps } : {}),
+    ...(prev?.bestTempoPct ? { bestTempoPct: prev.bestTempoPct } : {}),
   }
   write(PROGRESS_KEY, all)
   return all
 }
 
-export function saveLessonResult(lessonId: string, accuracy: number, stars: number): Record<string, LessonProgress> {
+/**
+ * Save a Perform result. `tempoPct` above 100 with 3 stars raises the tempo
+ * ladder's best rung; stars and accuracy are kept at their best regardless.
+ */
+export function saveLessonResult(
+  lessonId: string,
+  accuracy: number,
+  stars: number,
+  tempoPct = 100,
+): Record<string, LessonProgress> {
   const all = loadProgress()
   const prev = all[lessonId]
+  const ladder = stars >= 3 && tempoPct > 100
+    ? Math.max(prev?.bestTempoPct ?? 100, Math.min(120, Math.round(tempoPct)))
+    : prev?.bestTempoPct ?? 100
   all[lessonId] = {
     bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, accuracy),
     stars: Math.max(prev?.stars ?? 0, stars),
     ...(prev?.stepsDone?.length ? { stepsDone: prev.stepsDone } : {}),
+    ...(ladder > 100 ? { bestTempoPct: ladder } : {}),
   }
   write(PROGRESS_KEY, all)
   return all

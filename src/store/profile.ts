@@ -185,6 +185,10 @@ export function applyRun(opts: {
    * run). Paid once per day: a second clear the same day earns nothing extra.
    */
   dailyBonusXp: number
+  /** Tempo percent the run was played at (default 100). */
+  tempoPct?: number
+  /** Tempo-ladder rung newly cleared by this run, if any. */
+  newRung?: number | null
   durationSec: number
   prevXp: number
 }): RunAward {
@@ -203,6 +207,8 @@ export function applyRun(opts: {
     scored: opts.scored,
     firstClear: opts.firstClear,
     dailyBonus: dailyClear && !alreadyCleared ? opts.dailyBonusXp : 0,
+    tempoPct: opts.tempoPct ?? 100,
+    newRung: Boolean(opts.newRung),
   })
   p.xp += xpGained
   p.notesHit += opts.summary.perfect + opts.summary.great + opts.summary.good
@@ -258,6 +264,8 @@ export function applyRun(opts: {
   if (p.streak >= 3) unlock(p, 'streak-3', fresh)
   if (p.streak >= 7) unlock(p, 'streak-7', fresh)
   if (p.xp >= 250) unlock(p, 'pocket', fresh)
+  if (opts.newRung) unlock(p, 'ladder-first', fresh)
+  if ((opts.newRung ?? 0) >= 120) unlock(p, 'ladder-120', fresh)
 
   write(p)
   return {
@@ -285,4 +293,6 @@ export const BADGE_LABEL: Record<string, string> = {
   'streak-3': '3-day streak',
   'streak-7': 'Week on pads',
   pocket: 'Pocket rank',
+  'ladder-first': 'Up the ladder',
+  'ladder-120': 'Full speed',
 }

@@ -34,11 +34,20 @@ export function xpForRun(opts: {
   firstClear: boolean
   /** XP awarded for clearing the daily groove with this run; 0 when it did not. */
   dailyBonus: number
+  /** Tempo the run was played at. Above 100 scales the base payout (120% = 1.4x). */
+  tempoPct?: number
+  /** First clear of a new tempo-ladder rung on this lesson. */
+  newRung?: boolean
 }): number {
   if (!opts.scored) return Math.max(4, Math.round(opts.accuracy * 0.12))
   let xp = opts.accuracy + opts.maxCombo * 2 + opts.stars * 22
   if (opts.stars === 3) xp += 35
+  const tempo = opts.tempoPct ?? 100
+  if (tempo > 100) xp *= 1 + ((tempo - 100) / 100) * 2
   if (opts.firstClear) xp += 40
+  if (opts.newRung) xp += RUNG_BONUS_XP
   xp += Math.max(0, opts.dailyBonus)
   return Math.round(xp)
 }
+
+export const RUNG_BONUS_XP = 50

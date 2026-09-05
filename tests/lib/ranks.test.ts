@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RANKS, rankForXp, xpForRun } from '../../src/lib/ranks'
+import { RANKS, RUNG_BONUS_XP, rankForXp, xpForRun } from '../../src/lib/ranks'
 
 describe('rankForXp', () => {
   it('starts at Rookie', () => {
@@ -49,5 +49,16 @@ describe('xpForRun', () => {
     const a = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: true, dailyBonus: 60 })
     const b = xpForRun({ accuracy: 90, stars: 3, maxCombo: 8, scored: false, firstClear: false, dailyBonus: 0 })
     expect(a).toBe(b)
+  })
+})
+
+describe('xpForRun tempo ladder', () => {
+  const base = { accuracy: 92, stars: 3, maxCombo: 20, scored: true, firstClear: false, dailyBonus: 0 }
+  it('scales the base payout by tempo and adds a rung bonus', () => {
+    const at100 = xpForRun(base)
+    const at120 = xpForRun({ ...base, tempoPct: 120 })
+    expect(at120).toBe(Math.round(at100 * 1.4))
+    expect(xpForRun({ ...base, tempoPct: 120, newRung: true })).toBe(at120 + RUNG_BONUS_XP)
+    expect(xpForRun({ ...base, tempoPct: 80 })).toBe(at100)
   })
 })

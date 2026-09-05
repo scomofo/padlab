@@ -9,6 +9,7 @@ import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
 import { dailyLesson, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../lib/curriculum'
 import { dailyBlurb, dailyModifier } from '../lib/daily'
+import { ladderLabel } from '../lib/ladder'
 import { rankForXp } from '../lib/ranks'
 import { PadGrid } from './PadGrid'
 import { usePadKeyboard } from '../input/usePadKeyboard'
@@ -262,6 +263,7 @@ export function LessonBrowser({
                           <span key={s} className={(p?.stars ?? 0) >= s ? 'star on' : 'star'}>★</span>
                         ))}
                       </span>
+                      {ladderLabel(l, p) && <span className="ladder-chip" title="Tempo ladder: fastest 3-star Perform">{ladderLabel(l, p)}</span>}
                       {p && p.bestAccuracy > 0 && <span className="best muted">best {p.bestAccuracy}%</span>}
                     </div>
                   </button>
