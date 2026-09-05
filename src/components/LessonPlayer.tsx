@@ -14,7 +14,7 @@ import { Results } from './Results'
 import type { Settings } from '../store/progress'
 import { loadProgress, saveLessonResult, saveStepDone } from '../store/progress'
 import { applyRun, type Profile, type RunAward } from '../store/profile'
-import { nextInCourse, resumeStep, stepDone } from '../lib/curriculum'
+import { nextInCourse, performScored, resumeStep, stepDone } from '../lib/curriculum'
 import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
 import { LADDER_RUNGS, bestRung, ladderUnlocked, nextRung, rungCleared, tempoChoices } from '../lib/ladder'
 import { LESSONS } from '../lessons'
@@ -70,6 +70,8 @@ export function LessonPlayer({
 
   const step = lesson.steps[stepIndex]
   const isLastStep = stepIndex === lesson.steps.length - 1
+  // A slowed-down Perform is practice: it shows results but saves nothing.
+  const scored = performScored(isLastStep, tempoPct)
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
   const lessonProgress = (progress ?? loadProgress())[lesson.id]
@@ -111,11 +113,11 @@ export function LessonPlayer({
         if (summary) {
           let newBest = false
           const prev = (progress ?? loadProgress())[lesson.id]
-          const firstClear = isLastStep && (prev?.stars ?? 0) === 0
+          const firstClear = scored && (prev?.stars ?? 0) === 0
           // A practice step is done at one star or better; Perform is tracked by stars.
           const stepCleared = !isLastStep && summary.stars >= 1
-          const newRung = rungCleared(prev, { tempoPct, stars: summary.stars, isLastStep })
-          if (isLastStep) {
+          const newRung = rungCleared(prev, { tempoPct, stars: summary.stars, isLastStep: scored })
+          if (scored) {
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
             saveLessonResult(lesson.id, summary.accuracy, summary.stars, tempoPct)
             onProgressChange()
@@ -123,12 +125,12 @@ export function LessonPlayer({
             saveStepDone(lesson.id, stepIndex)
             onProgressChange()
           }
-          const dailyMet = modifier ? dailyCleared(modifier, summary, { isLastStep, tempoPct }) : false
+          const dailyMet = modifier ? dailyCleared(modifier, summary, { isLastStep: scored, tempoPct }) : false
           const award = applyRun({
             profile,
             lessonId: lesson.id,
             summary,
-            scored: isLastStep,
+            scored,
             firstClear,
             dailyBonusXp: dailyMet && modifier ? modifier.bonusXp : 0,
             tempoPct,
@@ -146,7 +148,7 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress])
+  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored])
 
   const skipInitialStop = useRef(true)
   useEffect(() => {
@@ -331,7 +333,8 @@ export function LessonPlayer({
           newBest={results.newBest}
           lessonTitle={lesson.title}
           stepName={step.name}
-          scored={isLastStep}
+          scored={scored}
+          slowed={isLastStep && !scored}
           stepCleared={results.stepCleared}
           stepNumber={stepIndex + 1}
           stepCount={lesson.steps.length}

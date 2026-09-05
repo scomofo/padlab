@@ -85,3 +85,15 @@ export function resumeStep(lesson: Lesson, p: LessonProgress | undefined): numbe
   }
   return lesson.steps.length - 1
 }
+
+/** Tempo at or above which a Perform run counts: stars, streak, daily, ladder. */
+export const FULL_TEMPO_PCT = 100
+
+/**
+ * Whether a finished run is scored toward saved progress. Only the Perform
+ * step counts, and only at full tempo or faster: a slowed-down Perform is
+ * practice and must not mint stars the chart was never played for.
+ */
+export function performScored(isLastStep: boolean, tempoPct: number): boolean {
+  return isLastStep && tempoPct >= FULL_TEMPO_PCT
+}

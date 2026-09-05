@@ -14,6 +14,8 @@ interface ResultsProps {
   stepName: string
   /** Whether this run counted toward saved progress (Perform step). */
   scored: boolean
+  /** Perform played below full tempo: shown as practice, nothing saved. */
+  slowed?: boolean
   /** Practice step finished at one star or better, so its checkmark is saved. */
   stepCleared?: boolean
   stepNumber?: number
@@ -66,7 +68,7 @@ const BUCKET_LABEL: Record<string, string> = {
 }
 
 export function Results({
-  summary, newBest, lessonTitle, stepName, scored, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
+  summary, newBest, lessonTitle, stepName, scored, slowed = false, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
   newRung = null, nextRung = null, award, daily = null, nextLesson, onRetry, onNext, onExit,
 }: ResultsProps) {
   const title =
@@ -163,10 +165,13 @@ export function Results({
             )}
           </div>
         )}
-        {!scored && stepCleared && (
+        {slowed && (
+          <div className="muted">Played at {tempoPct}% — stars, streak and the daily need full tempo. Set 100% and go again.</div>
+        )}
+        {!scored && !slowed && stepCleared && (
           <div className="step-cleared">✓ Step {stepNumber}{stepCount ? ` of ${stepCount}` : ''} done — Perform is where the stars are</div>
         )}
-        {!scored && !stepCleared && (
+        {!scored && !slowed && !stepCleared && (
           <div className="muted">One star ticks this step off. Stars, streak and the daily come from Perform.</div>
         )}
         <div className="judge-row">
@@ -186,12 +191,12 @@ export function Results({
           <button className="btn" onClick={onRetry}>Retry</button>
           {onNext && (
             <button className="btn primary" onClick={onNext}>
-              {scored && nextLesson ? `Next: ${nextLesson.title} ›` : 'Next step ›'}
+              {nextLesson ? `Next: ${nextLesson.title} ›` : 'Next step ›'}
             </button>
           )}
           {!onNext && <button className="btn primary" onClick={onExit}>Studio</button>}
         </div>
-        {onNext && scored && (
+        {onNext && nextLesson && (
           <button className="btn ghost" onClick={onExit}>Back to studio</button>
         )}
       </div>
