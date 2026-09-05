@@ -11,7 +11,9 @@ import type { PerformanceRun } from '../store/history'
 import { PerformanceTrail } from './PerformanceTrail'
 
 interface ResultsProps {
-  summary: ScoreSummary
+  /** Null for a completed wait-mode practice: no timing score was measured. */
+  summary: ScoreSummary | null
+  practiceNotes?: number
   newBest: boolean
   lessonTitle: string
   stepName: string
@@ -25,6 +27,8 @@ interface ResultsProps {
   onReturnFromFocus?: () => void
   returnStepName?: string
   performances?: PerformanceRun[]
+  sessionRound?: { number: number; total: number; completed: boolean }
+  nextLabel?: string
   /** Practice step finished at one star or better, so its checkmark is saved. */
   stepCleared?: boolean
   stepNumber?: number
@@ -45,6 +49,7 @@ interface ResultsProps {
 }
 
 const COUNT_MS = 900
+const NO_SCORE: ScoreSummary = { perfect: 0, great: 0, good: 0, miss: 0, stray: 0, total: 0, accuracy: 0, stars: 0, maxCombo: 0, deltas: [] }
 
 /** Counts from `from` up to `to` over COUNT_MS; jumps straight there without rAF. */
 function useCountUp(from: number, to: number): number {
@@ -78,12 +83,16 @@ const BUCKET_LABEL: Record<string, string> = {
 }
 
 export function Results({
-  summary, newBest, lessonTitle, stepName, scored, slowed = false, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
+  summary: measured, practiceNotes = 0, newBest, lessonTitle, stepName, scored, slowed = false, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
   focusPractice = false, focusPhrase = null, onFocus, onReturnFromFocus, returnStepName, performances = [],
   newRung = null, nextRung = null, award, daily = null, nextLesson, onRetry, onNext, onExit,
+  sessionRound, nextLabel,
 }: ResultsProps) {
+  const practiceMode = measured === null
+  const summary = measured ?? NO_SCORE
   const title =
-    focusPractice ? (summary.stars >= 3 ? 'Phrase locked in' : 'Finding the feel')
+    practiceMode ? 'Practice complete'
+    : focusPractice ? (summary.stars >= 3 ? 'Phrase locked in' : 'Finding the feel')
     : summary.stars >= 3 ? 'Clean'
     : summary.stars === 2 ? 'In the pocket'
     : summary.stars === 1 ? 'Keep digging'
@@ -127,12 +136,17 @@ export function Results({
       <div className="results-card">
         <span className="muted">{lessonTitle} — {stepName}{tempoPct !== 100 ? ` · ${tempoPct}%` : ''}</span>
         <h2 id="results-title" className="results-title">{title}</h2>
+        {sessionRound && <div className="session-result">
+          {sessionRound.completed ? `✓ Round ${sessionRound.number} of ${sessionRound.total} saved` : 'Land a note to finish this round, or try Practice mode.'}
+        </div>}
+        {practiceMode ? <p className="practice-complete-note">You answered all {practiceNotes} notes. Take your time; the groove is coming together.</p> : <>
         <div className="stars big">
           {[1, 2, 3].map((s) => (
             <span key={s} className={summary.stars >= s ? 'star on pop' : 'star'}>★</span>
           ))}
         </div>
         <div className="accuracy">{summary.accuracy}%</div>
+        </>}
         {newBest && <div className="new-best">New best!</div>}
         {newRung && <div className="new-best">⚡ {newRung}% mastered{nextRung ? ` — next rung ${nextRung}%` : ' — full speed, ladder topped out'}</div>}
         {!newRung && scored && summary.stars >= 3 && nextRung && (
@@ -219,17 +233,18 @@ export function Results({
             )}
           </div>
         )}
-        {slowed && (
+        {!practiceMode && slowed && (
           <div className="muted">Played at {tempoPct}% — stars, streak and the daily need full tempo. Set 100% and go again.</div>
         )}
-        {focusPractice && <div className="focus-note">Practice XP earned. Take this feel back to the full groove. Complete Perform for stars and daily credit.</div>}
+        {focusPractice && <div className="focus-note">{(award?.xpGained ?? 0) > 0 ? 'Practice XP earned. ' : ''}Take this feel back to the full groove. Complete Perform in Play for stars and daily credit.</div>}
         {!focusPractice && !scored && !slowed && stepCleared && (
           <div className="step-cleared">✓ Step {stepNumber}{stepCount ? ` of ${stepCount}` : ''} done — Perform is where the stars are</div>
         )}
-        {!focusPractice && !scored && !slowed && !stepCleared && (
+        {practiceMode && !focusPractice && !stepCleared && <div className="muted">Ready to test your timing? Perform in Play at full tempo earns stars.</div>}
+        {!practiceMode && !focusPractice && !scored && !slowed && !stepCleared && (
           <div className="muted">One star ticks this step off. Stars, streak and the daily come from Perform.</div>
         )}
-        <div className="judge-row">
+        {!practiceMode && <><div className="judge-row">
           <span className="chip perfect">Perfect {summary.perfect}</span>
           <span className="chip great">Great {summary.great}</span>
           <span className="chip good">Good {summary.good}</span>
@@ -237,19 +252,20 @@ export function Results({
           {summary.stray > 0 && <span className="chip stray">Extra {summary.stray}</span>}
         </div>
         <div className="muted">Max combo: {summary.maxCombo}</div>
+        </>}
         {award && award.newBadges.length > 0 && (
           <div className="results-badges">
             {award.newBadges.map((b) => BADGE_LABEL[b] ?? b).join(' · ')}
           </div>
         )}
         <div className="results-actions">
-          <button className="btn" onClick={onRetry}>{focusPractice ? 'Repeat phrase' : 'Retry'}</button>
+          <button className="btn" onClick={onRetry}>{focusPractice ? 'Repeat phrase' : practiceMode ? 'Repeat practice' : 'Retry'}</button>
           {focusPractice && onReturnFromFocus && (
             <button className="btn primary" onClick={onReturnFromFocus}>Back to {returnStepName ?? 'full groove'} ›</button>
           )}
           {onNext && (
             <button className="btn primary" onClick={onNext}>
-              {nextLesson ? `Next: ${nextLesson.title} ›` : 'Next step ›'}
+              {nextLabel ?? (nextLesson ? `Next: ${nextLesson.title} ›` : 'Next step ›')}
             </button>
           )}
           {!onNext && !focusPractice && <button className="btn primary" onClick={onExit}>Studio</button>}

@@ -198,6 +198,24 @@ export function applyRun(opts: {
     badges: [...opts.profile.badges],
     week: { ...opts.profile.week },
   }
+  // A visit may span midnight without reloading the profile from storage.
+  if (p.dailyXpDate !== today) {
+    p.dailyXp = 0
+    p.dailyXpDate = today
+  }
+  if (p.dailyChallengeDate !== today) {
+    p.dailyChallengeDone = false
+    p.dailyChallengeDate = today
+  }
+  const notesHit = opts.summary.perfect + opts.summary.great + opts.summary.good
+  // Let an idle chart finish without treating it as a practice session or clear.
+  if (opts.summary.total <= 0 || notesHit <= 0) {
+    write(p)
+    return {
+      profile: p, xpGained: 0, streakGrew: false, newBadges: [], rankedUp: false,
+      dailyGoalHit: false, freezeUsed: false, freezesEarned: 0, dailyCleared: false,
+    }
+  }
   const alreadyCleared = p.dailyChallengeDone && p.dailyChallengeDate === today
   const dailyClear = opts.scored && opts.dailyBonusXp > 0
   const xpGained = xpForRun({
@@ -205,20 +223,16 @@ export function applyRun(opts: {
     stars: opts.summary.stars,
     maxCombo: opts.summary.maxCombo,
     scored: opts.scored,
-    firstClear: opts.firstClear,
+    firstClear: opts.scored && opts.summary.stars >= 1 && opts.firstClear,
     dailyBonus: dailyClear && !alreadyCleared ? opts.dailyBonusXp : 0,
     tempoPct: opts.tempoPct ?? 100,
     newRung: Boolean(opts.newRung),
   })
   p.xp += xpGained
-  p.notesHit += opts.summary.perfect + opts.summary.great + opts.summary.good
+  p.notesHit += notesHit
   p.sessions += 1
   p.secondsPracticed += Math.max(0, Math.round(opts.durationSec))
   p.lastLessonId = opts.lessonId
-  if (p.dailyXpDate !== today) {
-    p.dailyXp = 0
-    p.dailyXpDate = today
-  }
   const goalBefore = p.dailyXp >= DAILY_XP_GOAL
   p.dailyXp += xpGained
   const dailyGoalHit = !goalBefore && p.dailyXp >= DAILY_XP_GOAL
@@ -257,10 +271,12 @@ export function applyRun(opts: {
   }
 
   const fresh: string[] = []
-  if (opts.summary.stars >= 1) unlock(p, 'first-star', fresh)
-  if (opts.summary.stars >= 3) unlock(p, 'three-star', fresh)
-  if (opts.summary.maxCombo >= 16) unlock(p, 'combo-16', fresh)
-  if (opts.summary.maxCombo >= 32) unlock(p, 'combo-32', fresh)
+  if (opts.scored) {
+    if (opts.summary.stars >= 1) unlock(p, 'first-star', fresh)
+    if (opts.summary.stars >= 3) unlock(p, 'three-star', fresh)
+    if (opts.summary.maxCombo >= 16) unlock(p, 'combo-16', fresh)
+    if (opts.summary.maxCombo >= 32) unlock(p, 'combo-32', fresh)
+  }
   if (p.streak >= 3) unlock(p, 'streak-3', fresh)
   if (p.streak >= 7) unlock(p, 'streak-7', fresh)
   if (p.xp >= 250) unlock(p, 'pocket', fresh)
