@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dailyLesson, nextInCourse, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../../src/lib/curriculum'
+import { dailyLesson, nextInCourse, performScored, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../../src/lib/curriculum'
 import { todayKey } from '../../src/lib/dates'
 import type { Lesson, LessonProgress } from '../../src/engine/types'
 import { makeLesson } from '../helpers/chart'
@@ -114,5 +114,14 @@ describe('step tracking', () => {
     expect(resumeStep(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [1] })).toBe(0)
     expect(resumeStep(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [0, 1] })).toBe(steps - 1)
     expect(resumeStep(lesson, { stars: 3, bestAccuracy: 95, stepsDone: [0, 1] })).toBe(steps - 1)
+  })
+})
+
+describe('performScored', () => {
+  it('counts only the Perform step at full tempo or faster', () => {
+    expect(performScored(true, 100)).toBe(true)
+    expect(performScored(true, 110)).toBe(true)
+    expect(performScored(true, 90)).toBe(false)
+    expect(performScored(false, 100)).toBe(false)
   })
 })
