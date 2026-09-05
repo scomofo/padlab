@@ -341,3 +341,32 @@ describe('storage keys', () => {
     )
   })
 })
+
+describe('step progress', () => {
+  it('records completed steps, sorted and de-duplicated', async () => {
+    const { saveStepDone } = await import('../../src/store/progress')
+    saveStepDone('a', 2)
+    saveStepDone('a', 0)
+    saveStepDone('a', 2)
+    expect(loadProgress().a).toEqual({ bestAccuracy: 0, stars: 0, stepsDone: [0, 2] })
+  })
+
+  it('survives a Perform result and vice versa', async () => {
+    const { saveStepDone } = await import('../../src/store/progress')
+    saveStepDone('a', 1)
+    saveLessonResult('a', 88, 2)
+    expect(loadProgress().a).toEqual({ bestAccuracy: 88, stars: 2, stepsDone: [1] })
+    saveStepDone('a', 0)
+    expect(loadProgress().a).toEqual({ bestAccuracy: 88, stars: 2, stepsDone: [0, 1] })
+  })
+
+  it('drops garbage step entries and omits the key when nothing is left', () => {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+      a: { stars: 1, bestAccuracy: 60, stepsDone: [1, 'x', -1, 1.5, 999, 3] },
+      b: { stars: 0, bestAccuracy: 0, stepsDone: 'nope' },
+    }))
+    const p = loadProgress()
+    expect(p.a.stepsDone).toEqual([1, 3])
+    expect(p.b).toEqual({ stars: 0, bestAccuracy: 0 })
+  })
+})

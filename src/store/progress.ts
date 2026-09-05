@@ -58,11 +58,38 @@ export function loadProgress(): Record<string, LessonProgress> {
     const p = v as Record<string, unknown>
     // A corrupt field would flow through Math.max on the next save and the
     // star totals in the browser; 0 (unearned) is the safe reading of garbage.
-    return {
+    const out: LessonProgress = {
       stars: Math.round(numberOr(p.stars, 0, 0, 3)),
       bestAccuracy: Math.round(numberOr(p.bestAccuracy, 0, 0, 100)),
     }
+    const steps = sanitizeSteps(p.stepsDone)
+    if (steps.length) out.stepsDone = steps
+    return out
   })
+}
+
+/** Distinct small non-negative integers, sorted; anything else is dropped. */
+function sanitizeSteps(v: unknown): number[] {
+  if (!Array.isArray(v)) return []
+  const set = new Set<number>()
+  for (const x of v) {
+    if (typeof x === 'number' && Number.isInteger(x) && x >= 0 && x < 100) set.add(x)
+  }
+  return [...set].sort((a, b) => a - b)
+}
+
+/** Record a completed practice step. Idempotent; the Perform step is saved via saveLessonResult. */
+export function saveStepDone(lessonId: string, stepIndex: number): Record<string, LessonProgress> {
+  const all = loadProgress()
+  const prev = all[lessonId]
+  const steps = sanitizeSteps([...(prev?.stepsDone ?? []), stepIndex])
+  all[lessonId] = {
+    bestAccuracy: prev?.bestAccuracy ?? 0,
+    stars: prev?.stars ?? 0,
+    ...(steps.length ? { stepsDone: steps } : {}),
+  }
+  write(PROGRESS_KEY, all)
+  return all
 }
 
 export function saveLessonResult(lessonId: string, accuracy: number, stars: number): Record<string, LessonProgress> {
@@ -71,6 +98,7 @@ export function saveLessonResult(lessonId: string, accuracy: number, stars: numb
   all[lessonId] = {
     bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, accuracy),
     stars: Math.max(prev?.stars ?? 0, stars),
+    ...(prev?.stepsDone?.length ? { stepsDone: prev.stepsDone } : {}),
   }
   write(PROGRESS_KEY, all)
   return all

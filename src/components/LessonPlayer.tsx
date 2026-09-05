@@ -12,9 +12,9 @@ import { Highway } from './Highway'
 import { PadGrid } from './PadGrid'
 import { Results } from './Results'
 import type { Settings } from '../store/progress'
-import { loadProgress, saveLessonResult } from '../store/progress'
+import { loadProgress, saveLessonResult, saveStepDone } from '../store/progress'
 import { applyRun, type Profile, type RunAward } from '../store/profile'
-import { nextInCourse } from '../lib/curriculum'
+import { nextInCourse, resumeStep, stepDone } from '../lib/curriculum'
 import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
 import { LESSONS } from '../lessons'
 
@@ -54,13 +54,14 @@ export function LessonPlayer({
   const [modifier] = useState<DailyModifier | null>(
     () => (isDaily ? dailyModifier(progress ?? loadProgress()) : null),
   )
-  const [stepIndex, setStepIndex] = useState(0)
+  // Open on the first step not yet done, so a card's checkmarks pick up where they left off.
+  const [stepIndex, setStepIndex] = useState(() => resumeStep(lesson, (progress ?? loadProgress())[lesson.id]))
   const [mode, setMode] = useState<PlayMode>(autoStart ? 'play' : 'listen')
   const [tempoPct, setTempoPct] = useState(modifier?.tempoPct ?? 100)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
   const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
-  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean } | null>(null)
+  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean; stepCleared: boolean } | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
   const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
@@ -98,13 +99,23 @@ export function LessonPlayer({
       onFinish: (summary) => {
         runtimeRef.current = null
         setPlaying(false)
+        if (!summary && mode === 'practice' && !isLastStep) {
+          // A finished Practice run means every note was hit: the step is done.
+          saveStepDone(lesson.id, stepIndex)
+          onProgressChange()
+        }
         if (summary) {
           let newBest = false
           const prev = (progress ?? loadProgress())[lesson.id]
           const firstClear = isLastStep && (prev?.stars ?? 0) === 0
+          // A practice step is done at one star or better; Perform is tracked by stars.
+          const stepCleared = !isLastStep && summary.stars >= 1
           if (isLastStep) {
             newBest = summary.accuracy > (prev?.bestAccuracy ?? 0)
             saveLessonResult(lesson.id, summary.accuracy, summary.stars)
+            onProgressChange()
+          } else if (stepCleared) {
+            saveStepDone(lesson.id, stepIndex)
             onProgressChange()
           }
           const dailyMet = modifier ? dailyCleared(modifier, summary, { isLastStep, tempoPct }) : false
@@ -119,7 +130,7 @@ export function LessonPlayer({
             prevXp: profile.xp,
           })
           onProfile(award.profile)
-          setResults({ summary, newBest, award, dailyMet })
+          setResults({ summary, newBest, award, dailyMet, stepCleared })
         }
         bump((n) => n + 1)
       },
@@ -250,15 +261,19 @@ export function LessonPlayer({
       </header>
 
       <div className="step-strip">
-        {lesson.steps.map((s, i) => (
-          <button
-            key={i}
-            className={i === stepIndex ? 'step-pill on' : 'step-pill'}
-            onClick={() => setStepIndex(i)}
-          >
-            <span className="step-n">{i + 1}</span> {s.name}
-          </button>
-        ))}
+        {lesson.steps.map((s, i) => {
+          const done = stepDone(lesson, (progress ?? loadProgress())[lesson.id], i)
+          return (
+            <button
+              key={i}
+              className={`step-pill${i === stepIndex ? ' on' : ''}${done ? ' done' : ''}`}
+              onClick={() => setStepIndex(i)}
+              title={done ? `${s.name} — done` : s.name}
+            >
+              <span className="step-n">{done ? '✓' : i + 1}</span> {s.name}
+            </button>
+          )
+        })}
         <span className="step-desc muted">{step.description ?? ''}</span>
       </div>
 
@@ -288,6 +303,9 @@ export function LessonPlayer({
           lessonTitle={lesson.title}
           stepName={step.name}
           scored={isLastStep}
+          stepCleared={results.stepCleared}
+          stepNumber={stepIndex + 1}
+          stepCount={lesson.steps.length}
           award={results.award}
           daily={modifier ? { modifier, cleared: results.dailyMet } : null}
           nextLesson={isLastStep ? nextLesson : null}

@@ -7,7 +7,7 @@ import { DAILY_XP_GOAL, displayStreak, streakStatus } from '../store/profile'
 import { COURSES } from '../lessons/courses'
 import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
-import { dailyLesson, recommendLesson, weekDots } from '../lib/curriculum'
+import { dailyLesson, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../lib/curriculum'
 import { dailyBlurb, dailyModifier } from '../lib/daily'
 import { rankForXp } from '../lib/ranks'
 import { PadGrid } from './PadGrid'
@@ -160,7 +160,9 @@ export function LessonBrowser({
           <span className="muted kicker">{fresh ? 'Start here' : 'Continue'}</span>
           <h2>{fresh ? 'First Taps' : next.title}</h2>
           <p className="muted">
-            {fresh ? 'One kick. Four beats. Land on the click.' : `${next.genre} · ${next.bpm} BPM · LV ${next.level}`}
+            {fresh
+              ? 'One kick. Four beats. Land on the click.'
+              : `${next.genre} · ${next.bpm} BPM · LV ${next.level} · Step ${resumeStep(next, progress[next.id]) + 1} of ${next.steps.length}: ${next.steps[resumeStep(next, progress[next.id])].name}`}
           </p>
           <span className="btn primary play-now">{fresh ? 'Play now ›' : 'Keep going ›'}</span>
         </button>
@@ -242,6 +244,18 @@ export function LessonBrowser({
                     </div>
                     <h3>{l.title}</h3>
                     <div className="muted">{l.genre} · {l.bpm} BPM · {l.bars} bars</div>
+                    <div className="step-dots" aria-label={`${stepsDoneCount(l, p)} of ${l.steps.length} steps done`}>
+                      {l.steps.map((st, i) => (
+                        <span
+                          key={i}
+                          className={stepDone(l, p, i) ? 'step-dot on' : i === resumeStep(l, p) && stepsDoneCount(l, p) > 0 ? 'step-dot next' : 'step-dot'}
+                          title={st.name}
+                        />
+                      ))}
+                      {stepsDoneCount(l, p) > 0 && (p?.stars ?? 0) === 0 && (
+                        <span className="muted step-dots-label">{l.steps[resumeStep(l, p)]?.name}</span>
+                      )}
+                    </div>
                     <div className="card-bottom">
                       <span className={(p?.stars ?? 0) >= 3 ? 'stars maxed' : 'stars'}>
                         {[1, 2, 3].map((s) => (

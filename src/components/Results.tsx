@@ -14,6 +14,10 @@ interface ResultsProps {
   stepName: string
   /** Whether this run counted toward saved progress (Perform step). */
   scored: boolean
+  /** Practice step finished at one star or better, so its checkmark is saved. */
+  stepCleared?: boolean
+  stepNumber?: number
+  stepCount?: number
   award: RunAward | null
   /** Set when this visit is the daily groove: which twist, and whether this run cleared it. */
   daily?: { modifier: DailyModifier; cleared: boolean } | null
@@ -56,7 +60,8 @@ const BUCKET_LABEL: Record<string, string> = {
 }
 
 export function Results({
-  summary, newBest, lessonTitle, stepName, scored, award, daily = null, nextLesson, onRetry, onNext, onExit,
+  summary, newBest, lessonTitle, stepName, scored, stepCleared = false, stepNumber, stepCount, award, daily = null,
+  nextLesson, onRetry, onNext, onExit,
 }: ResultsProps) {
   const title =
     summary.stars >= 3 ? 'Clean'
@@ -148,7 +153,12 @@ export function Results({
             )}
           </div>
         )}
-        {!scored && <div className="muted">Practice steps aren’t scored toward progress — finish with Perform.</div>}
+        {!scored && stepCleared && (
+          <div className="step-cleared">✓ Step {stepNumber}{stepCount ? ` of ${stepCount}` : ''} done — Perform is where the stars are</div>
+        )}
+        {!scored && !stepCleared && (
+          <div className="muted">One star ticks this step off. Stars, streak and the daily come from Perform.</div>
+        )}
         <div className="judge-row">
           <span className="chip perfect">Perfect {summary.perfect}</span>
           <span className="chip great">Great {summary.great}</span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dailyLesson, nextInCourse, recommendLesson, weekDots } from '../../src/lib/curriculum'
+import { dailyLesson, nextInCourse, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../../src/lib/curriculum'
 import { todayKey } from '../../src/lib/dates'
 import type { Lesson, LessonProgress } from '../../src/engine/types'
 import { makeLesson } from '../helpers/chart'
@@ -89,5 +89,30 @@ describe('weekDots', () => {
       '2026-08-31': 2,
     }
     expect(weekDots(week, today)).toEqual([false, false, false, false, true, false, true])
+  })
+})
+
+describe('step tracking', () => {
+  const lesson = L({ id: 's' }) // makeLesson default: 3 steps, Perform last
+  const steps = lesson.steps.length
+
+  it('reads practice steps from stepsDone and the final step from stars', () => {
+    expect(stepDone(lesson, undefined, 0)).toBe(false)
+    expect(stepDone(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [0] }, 0)).toBe(true)
+    expect(stepDone(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [steps - 1] }, steps - 1)).toBe(false)
+    expect(stepDone(lesson, { stars: 1, bestAccuracy: 60 }, steps - 1)).toBe(true)
+  })
+
+  it('counts done steps', () => {
+    expect(stepsDoneCount(lesson, undefined)).toBe(0)
+    expect(stepsDoneCount(lesson, { stars: 2, bestAccuracy: 80, stepsDone: [0] })).toBe(2)
+  })
+
+  it('resumes on the first undone step, or Perform once everything is done', () => {
+    expect(resumeStep(lesson, undefined)).toBe(0)
+    expect(resumeStep(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [0] })).toBe(1)
+    expect(resumeStep(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [1] })).toBe(0)
+    expect(resumeStep(lesson, { stars: 0, bestAccuracy: 0, stepsDone: [0, 1] })).toBe(steps - 1)
+    expect(resumeStep(lesson, { stars: 3, bestAccuracy: 95, stepsDone: [0, 1] })).toBe(steps - 1)
   })
 })
