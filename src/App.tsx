@@ -17,10 +17,12 @@ import {
 } from './store/progress'
 import { loadProfile, type Profile } from './store/profile'
 import { loadHistory, type PerformanceRun } from './store/history'
+import { buildSession, completeSessionRound, type PracticeSession, type SessionResult } from './lib/session'
+import { loadSession, saveSession } from './store/session'
 
 export default function App() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
-  const [launch, setLaunch] = useState<{ daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }>({})
+  const [launch, setLaunch] = useState<{ daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number; stepIndex?: number }>({})
   const [guide, setGuide] = useState<Guide | null>(null)
   const [showSetup, setShowSetup] = useState(false)
   const [settings, setSettings] = useState<Settings>(() => loadSettings())
@@ -28,6 +30,10 @@ export default function App() {
   const [guideProgress, setGuideProgress] = useState(() => loadGuideProgress())
   const [profile, setProfile] = useState<Profile>(() => loadProfile())
   const [history, setHistory] = useState<PerformanceRun[]>(loadHistory)
+  const [session, setSession] = useState<PracticeSession | null>(() => loadSession(LESSONS))
+  const [sessionRound, setSessionRound] = useState<number | null>(null)
+
+  useEffect(() => { if (session) saveSession(session) }, [session])
 
   useEffect(() => {
     void midi.init()
@@ -66,15 +72,50 @@ export default function App() {
   }
 
   const openLesson = (next: Lesson, opts?: typeof launch) => {
+    setSessionRound(null)
     setLaunch(opts ?? {})
     setLesson(next)
+  }
+
+  const exitLesson = () => {
+    setLesson(null)
+    setLaunch({})
+    setSessionRound(null)
+  }
+
+  const openSessionRound = (plan: PracticeSession, index: number) => {
+    const next = LESSONS.find((l) => l.id === plan.lessonId)
+    const round = plan.rounds[index]
+    if (!next || !round) return
+    void unlockAudio()
+    setSessionRound(index)
+    setLaunch({ autoStart: true, stepIndex: round.stepIndex, tempoPct: round.tempoPct })
+    setLesson(next)
+  }
+
+  const startSession = () => {
+    const next = session && session.results.length < session.rounds.length
+      ? session : buildSession(LESSONS, progress, profile.lastLessonId)
+    if (!next) return
+    setSession(next)
+    openSessionRound(next, next.results.length)
+  }
+
+  const finishSessionRound = (index: number, result: SessionResult) => {
+    setSession((current) => current ? completeSessionRound(current, index, result) : current)
+  }
+
+  const nextSessionRound = () => {
+    if (!session || sessionRound === null || session.results.length <= sessionRound) return
+    if (session.results.length === session.rounds.length) exitLesson()
+    else openSessionRound(session, session.results.length)
   }
 
   return (
     <div className="app">
       {lesson ? (
         <LessonPlayer
-          key={lesson.id}
+          key={`${lesson.id}:${sessionRound ?? 'free'}`}
           lesson={lesson}
           settings={settings}
           profile={profile}
@@ -82,13 +123,18 @@ export default function App() {
           autoStart={launch.autoStart}
           startAtPerform={launch.perform}
           initialTempoPct={launch.tempoPct}
+          initialStepIndex={launch.stepIndex}
+          sessionRound={session && sessionRound !== null ? {
+            number: sessionRound + 1, total: session.rounds.length,
+            completed: session.results.length > sessionRound,
+            label: session.rounds[sessionRound].label,
+          } : undefined}
+          onSessionResult={sessionRound !== null ? (result) => finishSessionRound(sessionRound, result) : undefined}
+          onSessionNext={nextSessionRound}
           progress={progress}
           history={history}
           onHistory={setHistory}
-          onExit={() => {
-            setLesson(null)
-            setLaunch({})
-          }}
+          onExit={exitLesson}
           onProgressChange={() => setProgress(loadProgress())}
           onProfile={setProfile}
           onOpenLesson={(l) => openLesson(l, { autoStart: true })}
@@ -108,6 +154,8 @@ export default function App() {
           guideProgress={guideProgress}
           profile={profile}
           history={history}
+          session={session}
+          onStartSession={startSession}
           onOpen={openLesson}
           onOpenGuide={setGuide}
           onOpenSetup={() => setShowSetup(true)}

@@ -4,10 +4,12 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { RuntimeOptions } from '../src/engine/player'
 import type { ScoreKeeper } from '../src/engine/scoring'
+import type { NoteEvent } from '../src/engine/types'
 
 interface TestRuntime {
   opts: RuntimeOptions
   score: ScoreKeeper | null
+  playerEvents: NoteEvent[]
   start: ReturnType<typeof vi.fn>
   stop: ReturnType<typeof vi.fn>
 }
@@ -23,6 +25,7 @@ vi.mock('../src/engine/player', async () => {
   return { PlayerRuntime: class {
     opts: RuntimeOptions
     score: ScoreKeeper | null
+    playerEvents: NoteEvent[]
     start = vi.fn()
     stop = vi.fn()
     setMetronome = vi.fn()
@@ -31,6 +34,7 @@ vi.mock('../src/engine/player', async () => {
       this.opts = opts
       const pads = opts.lesson.steps[opts.stepIndex].playerPads
       const events = opts.lesson.events.filter((e) => pads === 'all' || pads.includes(e.pad))
+      this.playerEvents = events
       this.score = opts.mode === 'play' ? new ScoreKeeper(events, 60 / opts.lesson.bpm) : null
       runs.push(this)
     }
@@ -40,7 +44,10 @@ vi.mock('../src/engine/player', async () => {
 import App from '../src/App'
 import { loadHistory, savePerformance } from '../src/store/history'
 import { loadProgress, saveLessonResult } from '../src/store/progress'
-import { loadProfile } from '../src/store/profile'
+import { loadProfile, saveProfile } from '../src/store/profile'
+import { loadSession, saveSession } from '../src/store/session'
+import { buildSession } from '../src/lib/session'
+import { todayKey } from '../src/lib/dates'
 import * as daily from '../src/lib/daily'
 import * as curriculum from '../src/lib/curriculum'
 import { LESSONS } from '../src/lessons'
@@ -65,6 +72,7 @@ describe('personal practice loop integration', () => {
     host.remove()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
   async function mount() { await act(async () => root.render(createElement(App))) }
@@ -157,7 +165,8 @@ describe('personal practice loop integration', () => {
     await click('Start', host.querySelector('.player-controls')!)
     await finish()
     expect(loadProgress()).toEqual({})
-    await click('Back to The pulse')
+    expect(host.textContent).toContain('Practice complete')
+    await click('Back to The pulse', host.querySelector('[role="dialog"]')!)
     expect(runs.at(-1)!.opts).toMatchObject({ mode: 'play', stepIndex: 0, tempoPct: 100 })
   })
 
@@ -202,5 +211,116 @@ describe('personal practice loop integration', () => {
     await click('Retry')
     await click('Studio', host.querySelector('.player-bar')!)
     expect(loadHistory()).toHaveLength(1)
+  })
+
+  it('finishes three rounds with a pause and reload in the middle, then presents a saved recap', async () => {
+    await mount()
+    await click('Start 3 rounds')
+    expect(runs.at(-1)!.opts).toMatchObject({ lesson: { id: 'first-taps' }, stepIndex: 0, tempoPct: 100 })
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(1)
+    // Replaying the first round must not turn it into a completed second round.
+    await click('Retry', host.querySelector('[role="dialog"]')!)
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(1)
+    await click('Next round')
+    expect(runs.at(-1)!.opts.stepIndex).toBe(1)
+    await click('Pause session')
+    expect(runs.at(-1)!.stop).toHaveBeenCalled()
+    act(() => root.unmount())
+    root = createRoot(host)
+    await mount()
+    expect(host.querySelector('.session-card')!.textContent).toContain('1/3 rounds')
+    await click('Resume session')
+    expect(runs.at(-1)!.opts.stepIndex).toBe(1)
+    await finish()
+    await click('Next round')
+    expect(runs.at(-1)!.opts.stepIndex).toBe(2)
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(3)
+    await click('Finish session')
+    expect(host.querySelector('.session-card')!.textContent).toContain('Session complete')
+    expect(host.querySelector('.session-card')!.textContent).toContain('48 notes landed')
+    await click('Start another session')
+    expect(loadSession(LESSONS)?.results).toHaveLength(0)
+  })
+
+  it('requires engagement and does not count focus drills or Listen as session rounds', async () => {
+    await mount()
+    await click('Start 3 rounds')
+    await finish(16)
+    expect(loadProfile().xp).toBe(0)
+    expect(loadSession(LESSONS)?.results).toHaveLength(0)
+    expect(host.querySelector('[role="dialog"]')!.textContent).not.toContain('Next round')
+    await click('Practice bars')
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(0)
+    expect(loadProfile().badges).not.toContain('three-star')
+    await click('Back to The pulse', host.querySelector('[role="dialog"]')!)
+    await click('Listen', host.querySelector('.segmented')!)
+    await click('Start', host.querySelector('.player-controls')!)
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(0)
+    await click('Play', host.querySelector('.segmented')!)
+    await click('Start', host.querySelector('.player-controls')!)
+    await finish()
+    expect(loadSession(LESSONS)?.results).toHaveLength(1)
+  })
+
+  it('celebrates wait-mode completion without a fake score and preserves Practice-only lesson continuity', async () => {
+    await mount()
+    await click('Start 3 rounds')
+    for (let i = 0; i < 3; i++) {
+      await click('Practice', host.querySelector('.segmented')!)
+      await click('Start', host.querySelector('.player-controls')!)
+      await finish()
+      const dialog = host.querySelector('[role="dialog"]')!
+      expect(dialog.textContent).toContain('Practice complete')
+      expect(dialog.querySelector('.accuracy')).toBeNull()
+      expect(dialog.querySelector('.stars')).toBeNull()
+      expect(loadSession(LESSONS)?.results).toHaveLength(i + 1)
+      if (i < 2) await click('Next round')
+    }
+    expect(loadHistory()).toEqual([])
+    expect(loadProfile().xp).toBe(0)
+    expect(loadProfile().lastLessonId).toBe('first-taps')
+    expect(loadProgress()['first-taps'].stars).toBe(0)
+    await click('Finish session')
+    await click('Start another session')
+    expect(runs.at(-1)!.opts).toMatchObject({ lesson: { id: 'first-taps' }, stepIndex: 2, tempoPct: 80 })
+  })
+
+  it('holds a mastered session to its planned tempos, including its final ladder rung', async () => {
+    const progress = Object.fromEntries(LESSONS.map((l) => [l.id, { stars: 3, bestAccuracy: 95 }]))
+    localStorage.setItem('padlab-progress-v1', JSON.stringify(progress))
+    const plan = buildSession(LESSONS, progress, 'first-taps')!
+    saveSession(plan)
+    await mount()
+    await click('Resume session')
+    expect(runs.at(-1)!.opts.tempoPct).toBe(80)
+    expect(host.querySelector<HTMLSelectElement>('.tempo-select')!.disabled).toBe(true)
+    expect(host.querySelector('.ladder')).toBeNull()
+    expect([...host.querySelectorAll<HTMLButtonElement>('.step-pill')].every((b) => b.disabled)).toBe(true)
+    await finish()
+    await click('Next round')
+    expect(runs.at(-1)!.opts.tempoPct).toBe(100)
+    await finish()
+    await click('Next round')
+    expect(runs.at(-1)!.opts.tempoPct).toBe(105)
+    expect(host.querySelector<HTMLSelectElement>('.tempo-select')!.value).toBe('105')
+  })
+
+  it('refreshes yesterday’s goal and daily challenge when the studio regains focus after midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 8, 5, 23, 59))
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    saveProfile({ ...loadProfile(), dailyXp: 170, dailyXpDate: todayKey(),
+      dailyChallengeDone: true, dailyChallengeDate: todayKey() })
+    await mount()
+    expect(host.querySelector('.daily-status')!.textContent).toBe('Cleared today')
+    vi.setSystemTime(new Date(2026, 8, 6, 0, 1))
+    await act(async () => window.dispatchEvent(new Event('focus')))
+    expect(host.querySelector('.daily-status')!.textContent).toBe('Take it on ›')
+    expect(host.querySelector('.stat-card.goal .stat-value')!.textContent).toBe('0 / 150 XP')
   })
 })
