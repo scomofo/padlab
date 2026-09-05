@@ -22,6 +22,8 @@ export interface ScoreSummary {
   accuracy: number // 0-100
   stars: 0 | 1 | 2 | 3
   maxCombo: number
+  /** Signed timing error (ms, negative = early) of every judged hit, chart order. */
+  deltas: number[]
 }
 
 /** Timing windows, in ms of absolute error. Beyond `good` is a miss. */
@@ -172,6 +174,9 @@ export class ScoreKeeper {
       accuracy,
       stars: starsForAccuracy(accuracy),
       maxCombo: this.maxCombo,
+      deltas: this.events
+        .filter((ev) => ev.deltaMs !== undefined)
+        .map((ev) => Math.round(ev.deltaMs as number)),
     }
   }
 }

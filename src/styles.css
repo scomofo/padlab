@@ -651,6 +651,35 @@ kbd {
 .new-best { color: var(--accent); font-weight: 800; font-size: 14px; }
 .results-xp { color: var(--accent); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
 .results-badges { font-size: 12px; font-weight: 700; color: var(--accent); }
+.results-hook { font-size: 14px; font-weight: 700; color: #ffd166; }
+.results-award { display: flex; flex-direction: column; gap: 6px; width: 100%; align-items: center; }
+.rank-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; width: 100%; font-size: 12px; }
+.rank-name { font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+.rank-bar { margin-top: 0; }
+.rank-bar span { transition: width 0.12s linear; }
+.rank-next { font-size: 12px; }
+.daily-goal { display: flex; flex-direction: column; gap: 4px; width: 100%; font-size: 12px; font-weight: 700; color: var(--muted); }
+.daily-goal.met { color: var(--accent); }
+.goal-bar { margin-top: 0; }
+.goal-bar span { background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.12s linear; }
+.timing { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.timing-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; height: 56px; align-items: end; }
+.timing-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
+.timing-bar { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: rgba(255, 255, 255, 0.14); min-height: 2px; }
+.timing-col.on .timing-bar { background: #3ef0c8; }
+.timing-col.early .timing-bar, .timing-col.late .timing-bar { background: #6ea8ff; }
+.timing-col.early-miss .timing-bar, .timing-col.late-miss .timing-bar { background: #ffd166; }
+.timing-label { font-size: 10px; color: var(--muted); height: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.timing-caption { font-size: 12px; }
+.goal-ring { position: relative; width: 44px; height: 44px; border-radius: 50%; flex: none;
+  background: conic-gradient(var(--accent) var(--pct), rgba(255, 255, 255, 0.08) 0); display: grid; place-items: center; }
+.goal-ring::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--panel); }
+.goal-ring span { position: relative; font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat-card.goal { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 8px; }
+.stat-card.goal .goal-ring { grid-row: 1 / span 3; }
+.stat-value.warn { color: #ffd166; }
+.stat-value.frost { color: #6ea8ff; }
+.streak-freezes { font-size: 11px; color: #6ea8ff; font-weight: 700; }
 .judge-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .chip { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); }
 .chip.perfect { color: #3ef0c8; }

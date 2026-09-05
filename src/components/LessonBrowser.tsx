@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { Lesson, LessonProgress } from '../engine/types'
 import type { Guide } from '../guides/types'
 import type { GuideProgress } from '../store/progress'
 import type { Profile } from '../store/profile'
-import { goalMetToday } from '../store/profile'
+import { DAILY_XP_GOAL, displayStreak, streakStatus } from '../store/profile'
 import { COURSES } from '../lessons/courses'
 import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
@@ -77,7 +77,9 @@ export function LessonBrowser({
   const startLesson = fresh ? lessons.find((l) => l.id === 'first-taps') ?? next : next
   const rank = rankForXp(profile.xp)
   const stars = totalStars(lessons, progress)
-  const goal = goalMetToday(profile)
+  const status = streakStatus(profile)
+  const shownStreak = displayStreak(profile)
+  const dailyPct = Math.min(100, Math.round((profile.dailyXp / DAILY_XP_GOAL) * 100))
   const dots = weekDots(profile.week)
   const minutes = Math.round(profile.secondsPracticed / 60)
 
@@ -106,9 +108,22 @@ export function LessonBrowser({
 
       <section className="hub-stats">
         <div className="stat-card">
-          <div className="stat-label">{goal && profile.streak > 0 ? '🔥 Streak' : 'Streak'}</div>
-          <div className="stat-value">{profile.streak > 0 ? `${profile.streak}d` : '—'}</div>
-          <div className="muted">{goal ? 'Goal done today' : 'Play a Perform step'}</div>
+          <div className="stat-label">
+            {status === 'safe' ? '🔥 Streak' : status === 'at-risk' ? '⚠ Streak at risk' : status === 'frozen' ? '❄ Streak frozen' : 'Streak'}
+          </div>
+          <div className={status === 'at-risk' ? 'stat-value warn' : status === 'frozen' ? 'stat-value frost' : 'stat-value'}>
+            {shownStreak > 0 ? `${shownStreak}d` : '—'}
+          </div>
+          <div className="muted">
+            {status === 'safe' ? 'Goal done today'
+              : status === 'at-risk' ? 'Perform today to keep it'
+              : status === 'frozen' ? 'Perform today to save it'
+              : status === 'broken' ? `Best: ${profile.longestStreak}d · start again`
+              : 'Play a Perform step'}
+          </div>
+          {profile.freezes > 0 && (
+            <div className="streak-freezes">{'❄'.repeat(profile.freezes)} {profile.freezes === 1 ? '1 freeze' : `${profile.freezes} freezes`}</div>
+          )}
         </div>
         <div className="stat-card">
           <div className="stat-label">{rank.current.name}</div>
@@ -116,10 +131,13 @@ export function LessonBrowser({
           <div className="muted">{rank.next ? `${rank.next.xp - profile.xp} to ${rank.next.name}` : 'Max rank'}</div>
           <div className="stat-bar"><span style={{ width: `${Math.round(rank.into * 100)}%` }} /></div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Stars</div>
-          <div className="stat-value">{stars}</div>
-          <div className="muted">{minutes} min on pads</div>
+        <div className="stat-card goal">
+          <div className="stat-label">Today</div>
+          <div className="stat-value">{profile.dailyXp}<span className="muted"> / {DAILY_XP_GOAL} XP</span></div>
+          <div className="muted">{dailyPct >= 100 ? `Goal done · ${stars} ★ · ${minutes} min` : `${stars} ★ · ${minutes} min on pads`}</div>
+          <div className="goal-ring" style={{ '--pct': `${dailyPct}%` } as CSSProperties} aria-label={`Daily goal ${dailyPct}%`}>
+            <span>{dailyPct}%</span>
+          </div>
         </div>
       </section>
 

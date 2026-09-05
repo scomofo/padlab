@@ -1,4 +1,4 @@
-import { todayKey, yesterdayKey } from '../lib/dates'
+import { daysAgoKey, todayKey, yesterdayKey } from '../lib/dates'
 import { RANKS, xpForRun } from '../lib/ranks'
 import type { ScoreSummary } from '../engine/scoring'
 
@@ -20,7 +20,17 @@ export interface Profile {
   dailyChallengeDate: string | null
   badges: string[]
   week: Record<string, number>
+  /** Unused streak freezes. One is earned every FREEZE_EVERY_DAYS of streak. */
+  freezes: number
+  /** Total freezes ever earned, so the same milestone cannot pay out twice. */
+  freezesEarned: number
 }
+
+/** Daily XP target shown as a ring on the home screen and on results. */
+export const DAILY_XP_GOAL = 150
+/** A streak freeze is earned each time the streak crosses a multiple of this. */
+export const FREEZE_EVERY_DAYS = 7
+export const MAX_FREEZES = 2
 
 const EMPTY: Profile = {
   xp: 0,
@@ -37,6 +47,8 @@ const EMPTY: Profile = {
   dailyChallengeDate: null,
   badges: [],
   week: {},
+  freezes: 0,
+  freezesEarned: 0,
 }
 
 function readRaw(): unknown {
@@ -64,7 +76,7 @@ function numberOr(v: unknown, fb: number, min = 0, max = 1e12): number {
 export function loadProfile(): Profile {
   const stored = readRaw()
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
-    return { ...EMPTY, week: {} }
+    return { ...EMPTY, week: {}, badges: [] }
   }
   const s = stored as Record<string, unknown>
   const today = todayKey()
@@ -93,6 +105,8 @@ export function loadProfile(): Profile {
     dailyChallengeDate: challengeDate === today ? challengeDate : today,
     badges: Array.isArray(s.badges) ? s.badges.filter((b): b is string => typeof b === 'string') : [],
     week,
+    freezes: Math.round(numberOr(s.freezes, 0, 0, MAX_FREEZES)),
+    freezesEarned: Math.round(numberOr(s.freezesEarned, 0, 0, 10_000)),
   }
 }
 
@@ -104,12 +118,52 @@ export function goalMetToday(p: Profile): boolean {
   return p.lastGoalDate === todayKey()
 }
 
+export function dailyGoalMet(p: Profile): boolean {
+  return p.dailyXpDate === todayKey() && p.dailyXp >= DAILY_XP_GOAL
+}
+
+export type StreakStatus =
+  /** Scored a Perform today; the streak is safe. */
+  | 'safe'
+  /** Streak is alive from yesterday but nothing scored yet today. */
+  | 'at-risk'
+  /** Missed exactly one day and a freeze will bridge the gap on the next Perform. */
+  | 'frozen'
+  /** Gap too long (or no freeze); the shown streak will reset on the next Perform. */
+  | 'broken'
+  /** Never scored. */
+  | 'none'
+
+/**
+ * How the stored streak relates to today. The stored number is only rewritten
+ * on a Perform, so the home screen uses this to avoid showing a dead streak as
+ * alive — and to warn when it is about to die.
+ */
+export function streakStatus(p: Profile, now = new Date()): StreakStatus {
+  if (!p.lastGoalDate || p.streak === 0) return 'none'
+  if (p.lastGoalDate === todayKey(now)) return 'safe'
+  if (p.lastGoalDate === yesterdayKey(now)) return 'at-risk'
+  if (p.lastGoalDate === daysAgoKey(2, now) && p.freezes > 0) return 'frozen'
+  return 'broken'
+}
+
+/** The streak a player should be shown: 0 once it is beyond saving. */
+export function displayStreak(p: Profile, now = new Date()): number {
+  return streakStatus(p, now) === 'broken' ? 0 : p.streak
+}
+
 export interface RunAward {
   profile: Profile
   xpGained: number
   streakGrew: boolean
   newBadges: string[]
   rankedUp: boolean
+  /** This run pushed today's XP across DAILY_XP_GOAL. */
+  dailyGoalHit: boolean
+  /** A stored freeze was spent to bridge yesterday's missed day. */
+  freezeUsed: boolean
+  /** Freezes earned by this run (0 or 1). */
+  freezesEarned: number
 }
 
 function unlock(p: Profile, id: string, fresh: string[]): void {
@@ -151,16 +205,37 @@ export function applyRun(opts: {
     p.dailyXp = 0
     p.dailyXpDate = today
   }
+  const goalBefore = p.dailyXp >= DAILY_XP_GOAL
   p.dailyXp += xpGained
+  const dailyGoalHit = !goalBefore && p.dailyXp >= DAILY_XP_GOAL
   p.week[today] = (p.week[today] ?? 0) + 1
 
   let streakGrew = false
+  let freezeUsed = false
+  let freezesEarned = 0
   if (opts.scored && p.lastGoalDate !== today) {
-    if (p.lastGoalDate === yesterdayKey()) p.streak += 1
-    else p.streak = 1
+    if (p.lastGoalDate === yesterdayKey()) {
+      p.streak += 1
+    } else if (p.lastGoalDate === daysAgoKey(2) && p.freezes > 0) {
+      // One missed day, bridged by a freeze: the streak survives and grows.
+      p.freezes -= 1
+      freezeUsed = true
+      p.streak += 1
+    } else {
+      p.streak = 1
+    }
     p.lastGoalDate = today
     streakGrew = true
     p.longestStreak = Math.max(p.longestStreak, p.streak)
+    // Every FREEZE_EVERY_DAYS of streak earns a freeze, once per milestone.
+    const milestones = Math.floor(p.streak / FREEZE_EVERY_DAYS)
+    if (milestones > p.freezesEarned) {
+      p.freezesEarned = milestones
+      if (p.freezes < MAX_FREEZES) {
+        p.freezes += 1
+        freezesEarned = 1
+      }
+    }
   }
   if (opts.isDaily && opts.scored) {
     p.dailyChallengeDone = true
@@ -183,6 +258,9 @@ export function applyRun(opts: {
     streakGrew,
     newBadges: fresh,
     rankedUp: rankCrossed(opts.prevXp, p.xp),
+    dailyGoalHit,
+    freezeUsed,
+    freezesEarned,
   }
 }
 
