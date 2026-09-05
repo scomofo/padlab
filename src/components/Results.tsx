@@ -5,6 +5,7 @@ import type { RunAward } from '../store/profile'
 import { BADGE_LABEL, DAILY_XP_GOAL } from '../store/profile'
 import { rankForXp } from '../lib/ranks'
 import { nearMissHook, timingBuckets, timingLean } from '../lib/insight'
+import type { DailyModifier } from '../lib/daily'
 
 interface ResultsProps {
   summary: ScoreSummary
@@ -14,6 +15,8 @@ interface ResultsProps {
   /** Whether this run counted toward saved progress (Perform step). */
   scored: boolean
   award: RunAward | null
+  /** Set when this visit is the daily groove: which twist, and whether this run cleared it. */
+  daily?: { modifier: DailyModifier; cleared: boolean } | null
   nextLesson: Lesson | null
   onRetry: () => void
   onNext?: () => void
@@ -53,7 +56,7 @@ const BUCKET_LABEL: Record<string, string> = {
 }
 
 export function Results({
-  summary, newBest, lessonTitle, stepName, scored, award, nextLesson, onRetry, onNext, onExit,
+  summary, newBest, lessonTitle, stepName, scored, award, daily = null, nextLesson, onRetry, onNext, onExit,
 }: ResultsProps) {
   const title =
     summary.stars >= 3 ? 'Clean'
@@ -84,6 +87,13 @@ export function Results({
         </div>
         <div className="accuracy">{summary.accuracy}%</div>
         {newBest && <div className="new-best">New best!</div>}
+        {daily && scored && (
+          <div className={daily.cleared ? 'daily-result cleared' : 'daily-result'}>
+            {daily.cleared
+              ? `Daily groove cleared${daily.modifier.id === 'standard' ? '' : ` · ${daily.modifier.name}`}`
+              : `Daily not cleared — ${daily.modifier.rule}`}
+          </div>
+        )}
         {hook && <div className="results-hook">{hook}</div>}
 
         {judged > 0 && (

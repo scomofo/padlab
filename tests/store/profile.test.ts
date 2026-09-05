@@ -67,7 +67,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 12.4,
       prevXp: 0,
     })
@@ -87,7 +87,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -103,7 +103,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -113,7 +113,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: first.profile.xp,
     })
@@ -128,7 +128,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: false,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -141,7 +141,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: false,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -155,7 +155,7 @@ describe('applyRun', () => {
       summary: summary({ stars: 0 }),
       scored: false,
       firstClear: false,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -171,7 +171,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: false,
       firstClear: false,
-      isDaily: true,
+      dailyBonusXp: 60,
       durationSec: 8,
       prevXp: 0,
     })
@@ -183,7 +183,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: true,
+      dailyBonusXp: 60,
       durationSec: 8,
       prevXp: practice.profile.xp,
     })
@@ -198,7 +198,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })
@@ -209,7 +209,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: false,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: first.profile.xp,
     })
@@ -224,7 +224,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: true,
+      dailyBonusXp: 60,
       durationSec: 8,
       prevXp: 240,
     })
@@ -243,7 +243,7 @@ describe('applyRun', () => {
       summary: summary(),
       scored: true,
       firstClear: true,
-      isDaily: false,
+      dailyBonusXp: 0,
       durationSec: 8,
       prevXp: 0,
     })).not.toThrow()
@@ -254,7 +254,7 @@ describe('streak freezes', () => {
   const run = (profile: Profile, over: Partial<Parameters<typeof applyRun>[0]> = {}) =>
     applyRun({
       profile, lessonId: 'a', summary: summary(), scored: true, firstClear: false,
-      isDaily: false, durationSec: 8, prevXp: profile.xp, ...over,
+      dailyBonusXp: 0, durationSec: 8, prevXp: profile.xp, ...over,
     })
 
   it('earns a freeze when the streak reaches 7, once', () => {
@@ -335,7 +335,7 @@ describe('daily XP goal', () => {
     for (let i = 0; i < 6; i++) {
       const a = applyRun({
         profile: p, lessonId: 'a', summary: summary(), scored: true, firstClear: false,
-        isDaily: false, durationSec: 8, prevXp: p.xp,
+        dailyBonusXp: 0, durationSec: 8, prevXp: p.xp,
       })
       if (a.dailyGoalHit) {
         crossed++
@@ -352,5 +352,30 @@ describe('daily XP goal', () => {
   it('is not met on a fresh day even with stale XP stored', () => {
     localStorage.setItem(KEY, JSON.stringify({ dailyXp: 500, dailyXpDate: '1999-01-01' }))
     expect(dailyGoalMet(loadProfile())).toBe(false)
+  })
+})
+
+describe('daily bonus', () => {
+  const run = (profile: Profile, dailyBonusXp: number, scored = true) =>
+    applyRun({
+      profile, lessonId: 'd', summary: summary(), scored, firstClear: false,
+      dailyBonusXp, durationSec: 8, prevXp: profile.xp,
+    })
+
+  it('pays the modifier bonus once per day and reports the clear', () => {
+    const first = run(empty(), 90)
+    const plain = run(empty(), 0)
+    expect(first.dailyCleared).toBe(true)
+    expect(first.xpGained - plain.xpGained).toBe(90)
+    const again = run(first.profile, 90)
+    expect(again.dailyCleared).toBe(true)
+    expect(again.xpGained).toBe(plain.xpGained)
+    expect(again.profile.dailyChallengeDone).toBe(true)
+  })
+
+  it('does not clear or pay on a practice step', () => {
+    const a = run(empty(), 90, false)
+    expect(a.dailyCleared).toBe(false)
+    expect(a.profile.dailyChallengeDone).toBe(false)
   })
 })

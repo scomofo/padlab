@@ -8,6 +8,7 @@ import { COURSES } from '../lessons/courses'
 import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
 import { dailyLesson, recommendLesson, weekDots } from '../lib/curriculum'
+import { dailyBlurb, dailyModifier } from '../lib/daily'
 import { rankForXp } from '../lib/ranks'
 import { PadGrid } from './PadGrid'
 import { usePadKeyboard } from '../input/usePadKeyboard'
@@ -73,6 +74,7 @@ export function LessonBrowser({
 
   const next = recommendLesson(lessons, progress, profile.lastLessonId)
   const daily = dailyLesson(lessons, progress)
+  const twist = dailyModifier(progress)
   const fresh = profile.xp === 0 && Object.keys(progress).length === 0
   const startLesson = fresh ? lessons.find((l) => l.id === 'first-taps') ?? next : next
   const rank = rankForXp(profile.xp)
@@ -169,9 +171,10 @@ export function LessonBrowser({
             onOpen(daily, { daily: true, autoStart: true })
           }}
         >
-          <span className="muted kicker">Daily groove</span>
+          <span className="muted kicker">Daily groove{twist.id !== 'standard' ? ` · ${twist.name}` : ''}</span>
           <h2>{daily.title}</h2>
-          <p className="muted">{daily.genre} · {daily.bpm} BPM · +60 XP bonus</p>
+          <p className="muted">{dailyBlurb(daily, twist)}</p>
+          {twist.id !== 'standard' && <p className="muted daily-rule">{twist.rule}</p>}
           <span className={profile.dailyChallengeDone ? 'daily-status done' : 'daily-status'}>
             {profile.dailyChallengeDone ? 'Cleared today' : 'Take it on ›'}
           </span>

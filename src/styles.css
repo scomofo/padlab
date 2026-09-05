@@ -177,6 +177,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .play-now { margin-top: 12px; align-self: flex-start; }
 .daily-status { margin-top: 12px; font-size: 14px; font-weight: 700; color: var(--accent); }
 .daily-status.done { color: var(--muted); }
+.daily-rule { font-size: 12px; color: var(--accent2); font-weight: 600; }
+.player-title .daily-rule { display: block; margin-top: 2px; }
+.daily-result { font-size: 13px; font-weight: 700; color: var(--muted); }
+.daily-result.cleared { color: var(--accent); }
 
 .warmup {
   margin-top: 12px;

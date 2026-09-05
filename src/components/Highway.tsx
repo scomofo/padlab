@@ -13,6 +13,8 @@ interface HighwayProps {
   tempoPct: number
   /** Live run, or null when idle (idle shows the chart parked at the start). */
   runtime: PlayerRuntime | null
+  /** Daily "Fade" twist: player notes fade to invisible over this many beats before the line. */
+  fadeBeats?: number
 }
 
 const JUDGE_COLORS: Record<string, string> = {
@@ -50,7 +52,7 @@ const COMBO_TIERS: { min: number; color: string }[] = [
 ]
 const comboColor = (combo: number) => COMBO_TIERS.find((t) => combo >= t.min)!.color
 
-export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) {
+export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }: HighwayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef(runtime)
@@ -59,6 +61,8 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
   stepRef.current = stepIndex
   const tempoRef = useRef(tempoPct)
   tempoRef.current = tempoPct
+  const fadeRef = useRef(fadeBeats)
+  fadeRef.current = fadeBeats
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -247,10 +251,16 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime }: HighwayProps) 
           ctx2d.fillStyle = color
           ctx2d.fill()
         } else {
-          ctx2d.globalAlpha = 1
+          // Fade twist: only while a run is live, so the parked chart stays readable.
+          let alpha = 1
+          if (fadeRef.current > 0 && rt) {
+            alpha = Math.max(0, Math.min(1, (t - now) / fadeRef.current))
+            if (alpha <= 0) { ctx2d.globalAlpha = 1; return }
+          }
+          ctx2d.globalAlpha = alpha
           ctx2d.fillStyle = color
           ctx2d.fill()
-          ctx2d.globalAlpha = 0.5
+          ctx2d.globalAlpha = 0.5 * alpha
           ctx2d.strokeStyle = '#ffffff'
           ctx2d.lineWidth = 1
           ctx2d.stroke()

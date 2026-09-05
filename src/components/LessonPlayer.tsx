@@ -15,6 +15,7 @@ import type { Settings } from '../store/progress'
 import { loadProgress, saveLessonResult } from '../store/progress'
 import { applyRun, type Profile, type RunAward } from '../store/profile'
 import { nextInCourse } from '../lib/curriculum'
+import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
 import { LESSONS } from '../lessons'
 
 interface LessonPlayerProps {
@@ -49,13 +50,17 @@ export function LessonPlayer({
   onProfile,
   onOpenLesson,
 }: LessonPlayerProps) {
+  // Fixed for the visit: progress changes mid-session must not swap the twist.
+  const [modifier] = useState<DailyModifier | null>(
+    () => (isDaily ? dailyModifier(progress ?? loadProgress()) : null),
+  )
   const [stepIndex, setStepIndex] = useState(0)
   const [mode, setMode] = useState<PlayMode>(autoStart ? 'play' : 'listen')
-  const [tempoPct, setTempoPct] = useState(100)
+  const [tempoPct, setTempoPct] = useState(modifier?.tempoPct ?? 100)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
   const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
-  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null } | null>(null)
+  const [results, setResults] = useState<{ summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean } | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
   const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
@@ -102,18 +107,19 @@ export function LessonPlayer({
             saveLessonResult(lesson.id, summary.accuracy, summary.stars)
             onProgressChange()
           }
+          const dailyMet = modifier ? dailyCleared(modifier, summary, { isLastStep, tempoPct }) : false
           const award = applyRun({
             profile,
             lessonId: lesson.id,
             summary,
             scored: isLastStep,
             firstClear,
-            isDaily: Boolean(isDaily) && isLastStep,
+            dailyBonusXp: dailyMet && modifier ? modifier.bonusXp : 0,
             durationSec: (performance.now() - startedAt.current) / 1000,
             prevXp: profile.xp,
           })
           onProfile(award.profile)
-          setResults({ summary, newBest, award })
+          setResults({ summary, newBest, award, dailyMet })
         }
         bump((n) => n + 1)
       },
@@ -122,7 +128,7 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, isDaily, onProfile, progress])
+  }, [lesson, stepIndex, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress])
 
   const skipInitialStop = useRef(true)
   useEffect(() => {
@@ -198,8 +204,11 @@ export function LessonPlayer({
           <h1>{lesson.title}</h1>
           <span className="muted">
             {lesson.genre} · {lesson.bpm} BPM · Level {lesson.level} · {lesson.padCount} pads
-            {isDaily ? ' · Daily' : ''}
+            {modifier ? ` · Daily${modifier.id === 'standard' ? '' : `: ${modifier.name}`}` : ''}
           </span>
+          {modifier && modifier.id !== 'standard' && (
+            <span className="daily-rule">{modifier.rule}</span>
+          )}
         </div>
         <div className="player-controls">
           <div className="segmented">
@@ -219,7 +228,7 @@ export function LessonPlayer({
             onChange={(e) => setTempoPct(Number(e.target.value))}
             title="Tempo"
           >
-            {[100, 90, 80, 70, 60, 50].map((p) => (
+            {(modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -254,7 +263,7 @@ export function LessonPlayer({
       </div>
 
       <div className="player-stage">
-        <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} />
+        <Highway lesson={lesson} stepIndex={stepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={modifier?.fadeBeats ?? 0} />
         {playing && mode === 'play' && hud.judged > 0 && (
           <div className="play-hud">
             <span>{hud.acc}%</span>
@@ -280,6 +289,7 @@ export function LessonPlayer({
           stepName={step.name}
           scored={isLastStep}
           award={results.award}
+          daily={modifier ? { modifier, cleared: results.dailyMet } : null}
           nextLesson={isLastStep ? nextLesson : null}
           onRetry={() => { setResults(null); startRun() }}
           onNext={
