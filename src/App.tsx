@@ -16,17 +16,18 @@ import {
   loadGuideProgress, loadProgress, loadSettings, saveSettings, type Settings,
 } from './store/progress'
 import { loadProfile, type Profile } from './store/profile'
+import { loadHistory, type PerformanceRun } from './store/history'
 
 export default function App() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
-  const [daily, setDaily] = useState(false)
-  const [autoStart, setAutoStart] = useState(false)
+  const [launch, setLaunch] = useState<{ daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }>({})
   const [guide, setGuide] = useState<Guide | null>(null)
   const [showSetup, setShowSetup] = useState(false)
   const [settings, setSettings] = useState<Settings>(() => loadSettings())
   const [progress, setProgress] = useState(() => loadProgress())
   const [guideProgress, setGuideProgress] = useState(() => loadGuideProgress())
   const [profile, setProfile] = useState<Profile>(() => loadProfile())
+  const [history, setHistory] = useState<PerformanceRun[]>(loadHistory)
 
   useEffect(() => {
     void midi.init()
@@ -64,9 +65,8 @@ export default function App() {
     saveSettings(s)
   }
 
-  const openLesson = (next: Lesson, opts?: { daily?: boolean; autoStart?: boolean }) => {
-    setDaily(Boolean(opts?.daily))
-    setAutoStart(Boolean(opts?.autoStart))
+  const openLesson = (next: Lesson, opts?: typeof launch) => {
+    setLaunch(opts ?? {})
     setLesson(next)
   }
 
@@ -78,13 +78,16 @@ export default function App() {
           lesson={lesson}
           settings={settings}
           profile={profile}
-          isDaily={daily}
-          autoStart={autoStart}
+          isDaily={launch.daily}
+          autoStart={launch.autoStart}
+          startAtPerform={launch.perform}
+          initialTempoPct={launch.tempoPct}
           progress={progress}
+          history={history}
+          onHistory={setHistory}
           onExit={() => {
             setLesson(null)
-            setDaily(false)
-            setAutoStart(false)
+            setLaunch({})
           }}
           onProgressChange={() => setProgress(loadProgress())}
           onProfile={setProfile}
@@ -104,6 +107,7 @@ export default function App() {
           progress={progress}
           guideProgress={guideProgress}
           profile={profile}
+          history={history}
           onOpen={openLesson}
           onOpenGuide={setGuide}
           onOpenSetup={() => setShowSetup(true)}

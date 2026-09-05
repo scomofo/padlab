@@ -15,6 +15,8 @@ import { PadGrid } from './PadGrid'
 import { usePadKeyboard } from '../input/usePadKeyboard'
 import { padBus } from '../input/inputBus'
 import { unlockAudio } from '../audio/audio'
+import type { PerformanceRun } from '../store/history'
+import { ReplayCard } from './ReplayCard'
 
 interface LessonBrowserProps {
   lessons: Lesson[]
@@ -22,7 +24,8 @@ interface LessonBrowserProps {
   progress: Record<string, LessonProgress>
   guideProgress: Record<string, GuideProgress>
   profile: Profile
-  onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean }) => void
+  history: PerformanceRun[]
+  onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }) => void
   onOpenGuide: (guide: Guide) => void
   onOpenSetup: () => void
   /** False while DeviceSetup overlay is open — its own 16-pad listener owns keys. */
@@ -32,7 +35,7 @@ interface LessonBrowserProps {
 type Filter = 'all' | 8 | 16
 
 export function LessonBrowser({
-  lessons, guides, progress, guideProgress, profile, onOpen, onOpenGuide, onOpenSetup,
+  lessons, guides, progress, guideProgress, profile, history, onOpen, onOpenGuide, onOpenSetup,
   keyboardEnabled = true,
 }: LessonBrowserProps) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -183,6 +186,11 @@ export function LessonBrowser({
           </span>
         </button>
       </section>
+
+      <ReplayCard lessons={lessons} history={history} onReplay={(lesson, tempoPct) => {
+        void unlockAudio()
+        onOpen(lesson, { autoStart: true, perform: true, tempoPct })
+      }} />
 
       <div className="filter-row">
         {([['all', 'All lessons'], [8, '8 pads · MPK Mini'], [16, '16 pads · SP-404']] as [Filter, string][]).map(

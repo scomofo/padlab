@@ -24,6 +24,7 @@ import { COUNT_IN_BEATS, PlayerRuntime, type PlayMode } from '../../src/engine/p
 import type { ScoreSummary } from '../../src/engine/scoring'
 import type { Lesson, NoteEvent } from '../../src/engine/types'
 import { makeLesson, note } from '../helpers/chart'
+import { createFocusLesson } from '../../src/lib/focus'
 
 /** Matches TICK_MS in player.ts. */
 const TICK_MS = 25
@@ -571,5 +572,20 @@ describe('soundFor', () => {
   it('returns null for a pad outside the controller', () => {
     const { runtime } = harness({ lesson: makeLesson({ padCount: 8 }) })
     expect(runtime.soundFor(9)).toBeNull()
+  })
+})
+
+describe('focus chart playback', () => {
+  it('judges all four repeats and schedules the original backing part through the real runtime', () => {
+    const lesson = makeLesson({ events: [
+      note(0, 1), note(8, 1, 40), note(9, 2, 90), note(12, 1, 80), note(15, 2, 110),
+    ] })
+    const drill = createFocusLesson(lesson, 0, { startBar: 3, endBar: 4, misses: 2, offTime: 0, total: 2 })
+    const h = harness({ lesson: drill, stepIndex: 0, tempoPct: 80 })
+    h.playPerfectly()
+    expect(h.finished).toBe(true)
+    expect(h.summary).toMatchObject({ total: 8, perfect: 8, accuracy: 100, miss: 0 })
+    expect(h.autoPlayed).toEqual(Array(8).fill(2))
+    expect(playSound.mock.calls.map((call) => call[0])).toEqual(Array(8).fill('snare'))
   })
 })

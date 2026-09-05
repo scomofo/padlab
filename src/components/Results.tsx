@@ -6,6 +6,9 @@ import { BADGE_LABEL, DAILY_XP_GOAL } from '../store/profile'
 import { rankForXp } from '../lib/ranks'
 import { nearMissHook, timingBuckets, timingLean } from '../lib/insight'
 import type { DailyModifier } from '../lib/daily'
+import { FOCUS_REPEATS, focusTempo, phraseLabel, type FocusPhrase } from '../lib/focus'
+import type { PerformanceRun } from '../store/history'
+import { PerformanceTrail } from './PerformanceTrail'
 
 interface ResultsProps {
   summary: ScoreSummary
@@ -16,6 +19,12 @@ interface ResultsProps {
   scored: boolean
   /** Perform played below full tempo: shown as practice, nothing saved. */
   slowed?: boolean
+  focusPractice?: boolean
+  focusPhrase?: FocusPhrase | null
+  onFocus?: (phrase: FocusPhrase) => void
+  onReturnFromFocus?: () => void
+  returnStepName?: string
+  performances?: PerformanceRun[]
   /** Practice step finished at one star or better, so its checkmark is saved. */
   stepCleared?: boolean
   stepNumber?: number
@@ -42,7 +51,8 @@ function useCountUp(from: number, to: number): number {
   const [value, setValue] = useState(from)
   const frame = useRef(0)
   useEffect(() => {
-    if (typeof requestAnimationFrame !== 'function' || from === to) {
+    if (typeof requestAnimationFrame !== 'function' || from === to
+      || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setValue(to)
       return
     }
@@ -69,10 +79,12 @@ const BUCKET_LABEL: Record<string, string> = {
 
 export function Results({
   summary, newBest, lessonTitle, stepName, scored, slowed = false, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
+  focusPractice = false, focusPhrase = null, onFocus, onReturnFromFocus, returnStepName, performances = [],
   newRung = null, nextRung = null, award, daily = null, nextLesson, onRetry, onNext, onExit,
 }: ResultsProps) {
   const title =
-    summary.stars >= 3 ? 'Clean'
+    focusPractice ? (summary.stars >= 3 ? 'Phrase locked in' : 'Finding the feel')
+    : summary.stars >= 3 ? 'Clean'
     : summary.stars === 2 ? 'In the pocket'
     : summary.stars === 1 ? 'Keep digging'
     : 'Again'
@@ -87,9 +99,31 @@ export function Results({
   const dailyXp = award?.profile.dailyXp ?? 0
   const dailyBefore = Math.max(0, dailyXp - (award?.xpGained ?? 0))
   const dailyShown = Math.min(DAILY_XP_GOAL, dailyBefore + (xpNow - xpBefore))
+  const previousRun = performances.at(-2)
+  const improvement = previousRun ? summary.accuracy - previousRun.accuracy : null
+  const dialog = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const previous = document.activeElement
+    dialog.current?.focus()
+    return () => { if (previous instanceof HTMLElement && previous.isConnected) previous.focus() }
+  }, [])
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="results-title">
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="results-title" ref={dialog} tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onExit() }
+        if (event.key !== 'Tab') return
+        const buttons = dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')
+        if (!buttons?.length) return
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog.current)) {
+          event.preventDefault(); last.focus()
+        } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog.current)) {
+          event.preventDefault(); first.focus()
+        }
+      }}>
       <div className="results-card">
         <span className="muted">{lessonTitle} — {stepName}{tempoPct !== 100 ? ` · ${tempoPct}%` : ''}</span>
         <h2 id="results-title" className="results-title">{title}</h2>
@@ -112,6 +146,26 @@ export function Results({
           </div>
         )}
         {hook && <div className="results-hook">{hook}</div>}
+
+        {performances.length > 0 && (
+          <div className="performance-comparison">
+            <strong>{improvement === null ? 'Your first recorded run'
+              : improvement > 0 ? `+${improvement} points since last time`
+              : improvement === 0 ? 'Matched your last run'
+              : `Last time ${previousRun!.accuracy}% · this time ${summary.accuracy}%`}</strong>
+            <span>{improvement === null ? 'Replay this groove to see your progress.' : `Same groove · ${tempoPct}% tempo · same challenge rules`}</span>
+            <PerformanceTrail runs={performances} />
+          </div>
+        )}
+
+        {focusPhrase && onFocus && (
+          <div className="focus-suggestion">
+            <strong>A smaller part to work on</strong>
+            <p>{phraseLabel(focusPhrase)} · {focusPhrase.misses > 0 ? `${focusPhrase.misses} of ${focusPhrase.total} notes missed` : `${focusPhrase.offTime} hits to tighten up`}</p>
+            <p>{FOCUS_REPEATS} repeats at {focusTempo(tempoPct)}% tempo. Then try the full step again.</p>
+            <button className="btn primary" onClick={() => onFocus(focusPhrase)}>Practice {phraseLabel(focusPhrase).toLowerCase()} ›</button>
+          </div>
+        )}
 
         {judged > 0 && (
           <div className="timing" aria-label="Timing distribution">
@@ -168,10 +222,11 @@ export function Results({
         {slowed && (
           <div className="muted">Played at {tempoPct}% — stars, streak and the daily need full tempo. Set 100% and go again.</div>
         )}
-        {!scored && !slowed && stepCleared && (
+        {focusPractice && <div className="focus-note">Practice XP earned. Take this feel back to the full groove. Complete Perform for stars and daily credit.</div>}
+        {!focusPractice && !scored && !slowed && stepCleared && (
           <div className="step-cleared">✓ Step {stepNumber}{stepCount ? ` of ${stepCount}` : ''} done — Perform is where the stars are</div>
         )}
-        {!scored && !slowed && !stepCleared && (
+        {!focusPractice && !scored && !slowed && !stepCleared && (
           <div className="muted">One star ticks this step off. Stars, streak and the daily come from Perform.</div>
         )}
         <div className="judge-row">
@@ -188,15 +243,18 @@ export function Results({
           </div>
         )}
         <div className="results-actions">
-          <button className="btn" onClick={onRetry}>Retry</button>
+          <button className="btn" onClick={onRetry}>{focusPractice ? 'Repeat phrase' : 'Retry'}</button>
+          {focusPractice && onReturnFromFocus && (
+            <button className="btn primary" onClick={onReturnFromFocus}>Back to {returnStepName ?? 'full groove'} ›</button>
+          )}
           {onNext && (
             <button className="btn primary" onClick={onNext}>
               {nextLesson ? `Next: ${nextLesson.title} ›` : 'Next step ›'}
             </button>
           )}
-          {!onNext && <button className="btn primary" onClick={onExit}>Studio</button>}
+          {!onNext && !focusPractice && <button className="btn primary" onClick={onExit}>Studio</button>}
         </div>
-        {onNext && nextLesson && (
+        {(focusPractice || onNext) && (
           <button className="btn ghost" onClick={onExit}>Back to studio</button>
         )}
       </div>
