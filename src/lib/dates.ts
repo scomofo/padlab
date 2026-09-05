@@ -11,3 +11,10 @@ export function yesterdayKey(d = new Date()): string {
   y.setDate(y.getDate() - 1)
   return todayKey(y)
 }
+
+/** Local calendar day N days back as YYYY-MM-DD. */
+export function daysAgoKey(n: number, d = new Date()): string {
+  const y = new Date(d)
+  y.setDate(y.getDate() - n)
+  return todayKey(y)
+}

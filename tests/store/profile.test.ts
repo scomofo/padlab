@@ -1,7 +1,9 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyRun, loadProfile, type Profile } from '../../src/store/profile'
-import { todayKey, yesterdayKey } from '../../src/lib/dates'
+import {
+  DAILY_XP_GOAL, MAX_FREEZES, applyRun, dailyGoalMet, displayStreak, loadProfile, streakStatus, type Profile,
+} from '../../src/store/profile'
+import { daysAgoKey, todayKey, yesterdayKey } from '../../src/lib/dates'
 import type { ScoreSummary } from '../../src/engine/scoring'
 
 const KEY = 'padlab-profile-v1'
@@ -24,6 +26,7 @@ function summary(over: Partial<ScoreSummary> = {}): ScoreSummary {
     accuracy: 92,
     stars: 3,
     maxCombo: 10,
+    deltas: [],
     ...over,
   }
 }
@@ -244,5 +247,110 @@ describe('applyRun', () => {
       durationSec: 8,
       prevXp: 0,
     })).not.toThrow()
+  })
+})
+
+describe('streak freezes', () => {
+  const run = (profile: Profile, over: Partial<Parameters<typeof applyRun>[0]> = {}) =>
+    applyRun({
+      profile, lessonId: 'a', summary: summary(), scored: true, firstClear: false,
+      isDaily: false, durationSec: 8, prevXp: profile.xp, ...over,
+    })
+
+  it('earns a freeze when the streak reaches 7, once', () => {
+    const six = { ...empty(), streak: 6, lastGoalDate: yesterdayKey() }
+    const a = run(six)
+    expect(a.profile.streak).toBe(7)
+    expect(a.profile.freezes).toBe(1)
+    expect(a.freezesEarned).toBe(1)
+    // Reaching 7 again after a reset does not pay out a second freeze.
+    const again = run({ ...a.profile, streak: 6, lastGoalDate: yesterdayKey() })
+    expect(again.profile.freezes).toBe(1)
+    expect(again.freezesEarned).toBe(0)
+  })
+
+  it('caps stored freezes at MAX_FREEZES', () => {
+    const p = { ...empty(), streak: 20, lastGoalDate: yesterdayKey(), freezes: MAX_FREEZES, freezesEarned: 2 }
+    const a = run(p)
+    expect(a.profile.streak).toBe(21)
+    expect(a.profile.freezes).toBe(MAX_FREEZES)
+    expect(a.profile.freezesEarned).toBe(3)
+    expect(a.freezesEarned).toBe(0)
+  })
+
+  it('bridges exactly one missed day with a freeze', () => {
+    const p = { ...empty(), streak: 9, lastGoalDate: daysAgoKey(2), freezes: 1, freezesEarned: 1 }
+    const a = run(p)
+    expect(a.freezeUsed).toBe(true)
+    expect(a.profile.streak).toBe(10)
+    expect(a.profile.freezes).toBe(0)
+  })
+
+  it('does not bridge without a freeze, or across two missed days', () => {
+    const noFreeze = run({ ...empty(), streak: 9, lastGoalDate: daysAgoKey(2), freezes: 0 })
+    expect(noFreeze.freezeUsed).toBe(false)
+    expect(noFreeze.profile.streak).toBe(1)
+    const twoDays = run({ ...empty(), streak: 9, lastGoalDate: daysAgoKey(3), freezes: 2, freezesEarned: 2 })
+    expect(twoDays.freezeUsed).toBe(false)
+    expect(twoDays.profile.streak).toBe(1)
+    expect(twoDays.profile.freezes).toBe(2)
+  })
+
+  it('never spends a freeze on a practice step', () => {
+    const p = { ...empty(), streak: 9, lastGoalDate: daysAgoKey(2), freezes: 1, freezesEarned: 1 }
+    const a = run(p, { scored: false })
+    expect(a.freezeUsed).toBe(false)
+    expect(a.profile.freezes).toBe(1)
+    expect(a.profile.streak).toBe(9)
+  })
+
+  it('loads freezes clamped to the cap', () => {
+    localStorage.setItem(KEY, JSON.stringify({ freezes: 99, freezesEarned: 3 }))
+    expect(loadProfile().freezes).toBe(MAX_FREEZES)
+    expect(loadProfile().freezesEarned).toBe(3)
+  })
+})
+
+describe('streakStatus / displayStreak', () => {
+  it('reports each state from lastGoalDate and freezes', () => {
+    expect(streakStatus(empty())).toBe('none')
+    expect(streakStatus({ ...empty(), streak: 3, lastGoalDate: todayKey() })).toBe('safe')
+    expect(streakStatus({ ...empty(), streak: 3, lastGoalDate: yesterdayKey() })).toBe('at-risk')
+    expect(streakStatus({ ...empty(), streak: 3, lastGoalDate: daysAgoKey(2), freezes: 1 })).toBe('frozen')
+    expect(streakStatus({ ...empty(), streak: 3, lastGoalDate: daysAgoKey(2), freezes: 0 })).toBe('broken')
+    expect(streakStatus({ ...empty(), streak: 3, lastGoalDate: daysAgoKey(3), freezes: 2 })).toBe('broken')
+  })
+
+  it('shows 0 for a streak that is beyond saving', () => {
+    expect(displayStreak({ ...empty(), streak: 5, lastGoalDate: daysAgoKey(4) })).toBe(0)
+    expect(displayStreak({ ...empty(), streak: 5, lastGoalDate: yesterdayKey() })).toBe(5)
+    expect(displayStreak({ ...empty(), streak: 5, lastGoalDate: daysAgoKey(2), freezes: 1 })).toBe(5)
+  })
+})
+
+describe('daily XP goal', () => {
+  it('flags the run that crosses the goal, and only that run', () => {
+    let p = empty()
+    let crossed = 0
+    for (let i = 0; i < 6; i++) {
+      const a = applyRun({
+        profile: p, lessonId: 'a', summary: summary(), scored: true, firstClear: false,
+        isDaily: false, durationSec: 8, prevXp: p.xp,
+      })
+      if (a.dailyGoalHit) {
+        crossed++
+        expect(a.profile.dailyXp).toBeGreaterThanOrEqual(DAILY_XP_GOAL)
+        expect(a.profile.dailyXp - a.xpGained).toBeLessThan(DAILY_XP_GOAL)
+      }
+      p = a.profile
+    }
+    expect(p.dailyXp).toBeGreaterThanOrEqual(DAILY_XP_GOAL)
+    expect(crossed).toBe(1)
+    expect(dailyGoalMet(p)).toBe(true)
+  })
+
+  it('is not met on a fresh day even with stale XP stored', () => {
+    localStorage.setItem(KEY, JSON.stringify({ dailyXp: 500, dailyXpDate: '1999-01-01' }))
+    expect(dailyGoalMet(loadProfile())).toBe(false)
   })
 })

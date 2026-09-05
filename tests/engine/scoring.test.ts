@@ -508,3 +508,13 @@ describe('ScoreKeeper — retrigger debounce', () => {
     expect(k.stray).toBe(1)
   })
 })
+
+describe('summary().deltas', () => {
+  it('lists the signed error of every judged hit in chart order, skipping misses', () => {
+    const k = keeper([note(0, 1), note(1, 1), note(2, 1)])
+    k.registerHit(1, beatsFromMs(-30))
+    k.registerHit(1, 1 + beatsFromMs(60))
+    k.sweepMisses(10)
+    expect(k.summary().deltas).toEqual([-30, 60])
+  })
+})
