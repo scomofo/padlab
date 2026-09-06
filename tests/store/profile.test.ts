@@ -164,6 +164,76 @@ describe('applyRun', () => {
     expect(award.profile.lastGoalDate).toBeNull()
   })
 
+  it.each([true, false])('gives no rewards or session credit without landed notes (scored: %s)', (scored) => {
+    const profile = {
+      ...empty(), xp: 240, streak: 6, lastGoalDate: daysAgoKey(2), freezes: 1,
+      dailyXp: 140, dailyXpDate: todayKey(), dailyChallengeDate: todayKey(),
+    }
+    for (const missed of [
+      summary({ perfect: 0, great: 0, good: 0, miss: 10, accuracy: 0, stars: 0, maxCombo: 0 }),
+      summary({ perfect: 0, great: 0, good: 0, miss: 10, stray: 20, accuracy: 0, stars: 0, maxCombo: 0 }),
+      summary({ perfect: 0, great: 0, good: 0, miss: 0, total: 0, accuracy: 0, stars: 0, maxCombo: 0 }),
+    ]) {
+      const award = applyRun({
+        profile, lessonId: 'idle', summary: missed, scored, firstClear: true,
+        dailyBonusXp: 90, newRung: 120, durationSec: 60, prevXp: profile.xp,
+      })
+      expect(award).toEqual({
+        profile, xpGained: 0, streakGrew: false, newBadges: [], rankedUp: false,
+        dailyGoalHit: false, freezeUsed: false, freezesEarned: 0, dailyCleared: false,
+      })
+      expect(loadProfile()).toEqual(profile)
+    }
+  })
+
+  it('resets stale daily fields even when a run lands no notes', () => {
+    const profile = {
+      ...empty(), xp: 300, dailyXp: 200, dailyXpDate: yesterdayKey(),
+      dailyChallengeDone: true, dailyChallengeDate: yesterdayKey(),
+    }
+    const award = applyRun({
+      profile, lessonId: 'idle',
+      summary: summary({ perfect: 0, great: 0, miss: 10, accuracy: 0, stars: 0, maxCombo: 0 }),
+      scored: true, firstClear: true, dailyBonusXp: 60, durationSec: 60, prevXp: profile.xp,
+    })
+    expect(award.profile).toEqual({
+      ...profile, dailyXp: 0, dailyXpDate: todayKey(),
+      dailyChallengeDone: false, dailyChallengeDate: todayKey(),
+    })
+    expect(award.xpGained).toBe(0)
+    expect(award.dailyCleared).toBe(false)
+    expect(loadProfile()).toEqual(award.profile)
+    expect(profile.dailyChallengeDone).toBe(true)
+  })
+
+  it('requires a scored star before paying a claimed first-clear bonus', () => {
+    const run = (scored: boolean, stars: ScoreSummary['stars'], firstClear: boolean) => applyRun({
+      profile: empty(), lessonId: 'a',
+      summary: summary({ perfect: 1, great: 0, miss: 9, accuracy: 10, stars, maxCombo: 1 }),
+      scored, firstClear, dailyBonusXp: 0, durationSec: 8, prevXp: 0,
+    })
+    expect(run(true, 0, true).xpGained).toBe(run(true, 0, false).xpGained)
+    expect(run(false, 3, true).xpGained).toBe(run(false, 3, false).xpGained)
+    expect(run(true, 1, true).xpGained - run(true, 1, false).xpGained).toBe(40)
+  })
+
+  it('keeps practice XP without unlocking performance star or combo badges', () => {
+    const clean = summary({ perfect: 32, great: 0, total: 32, accuracy: 100, maxCombo: 32 })
+    const practice = applyRun({
+      profile: empty(), lessonId: 'a', summary: clean, scored: false,
+      firstClear: true, dailyBonusXp: 0, durationSec: 20, prevXp: 0,
+    })
+    expect(practice.xpGained).toBeGreaterThan(0)
+    expect(practice.profile.sessions).toBe(1)
+    expect(practice.profile.notesHit).toBe(32)
+    expect(practice.newBadges).toEqual([])
+    const perform = applyRun({
+      profile: practice.profile, lessonId: 'a', summary: clean, scored: true,
+      firstClear: true, dailyBonusXp: 0, durationSec: 20, prevXp: practice.profile.xp,
+    })
+    expect(perform.newBadges).toEqual(expect.arrayContaining(['first-star', 'three-star', 'combo-16', 'combo-32']))
+  })
+
   it('marks the daily groove only on a scored daily Perform', () => {
     const practice = applyRun({
       profile: empty(),
@@ -377,6 +447,22 @@ describe('daily bonus', () => {
     const a = run(empty(), 90, false)
     expect(a.dailyCleared).toBe(false)
     expect(a.profile.dailyChallengeDone).toBe(false)
+  })
+
+  it('normalizes yesterday’s daily credit before an ordinary run and pays today’s bonus once', () => {
+    const previousDay = {
+      ...empty(), xp: 500, dailyXp: 500, dailyXpDate: yesterdayKey(),
+      dailyChallengeDone: true, dailyChallengeDate: yesterdayKey(),
+    }
+    const ordinary = run(previousDay, 0)
+    expect(ordinary.profile.dailyXp).toBe(ordinary.xpGained)
+    expect(ordinary.profile.dailyXpDate).toBe(todayKey())
+    expect(ordinary.profile.dailyChallengeDone).toBe(false)
+    expect(ordinary.profile.dailyChallengeDate).toBe(todayKey())
+    const daily = run(ordinary.profile, 90)
+    const repeat = run(daily.profile, 90)
+    expect(daily.profile.dailyChallengeDone).toBe(true)
+    expect(daily.xpGained - repeat.xpGained).toBe(90)
   })
 })
 

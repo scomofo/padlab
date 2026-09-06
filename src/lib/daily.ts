@@ -26,7 +26,7 @@ export const MODIFIED_BONUS_XP = 90
 const STANDARD: DailyModifier = {
   id: 'standard',
   name: 'Standard',
-  rule: 'Play the Perform step to clear',
+  rule: 'Finish Perform and land at least one note',
   tempoPct: 100,
   fadeBeats: 0,
   bonusXp: STANDARD_BONUS_XP,
@@ -106,6 +106,7 @@ export function dailyCleared(
 ): boolean {
   if (!opts.isLastStep) return false
   if (opts.tempoPct < modifier.tempoPct) return false
+  if (summary.total <= 0 || summary.perfect + summary.great + summary.good <= 0) return false
   return modifier.clears(summary)
 }
 

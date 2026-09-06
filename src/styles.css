@@ -712,6 +712,38 @@ kbd {
 
 /* ---------- Personal practice loop ---------- */
 
+.session-card { border: 1px solid rgba(62, 240, 200, 0.3); border-radius: 18px; background: var(--panel); padding: 20px; margin-bottom: 20px; }
+.session-card.complete { border-color: var(--accent); }
+.session-card-head, .session-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.session-card h2 { font-size: 24px; letter-spacing: -0.4px; margin: 4px 0; }
+.session-kicker { color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.session-card p { font-size: 14px; line-height: 1.5; color: #c3cbe0; }
+.session-count { flex: none; font-size: 14px; color: #c3cbe0; font-variant-numeric: tabular-nums; }
+.session-rounds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); list-style: none; gap: 12px; margin: 20px 0; }
+.session-rounds li { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.session-rounds li.current { border-color: var(--accent2); background: rgba(129, 140, 248, 0.08); }
+.session-rounds li.done { background: rgba(62, 240, 200, 0.04); }
+.session-number { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--card); font-size: 14px; font-weight: 700; }
+.done .session-number { color: var(--accent); }
+.session-rounds strong { font-size: 16px; display: block; overflow-wrap: anywhere; }
+.session-rounds li div > span { display: block; font-size: 14px; color: #c3cbe0; line-height: 1.4; margin-top: 4px; }
+.session-rounds li div > .session-round-result { color: var(--accent); }
+.session-card-foot .btn { min-height: 44px; font-size: 14px; flex-shrink: 0; }
+.session-banner { flex: none; display: flex; align-items: center; gap: 16px; justify-content: space-between; flex-wrap: wrap; padding: 10px 16px; background: rgba(62, 240, 200, 0.06); border-bottom: 1px solid var(--line); }
+.session-banner strong, .session-banner span { font-size: 14px; }
+.session-banner strong, .session-result { color: var(--accent); }
+.session-banner span { color: #c3cbe0; }
+.session-result { font-size: 16px; font-weight: 600; line-height: 1.5; }
+.practice-complete-note { font-size: 16px; line-height: 1.5; }
+.step-pill:disabled, .tempo-select:disabled { cursor: default; }
+
+@media (max-width: 650px) {
+  .session-rounds { grid-template-columns: 1fr; gap: 8px; margin: 14px 0; }
+  .session-card-head { align-items: flex-start; }
+  .session-card-foot { align-items: stretch; flex-direction: column; gap: 12px; }
+  .session-banner { gap: 4px; }
+}
+
 .replay-card {
   display: flex;
   align-items: center;

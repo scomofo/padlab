@@ -13,13 +13,14 @@ import { PadGrid } from './PadGrid'
 import { Results } from './Results'
 import type { Settings } from '../store/progress'
 import { loadProgress, saveLessonResult, saveStepDone } from '../store/progress'
-import { applyRun, type Profile, type RunAward } from '../store/profile'
+import { applyRun, saveProfile, type Profile, type RunAward } from '../store/profile'
 import { nextInCourse, performScored, resumeStep, stepDone } from '../lib/curriculum'
 import { dailyCleared, dailyModifier, type DailyModifier } from '../lib/daily'
 import { LADDER_RUNGS, bestRung, ladderUnlocked, nextRung, rungCleared, tempoChoices } from '../lib/ladder'
 import { LESSONS } from '../lessons'
 import { createFocusLesson, findFocusPhrase, focusTempo, FOCUS_REPEATS, phraseLabel, type FocusPhrase } from '../lib/focus'
 import { comparableRuns, savePerformance, type PerformanceRun } from '../store/history'
+import type { SessionResult } from '../lib/session'
 
 interface LessonPlayerProps {
   lesson: Lesson
@@ -29,6 +30,10 @@ interface LessonPlayerProps {
   autoStart?: boolean
   startAtPerform?: boolean
   initialTempoPct?: number
+  initialStepIndex?: number
+  sessionRound?: { number: number; total: number; completed: boolean; label: string }
+  onSessionResult?: (result: SessionResult) => void
+  onSessionNext?: () => void
   /** Passed from App to avoid localStorage reads every render; falls back to load. */
   progress?: Record<string, import('../engine/types').LessonProgress>
   history: PerformanceRun[]
@@ -53,6 +58,10 @@ export function LessonPlayer({
   autoStart = false,
   startAtPerform = false,
   initialTempoPct = 100,
+  initialStepIndex,
+  sessionRound,
+  onSessionResult,
+  onSessionNext,
   progress,
   history,
   onHistory,
@@ -66,7 +75,7 @@ export function LessonPlayer({
     () => (isDaily ? dailyModifier(progress ?? loadProgress()) : null),
   )
   // Open on the first step not yet done, so a card's checkmarks pick up where they left off.
-  const [stepIndex, setStepIndex] = useState(() => startAtPerform ? lesson.steps.length - 1 : resumeStep(lesson, (progress ?? loadProgress())[lesson.id]))
+  const [stepIndex, setStepIndex] = useState(() => initialStepIndex ?? (startAtPerform ? lesson.steps.length - 1 : resumeStep(lesson, (progress ?? loadProgress())[lesson.id])))
   const [mode, setMode] = useState<PlayMode>(autoStart ? 'play' : 'listen')
   const [tempoPct, setTempoPct] = useState(modifier?.tempoPct ?? initialTempoPct)
   const [focus, setFocus] = useState<{ phrase: FocusPhrase; lesson: Lesson; returnTempo: number } | null>(null)
@@ -75,7 +84,7 @@ export function LessonPlayer({
   const [playing, setPlaying] = useState(false)
   const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
   const [results, setResults] = useState<{
-    summary: ScoreSummary; newBest: boolean; award: RunAward | null; dailyMet: boolean
+    summary: ScoreSummary | null; practiceNotes?: number; newBest: boolean; award: RunAward | null; dailyMet: boolean
     stepCleared: boolean; newRung: number | null; phrase: FocusPhrase | null
     performances: PerformanceRun[]
   } | null>(null)
@@ -89,11 +98,11 @@ export function LessonPlayer({
   const step = activeLesson.steps[activeStepIndex]
   const isLastStep = stepIndex === lesson.steps.length - 1
   // A slowed-down Perform is practice: it shows results but saves nothing.
-  const scored = !focus && performScored(isLastStep, tempoPct)
+  const scored = mode === 'play' && !focus && performScored(isLastStep, tempoPct)
   const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
   const lessonProgress = (progress ?? loadProgress())[lesson.id]
-  const ladderOn = !focus && isLastStep && ladderUnlocked(lessonProgress)
+  const ladderOn = !focus && !sessionRound && isLastStep && ladderUnlocked(lessonProgress)
   const rungNext = nextRung(lessonProgress)
 
   const stopRun = useCallback(() => {
@@ -124,15 +133,28 @@ export function LessonPlayer({
       onFinish: (summary) => {
         runtimeRef.current = null
         setPlaying(false)
-        if (!summary && mode === 'practice' && !isLastStep && !focus) {
-          // A finished Practice run means every note was hit: the step is done.
-          saveStepDone(lesson.id, stepIndex)
-          onProgressChange()
+        if (!summary && mode === 'practice') {
+          const practiceNotes = rt.playerEvents.length
+          const stepCleared = !isLastStep && !focus && practiceNotes > 0
+          if (stepCleared) {
+            // Wait mode only finishes after every note has been answered.
+            saveStepDone(lesson.id, stepIndex)
+            onProgressChange()
+          }
+          if (practiceNotes > 0) {
+            // Remember the learning path even when timing was not scored.
+            const nextProfile = { ...profile, lastLessonId: lesson.id }
+            saveProfile(nextProfile)
+            onProfile(nextProfile)
+          }
+          if (!focus && practiceNotes > 0) onSessionResult?.({ accuracy: null, notesHit: practiceNotes, mode: 'practice' })
+          setResults({ summary: null, practiceNotes, newBest: false, award: null, dailyMet: false,
+            stepCleared, newRung: null, phrase: null, performances: [] })
         }
         if (summary) {
           let newBest = false
           const prev = (progress ?? loadProgress())[lesson.id]
-          const firstClear = scored && (prev?.stars ?? 0) === 0
+          const firstClear = scored && summary.stars >= 1 && (prev?.stars ?? 0) === 0
           // A practice step is done at one star or better; Perform is tracked by stars.
           const stepCleared = !focus && !isLastStep && summary.stars >= 1
           const newRung = rungCleared(prev, { tempoPct, stars: summary.stars, isLastStep: scored })
@@ -167,6 +189,8 @@ export function LessonPlayer({
             prevXp: profile.xp,
           })
           onProfile(award.profile)
+          const notesHit = summary.perfect + summary.great + summary.good
+          if (!focus && notesHit > 0) onSessionResult?.({ accuracy: summary.accuracy, notesHit, mode: 'play' })
           const phrase = focus ? null : findFocusPhrase(lesson, rt.score?.events ?? [])
           setResults({ summary, newBest, award, dailyMet, stepCleared, newRung, phrase, performances })
         }
@@ -177,7 +201,7 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, activeLesson, activeStepIndex, focus, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored, history, onHistory])
+  }, [lesson, stepIndex, activeLesson, activeStepIndex, focus, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored, history, onHistory, onSessionResult])
 
   const startFocus = (phrase: FocusPhrase) => {
     stopRun()
@@ -275,7 +299,7 @@ export function LessonPlayer({
   return (
     <div className="player">
       <header className="player-bar">
-        <button className="btn ghost" onClick={() => { stopRun(); onExit() }}>‹ Studio</button>
+        <button className="btn ghost" onClick={() => { stopRun(); onExit() }}>{sessionRound ? '‹ Pause session' : '‹ Studio'}</button>
         <div className="player-title">
           <h1>{lesson.title}</h1>
           <span className="muted">
@@ -301,10 +325,11 @@ export function LessonPlayer({
           <select
             className="tempo-select"
             value={tempoPct}
+            disabled={Boolean(sessionRound) && !focus}
             onChange={(e) => setTempoPct(Number(e.target.value))}
-            title="Tempo"
+            title={sessionRound && !focus ? 'Tempo is set for this round. Practice mode waits for each note.' : 'Tempo'}
           >
-            {tempoChoices(ladderOn ? lessonProgress : undefined, !focus && modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50]).map((p) => (
+            {(sessionRound && !focus ? [tempoPct] : tempoChoices(ladderOn ? lessonProgress : undefined, !focus && modifier && modifier.tempoPct > 100 ? [modifier.tempoPct, 100, 90, 80, 70, 60, 50] : [100, 90, 80, 70, 60, 50])).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -325,6 +350,13 @@ export function LessonPlayer({
         </div>
       </header>
 
+      {sessionRound && (
+        <div className="session-banner">
+          <strong>Quick session · Round {sessionRound.number} of {sessionRound.total}</strong>
+          <span>{sessionRound.label} · {sessionRound.completed ? 'Round saved' : 'Pause anytime; finished rounds are saved'}</span>
+        </div>
+      )}
+
       {focus ? (
         <div className="focus-banner" role="status">
           <div><strong>Focus practice · {phraseLabel(focus.phrase)}</strong>
@@ -341,6 +373,7 @@ export function LessonPlayer({
               className={`step-pill${i === stepIndex ? ' on' : ''}${done ? ' done' : ''}`}
               onClick={() => setStepIndex(i)}
               title={done ? `${s.name} — done` : s.name}
+              disabled={Boolean(sessionRound)}
             >
               <span className="step-n">{done ? '✓' : i + 1}</span> {s.name}
             </button>
@@ -393,6 +426,7 @@ export function LessonPlayer({
       {results && (
         <Results
           summary={results.summary}
+          practiceNotes={results.practiceNotes}
           newBest={results.newBest}
           lessonTitle={lesson.title}
           stepName={step.name}
@@ -404,6 +438,8 @@ export function LessonPlayer({
           onReturnFromFocus={returnFromFocus}
           returnStepName={lesson.steps[stepIndex].name}
           performances={results.performances}
+          sessionRound={!focus ? sessionRound : undefined}
+          nextLabel={sessionRound ? (sessionRound.number === sessionRound.total ? 'Finish session ›' : 'Next round ›') : undefined}
           stepCleared={results.stepCleared}
           stepNumber={stepIndex + 1}
           stepCount={lesson.steps.length}
@@ -412,11 +448,11 @@ export function LessonPlayer({
           nextRung={nextRung((progress ?? loadProgress())[lesson.id])}
           award={results.award}
           daily={!focus && modifier ? { modifier, cleared: results.dailyMet } : null}
-          nextLesson={!focus && isLastStep ? nextLesson : null}
+          nextLesson={!focus && !sessionRound && isLastStep ? nextLesson : null}
           onRetry={() => { setResults(null); startRun() }}
           onNext={
-            focus ? undefined : !isLastStep
-              ? () => { setResults(null); setStepIndex(stepIndex + 1) }
+            focus ? undefined : sessionRound ? (sessionRound.completed ? onSessionNext : undefined) : !isLastStep
+              ? () => { setResults(null); setStepIndex(stepIndex + 1); setPendingStart(true) }
               : nextLesson
                 ? () => { setResults(null); onOpenLesson(nextLesson) }
                 : undefined

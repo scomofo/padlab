@@ -34,8 +34,16 @@ describe('dailyCleared', () => {
     expect(dailyCleared(DAILY_MODIFIERS.standard, s(), { isLastStep: false, tempoPct: 100 })).toBe(false)
   })
 
-  it('standard clears on any scored Perform', () => {
-    expect(dailyCleared(DAILY_MODIFIERS.standard, s({ accuracy: 10, stars: 0, miss: 9 }), on)).toBe(true)
+  it('standard clears on a scored Perform with at least one landed note', () => {
+    expect(dailyCleared(DAILY_MODIFIERS.standard, s({ perfect: 1, great: 0, accuracy: 10, stars: 0, miss: 9, maxCombo: 1 }), on)).toBe(true)
+  })
+
+  it.each(Object.values(DAILY_MODIFIERS))('$id never clears an idle or empty chart', (modifier) => {
+    const atTempo = { ...on, tempoPct: modifier.tempoPct }
+    const idle = s({ perfect: 0, great: 0, good: 0, miss: 10, accuracy: 0, stars: 0, maxCombo: 0 })
+    expect(dailyCleared(modifier, idle, atTempo)).toBe(false)
+    expect(dailyCleared(modifier, { ...idle, stray: 20 }, atTempo)).toBe(false)
+    expect(dailyCleared(modifier, { ...idle, total: 0, miss: 0 }, atTempo)).toBe(false)
   })
 
   it('tempo-up needs the raised tempo and one star', () => {

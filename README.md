@@ -17,6 +17,7 @@ Use Chrome or Edge — Web MIDI is required for hardware controllers. Allow MIDI
 
 - **Lessons** live in `src/lessons/data/*.json` — 50 original charts across levels 1-6, grouped into courses (`src/lessons/courses.json`): Foundations, Technique Workouts, Hip-Hop Lab, Four to the Floor, Breaks & Bass, and Global Grooves. Each is a chart of `{t, pad, vel}` events plus **steps**: early steps give you one or two pads (the rest of the kit auto-plays as backing) at reduced tempo; the final **Perform** step is the whole kit at full speed and is what saves stars.
 - **Guides** live in `src/guides/data/*.json` — hardware walkthroughs rather than playable charts, grouped into two more courses: the **SP-404 MKII Workshop** (resampling a first beat, chopping and shaping samples, importing and laying out a kit, the pattern sequencer, Bus FX / printing effects, and building a live set) and the **MPK Mini MK4 Workshop** (pads and banks, note repeat and the arpeggiator, saved programs and knob assignments). They open in a step-by-step viewer with button-combo keycaps, a pad diagram per step, "you'll know it worked when" checkpoints, and a practice metronome. Your position in each guide is remembered.
+- **Quick sessions** — start three short rounds from the studio, beginning with First Taps for a new player and following your unfinished lesson steps afterward. Near Perform, the session adds a slower warmup and a full-tempo run; mastered lessons can finish with the next tempo rung. Each round shows its part and BPM. Completed rounds persist in `padlab-session-v1`, so **Pause session** or closing the app lets you resume the next unfinished round. The recap is a clear stopping point. A completed Play run with at least one landed note, or a completed Practice run, counts as a round; Listen, stopped runs, idle runs, retries of an already-counted round, and focus drills never advance the session. Sessions use the normal lesson rewards and have no extra completion bonus.
 - **Modes** — *Listen* (the app plays it), *Practice* (playback waits at each note until you hit the right pad), *Play* (scored: Perfect ±45 ms, Great ±90 ms, Good ±135 ms; 3 stars at 90 %). A Perform run only saves stars, grows the streak, or clears the daily at 100 % tempo or faster; slowed-down Perform runs show results but count as practice. Extra hits cost accuracy proportionally, capped at 20 points, so sloppiness can't wipe out a run where you hit every note. Repeat hits on the same pad within 30 ms are treated as one hit, since velocity pads bounce and some controllers send duplicate note-ons.
 - **Sound** is a fully synthesized 16-voice drum kit (WebAudio — no samples), scheduled on the AudioContext clock with a lookahead scheduler, so timing doesn't wobble with the UI thread.
 - **Devices** — MPK Mini pads map from factory notes 36-43 (bank A) / 44-51 (bank B); SP-404 MKII pads from notes 36-51. Mapping is channel-aware: the MPK profile ignores everything on the keybed's factory channel (1), because the keybed's lower octaves reuse the Bank B note numbers and would otherwise score phantom pad hits. If your unit sends anything else, open the device panel (chip in the top-right of the lesson list) and run **MIDI Learn** — tap your pads in order once and the mapping is saved. A learned mapping is authoritative and remembers the channel along with the note: anything outside it (keybed, knobs, transport buttons) is ignored, so nothing but your pads can trigger a sound. There's also an input-latency slider if hits feel systematically late — it shifts both judging *and* miss detection, so raising it never turns a good hit into a miss.
@@ -25,6 +26,19 @@ Use Chrome or Edge — Web MIDI is required for hardware controllers. Allow MIDI
 - **Focus practice** — after a scored Play run, results can offer the two-bar phrase that lost the most timing points. One click repeats that phrase four times at a slower tempo, keeping the original player pads, kit, and backing part. Return straight to the original step and tempo when ready. Focus drills earn practice XP, but never save lesson stars, step checkmarks, tempo rungs, streak credit, daily clears, or performance history—even if you raise the drill to 100%. Daily Fade is disabled during the drill and restored on return. Perfect phrases and extra hits alone do not produce a made-up weak spot.
 - **Personal progress** — full-tempo Perform runs now record a local history of the last 60 performances (`padlab-history-v1`). Results compare the latest run with the previous one at the same lesson, tempo, note count, and daily rules, and show up to five recent scores. The studio's **Your last groove** card replays the latest ordinary performance directly on Perform at its saved tempo. Old stars are preserved; history starts with your next full performance. History stays on this browser/device, like the existing profile.
 - **Progress** (best accuracy + stars per lesson, plus XP / streak / rank in `padlab-profile-v1`) and settings persist in localStorage.
+
+Practice mode now ends with an explicit completion card rather than dropping back
+to the play screen. It remembers the last lesson without inventing a timing score
+or awarding Perform credit. Next step and Next round both launch with a count-in.
+Session tempos and lesson parts stay fixed; Practice mode and focus drills remain
+available when a round needs more work.
+
+Rewards require participation: an empty or all-miss run earns no XP, streak,
+daily credit, badges, or profile session count. First-clear XP is paid only when
+a full Perform first earns a star. Star/combo badges require a scored Perform;
+practice still earns its normal XP in Play. The studio refreshes its local day
+when focused, made visible, or left open across midnight, so yesterday's daily
+clear and XP do not appear as today's.
 
 ## Add a lesson
 
@@ -102,6 +116,9 @@ and the rest of the presentation layer are not covered.
 The practice-loop integration tests also exercise results → focus drill → full
 performance → studio replay, including reopening the app, reward isolation,
 daily Fade restoration, and comparisons that keep slower or modified runs apart.
+They also cover three-round session completion, pause/reload/resume, retry and
+drill isolation, Practice-only continuity, fixed session tempos, and the studio's
+midnight refresh. Session model tests exercise every lesson's saved round configuration.
 
 Two things worth knowing when adding tests:
 

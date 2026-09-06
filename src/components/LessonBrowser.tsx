@@ -17,6 +17,9 @@ import { padBus } from '../input/inputBus'
 import { unlockAudio } from '../audio/audio'
 import type { PerformanceRun } from '../store/history'
 import { ReplayCard } from './ReplayCard'
+import { SessionCard } from './SessionCard'
+import { buildSession, type PracticeSession } from '../lib/session'
+import { useLocalDay } from '../lib/useLocalDay'
 
 interface LessonBrowserProps {
   lessons: Lesson[]
@@ -25,6 +28,8 @@ interface LessonBrowserProps {
   guideProgress: Record<string, GuideProgress>
   profile: Profile
   history: PerformanceRun[]
+  session: PracticeSession | null
+  onStartSession: () => void
   onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }) => void
   onOpenGuide: (guide: Guide) => void
   onOpenSetup: () => void
@@ -35,12 +40,13 @@ interface LessonBrowserProps {
 type Filter = 'all' | 8 | 16
 
 export function LessonBrowser({
-  lessons, guides, progress, guideProgress, profile, history, onOpen, onOpenGuide, onOpenSetup,
+  lessons, guides, progress, guideProgress, profile, history, session, onStartSession, onOpen, onOpenGuide, onOpenSetup,
   keyboardEnabled = true,
 }: LessonBrowserProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const [, bump] = useState(0)
   const [jammed, setJammed] = useState(false)
+  const today = useLocalDay()
 
   useEffect(() => midi.onStatusChange(() => bump((n) => n + 1)), [])
   useEffect(() => padBus.subscribe(() => setJammed(true)), [])
@@ -85,7 +91,9 @@ export function LessonBrowser({
   const stars = totalStars(lessons, progress)
   const status = streakStatus(profile)
   const shownStreak = displayStreak(profile)
-  const dailyPct = Math.min(100, Math.round((profile.dailyXp / DAILY_XP_GOAL) * 100))
+  const dailyXp = profile.dailyXpDate === today ? profile.dailyXp : 0
+  const dailyDone = profile.dailyChallengeDate === today && profile.dailyChallengeDone
+  const dailyPct = Math.min(100, Math.round((dailyXp / DAILY_XP_GOAL) * 100))
   const dots = weekDots(profile.week)
   const minutes = Math.round(profile.secondsPracticed / 60)
 
@@ -139,7 +147,7 @@ export function LessonBrowser({
         </div>
         <div className="stat-card goal">
           <div className="stat-label">Today</div>
-          <div className="stat-value">{profile.dailyXp}<span className="muted"> / {DAILY_XP_GOAL} XP</span></div>
+          <div className="stat-value">{dailyXp}<span className="muted"> / {DAILY_XP_GOAL} XP</span></div>
           <div className="muted">{dailyPct >= 100 ? `Goal done · ${stars} ★ · ${minutes} min` : `${stars} ★ · ${minutes} min on pads`}</div>
           <div className="goal-ring" style={{ '--pct': `${dailyPct}%` } as CSSProperties} aria-label={`Daily goal ${dailyPct}%`}>
             <span>{dailyPct}%</span>
@@ -152,6 +160,9 @@ export function LessonBrowser({
           <span key={i} className={on ? (i === 6 ? 'week-dot on today' : 'week-dot on') : (i === 6 ? 'week-dot today' : 'week-dot')} />
         ))}
       </div>
+
+      <SessionCard lessons={lessons} session={session}
+        suggestion={buildSession(lessons, progress, profile.lastLessonId)} onStart={onStartSession} />
 
       <section className="hub-actions">
         <button
@@ -181,8 +192,8 @@ export function LessonBrowser({
           <h2>{daily.title}</h2>
           <p className="muted">{dailyBlurb(daily, twist)}</p>
           {twist.id !== 'standard' && <p className="muted daily-rule">{twist.rule}</p>}
-          <span className={profile.dailyChallengeDone ? 'daily-status done' : 'daily-status'}>
-            {profile.dailyChallengeDone ? 'Cleared today' : 'Take it on ›'}
+          <span className={dailyDone ? 'daily-status done' : 'daily-status'}>
+            {dailyDone ? 'Cleared today' : 'Take it on ›'}
           </span>
         </button>
       </section>
