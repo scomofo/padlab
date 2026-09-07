@@ -1,0 +1,251 @@
+
+> padlab@0.1.0 check
+> npm run build && npm run validate && npm run test
+
+
+> padlab@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 134 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.44 kB │ gzip:   0.28 kB
+dist/assets/index-Cnx6S44S.css   28.67 kB │ gzip:   6.45 kB
+dist/assets/index-C5_kzv2G.js   510.27 kB │ gzip: 138.45 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 688ms
+
+> padlab@0.1.0 validate
+> node scripts/validate-lessons.mjs && node scripts/validate-guides.mjs && node scripts/analyze-difficulty.mjs
+
+ok    global-grooves     L2 16p 100bpm  84ev  "Afrobeat Layers"
+ok    four-to-the-floor  L4 16p 112bpm 128ev  "Log Drum Line"
+ok    breaks-and-bass    L6 16p 174bpm 143ev  "Amen Chop Science"
+ok    global-grooves     L4 16p 108bpm 144ev  "Baião Brush"
+ok    global-grooves     L6 16p 130bpm 220ev  "Baile Funk Bounce"
+ok    foundations        L1  8p  90bpm  50ev  "First Boom Bap"
+ok    foundations        L1 16p  88bpm  50ev  "Perc Pickup"
+ok    breaks-and-bass    L3  8p 108bpm 126ev  "Classic Breakbeat"
+ok    global-grooves     L3  8p  98bpm 132ev  "Dancehall Bounce"
+ok    four-to-the-floor  L3 16p 122bpm 154ev  "Deep House Groove"
+ok    global-grooves     L2  8p  94bpm  82ev  "Dembow Basics"
+ok    hip-hop-lab        L4 16p 142bpm 108ev  "Drill Slide"
+ok    hip-hop-lab        L3 16p  94bpm 127ev  "Dusty Boom Bap"
+ok    foundations        L2  8p  88bpm  97ev  "Eighth-Note Hats"
+ok    foundations        L1  8p  90bpm  33ev  "First Beats"
+ok    foundations        L2  8p  96bpm 103ev  "First Fills"
+ok    foundations        L1  8p  86bpm  48ev  "First Hats"
+ok    foundations        L1  8p  80bpm  16ev  "First Taps"
+ok    four-to-the-floor  L2  8p 122bpm  70ev  "Four on the Floor"
+ok    technique          L3 16p 100bpm 160ev  "Ghost & Accent"
+ok    breaks-and-bass    L3 16p  98bpm  99ev  "Ghost Note Funk Break"
+ok    hip-hop-lab        L6 16p 150bpm 169ev  "Grime Skitter"
+ok    breaks-and-bass    L4  8p 140bpm 168ev  "Halftime Heavy"
+ok    four-to-the-floor  L6 16p 154bpm 161ev  "Hard Techno Drive"
+ok    breaks-and-bass    L5 16p 168bpm 173ev  "Jungle Chop"
+ok    global-grooves     L5 16p 150bpm 153ev  "Kuduro Drive"
+ok    breaks-and-bass    L5 16p 172bpm 144ev  "Liquid Flow"
+ok    hip-hop-lab        L2  8p  78bpm  98ev  "Lo-Fi Head Nod"
+ok    four-to-the-floor  L5  8p 128bpm 182ev  "Minimal Pulse"
+ok    hip-hop-lab        L5 16p 108bpm 222ev  "Neo-Soul Ghosts"
+ok    foundations        L1 16p  86bpm  48ev  "Pad Independence"
+ok    technique          L4 16p 112bpm  66ev  "Pad Transitions"
+ok    four-to-the-floor  L6  8p 130bpm 138ev  "Peak-Time Pressure"
+ok    hip-hop-lab        L5 16p 145bpm 218ev  "Phonk Cowbell"
+ok    foundations        L2  8p  92bpm 112ev  "Pushed Kicks"
+ok    technique          L6 16p 130bpm 184ev  "Quad Independence"
+ok    technique          L5  8p 112bpm 140ev  "Roll Builder"
+ok    four-to-the-floor  L3 16p 124bpm  70ev  "Shaker City"
+ok    four-to-the-floor  L4  8p 132bpm 119ev  "Skippy Two-Step"
+ok    global-grooves     L5 16p 160bpm 172ev  "Soca Drive"
+ok    global-grooves     L6 16p 110bpm 167ev  "Songo Engine"
+ok    technique          L1  8p  84bpm  40ev  "Steady Hands"
+ok    hip-hop-lab        L4  8p  98bpm 126ev  "Swung Boom Bap"
+ok    breaks-and-bass    L3  8p 100bpm  99ev  "Syncopated Funk Pocket"
+ok    four-to-the-floor  L5 16p 126bpm 190ev  "Percussive Tech House"
+ok    hip-hop-lab        L4 16p 140bpm 122ev  "808 Arsenal"
+ok    hip-hop-lab        L4  8p 140bpm  98ev  "Halftime Heat"
+ok    hip-hop-lab        L3  8p  90bpm 118ev  "Trip-Hop Drag"
+ok    breaks-and-bass    L6  8p 172bpm 123ev  "Two-Step Displacement"
+ok    technique          L2  8p  88bpm  88ev  "Upbeat Trainer"
+
+0 error(s), 0 warning(s)
+ok    mpk-mini-workshop L2 12min 5 steps  "Note Repeat & the Arpeggiator"
+ok    mpk-mini-workshop L1 10min 5 steps  "Pads, Banks & Full Level"
+ok    mpk-mini-workshop L3 12min 4 steps  "Programs & Knob Control"
+ok    sp404-workshop   L3 12min 5 steps  "Bus FX & Printing Effects"
+ok    sp404-workshop   L2 12min 5 steps  "Chop & Shape a Sample"
+ok    sp404-workshop   L1 12min 5 steps  "Import & Organize Your Kit"
+ok    sp404-workshop   L3 15min 5 steps  "Build a Live Set"
+ok    sp404-workshop   L2 14min 5 steps  "Pattern Sequencer"
+ok    sp404-workshop   L1 15min 6 steps  "Resample Your First Beat"
+
+0 error(s), 0 warning(s)
+lvl   eff  raw  2+hits  maxSim  minGap  ostinato  id
+---
+L1   2.15  2.15      0%       1    349ms         -  first-hats
+L1   2.15  2.15      0%       1    349ms         -  pad-independence
+L1   1.93  1.93     19%       2    341ms         -  boom-bap-perc-pickup
+L1   1.92  1.92     22%       2    333ms         -  boom-bap-first-beat
+L1   1.75  1.75      0%       1    357ms         -  steady-hands
+L1   1.55  1.55      0%       1    333ms         -  first-beats
+L1   1.33  1.33      0%       1    750ms         -  first-taps
+---
+L2   3.44  3.44     27%       2    150ms         -  afrobeat-layers
+L2   3.37  3.37     32%       2    246ms         -  four-on-the-floor-house
+L2   3.23  3.23     24%       2    160ms         -  dembow-basics
+L2   3.12  3.12     29%       2    170ms         -  upbeat-trainer
+L2   2.91  3.83     40%       2    163ms         5  pushed-kicks
+L2   2.59  3.25     58%       2    156ms         5  first-fills
+L2   2.08  2.93     52%       2    341ms         5  eighth-hat-basics
+L2   2.06   2.6     53%       2    192ms         5  lofi-head-nod
+---
+L3   5.69  8.13     20%       2    123ms         7  deep-house-groove
+L3   3.87  4.61     51%       3    139ms         5  classic-breakbeat
+L3   3.81  3.81     19%       2    121ms         -  shaker-stab-house
+L3   3.52  3.52     43%       2    153ms         -  ghost-note-funk-break
+L3   3.35  3.78     68%       3    153ms         5  dancehall-bounce
+L3   2.99  3.65     41%       2    150ms         3  syncopated-funk-pocket
+L3   2.97  3.38     72%       3    160ms         5  dusty-boom-bap
+L3   2.67  4.17     80%       3    150ms       2,5  ghost-and-accent
+L3   2.47  3.09     64%       3    167ms         5  trip-hop-drag
+---
+L4   6.15  8.17     46%       3    107ms         7  halftime-heavy
+L4   5.84  5.84     40%       2    114ms         -  skippy-two-step
+L4   4.62  6.64     22%       3    107ms         5  trap-808-arsenal
+L4   4.44  4.44     47%       3    106ms         -  drill-slide
+L4   4.29  6.18     19%       3    134ms         7  amapiano-logline
+L4   4.23  5.17     57%       2    139ms         7  baiao-brush
+L4   3.78  3.78     68%       3    153ms         -  swung-boom-bap
+L4   3.73  3.73      3%       2    268ms         -  pad-transitions
+L4   3.69  5.61     25%       3    107ms         3  trap-halftime-essentials
+---
+L5   7.37  8.57     44%       3     89ms         5  jungle-chop
+L5   7.27  7.67     61%       3     94ms         7  soca-drive
+L5   6.77  8.06     54%       3     87ms         5  liquid-flow
+L5   6.59   8.4     45%       3    119ms         7  tech-house-perc
+L5   6.49  9.67     45%       3    103ms         5  phonk-cowbell
+L5   6.47  6.47     58%       3    139ms         2  neo-soul-ghosts
+L5   6.37  8.53     41%       3    117ms         7  minimal-techno-pulse
+L5    6.3   6.3     30%       2    134ms         -  roll-builder
+L5   6.17  8.28     35%       3    100ms         7  kuduro-drive
+---
+L6   10.3  10.3      7%       2     44ms         -  two-step-displacement
+L6   8.97  8.97     41%       3     43ms         -  amen-chop-science
+L6   7.85  8.67     54%       3    115ms         7  baile-funk-bounce
+L6   7.85  7.85     18%       3    115ms         -  peak-time-pressure
+L6   7.73  7.73     51%       3    100ms         -  grime-skitter
+L6   7.48  8.13     40%       3    115ms         5  quad-independence
+L6   6.65  6.65     42%       3    136ms         -  songo-engine
+L6   6.58  6.58     63%       3     97ms         -  hard-techno-drive
+
+> padlab@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.10 <checkout>
+
+ ✓ tests/scripts/validate-lessons.test.mjs (117 tests) 64ms
+ ✓ tests/midi/midiManager.test.ts (26 tests) 76ms
+ ✓ tests/lessons/library.test.ts (172 tests) 542ms
+ ✓ tests/engine/player.test.ts (51 tests) 50ms
+ ✓ tests/store/progress.test.ts (56 tests) 17ms
+ ✓ tests/engine/scoring.test.ts (68 tests) 28ms
+ ✓ tests/midi/deviceProfiles.test.ts (20 tests) 23ms
+ ✓ tests/store/session.test.ts (7 tests) 18ms
+ ✓ tests/scripts/chart.test.mjs (26 tests) 16ms
+ ✓ tests/lib/curriculum.test.ts (16 tests) 10ms
+ ✓ tests/scripts/difficulty.test.mjs (24 tests) 9ms
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/store/history.test.ts (5 tests) 23ms
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > maps Z X C V to pads 1-4 and publishes them on the bus
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > maps Z X C V to pads 1-4 and publishes them on the bus
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > ignores keys outside the map, modifiers, and auto-repeat
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > ignores keys outside the map, modifiers, and auto-repeat
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > ignores mapped keys typed into form fields
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > ignores mapped keys typed into form fields
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > drops pads above maxPad so an 8-pad layout cannot fire pad 9
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > drops pads above maxPad so an 8-pad layout cannot fire pad 9
+The current testing environment is not configured to support act(...)
+
+stderr | tests/input/usePadKeyboard.test.ts > usePadKeyboard > removes the listener on unmount so later keydowns do not score
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/input/usePadKeyboard.test.ts (5 tests) 47ms
+ ✓ tests/midi/timingLifecycle.test.ts (3 tests) 20ms
+ ✓ tests/input/timing.test.ts (8 tests) 5ms
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/lessons/courseProgress.test.ts (10 tests) 8ms
+ ✓ tests/midi/acceptance.test.ts (3 tests) 6ms
+ ✓ tests/scripts/validate-guides.test.mjs (52 tests) 7ms
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | tests/app.smoke.test.tsx > App smoke > boots on the studio home, opens Device Setup, then a lesson
+The current testing environment is not configured to support act(...)
+
+ ✓ tests/app.smoke.test.tsx (1 test) 401ms
+     ✓ boots on the studio home, opens Device Setup, then a lesson  400ms
+ ✓ tests/input/inputBus.test.ts (14 tests) 10ms
+ ✓ tests/engine/kits.test.ts (13 tests) 13ms
+ ✓ tests/lib/session.test.ts (11 tests) 11ms
+ ✓ tests/engine/transport.test.ts (19 tests) 6ms
+ ✓ tests/lib/daily.test.ts (14 tests) 4ms
+ ✓ tests/lib/focus.test.ts (5 tests) 4ms
+ ✓ tests/lib/ranks.test.ts (9 tests) 8ms
+ ✓ tests/lib/insight.test.ts (8 tests) 4ms
+ ✓ tests/store/profile.test.ts (31 tests) 10ms
+ ✓ tests/lib/ladder.test.ts (6 tests) 4ms
+ ✓ tests/engine/comboChronology.test.ts (3 tests) 3ms
+ ✓ tests/engine/emptyPlayerPart.test.ts (2 tests) 2ms
+ ✓ tests/engine/inputTiming.test.ts (17 tests) 9ms
+ ✓ tests/electron/runtimeMode.test.mjs (3 tests) 3ms
+ ✓ tests/engine/runStatus.test.ts (3 tests) 2ms
+ ✓ tests/practiceLoop.test.tsx (9 tests) 1255ms
+     ✓ goes from a weak performance through a drill to a better full run, then replays it after reopening  533ms
+
+ Test Files  35 passed (35)
+      Tests  837 passed (837)
+   Start at  23:51:37
+   Duration  3.48s (transform 2.92s, setup 0ms, import 4.44s, tests 2.72s, environment 10.13s)
+

@@ -65,6 +65,12 @@ export class Transport {
     return this.anchorBeat
   }
 
+  /** Historical render-clock position, using the same anchor as audio scheduling. */
+  ctxTimeToBeat(contextTime: number): number {
+    if (this.state !== 'playing') return this.anchorBeat
+    return this.anchorBeat + (contextTime - this.anchorCtxTime) / this.secPerBeat
+  }
+
   beatToCtxTime(beat: number): number {
     return this.anchorCtxTime + (beat - this.anchorBeat) * this.secPerBeat
   }

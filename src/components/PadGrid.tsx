@@ -43,7 +43,7 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
         window.setTimeout(() => el.classList.remove('hit', 'auto'), 160),
       )
     }
-    const un1 = padBus.subscribe((e) => flash(e.pad, 'hit'))
+    const un1 = padBus.subscribe((e) => flash(e.pad, 'hit'), 'visual')
     const un2 = autoFlashBus.subscribe((pad) => flash(pad, 'auto'))
     return () => {
       un1()
@@ -70,7 +70,7 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
                 onPointerDown={(e) => {
                   e.preventDefault()
                   unlockAudio()
-                  padBus.emit({ pad, velocity: 100, source: 'pointer' })
+                  padBus.emit({ pad, velocity: 100, source: 'pointer', timeStamp: e.timeStamp })
                 }}
               >
                 <span className="pad-num">{pad}</span>

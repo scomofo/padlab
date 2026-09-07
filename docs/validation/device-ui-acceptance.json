@@ -1,0 +1,20 @@
+{
+  "scope": "Synthetic MIDI messages injected into the application; not physical hardware acceptance",
+  "checks": {
+    "exportStaysIncomplete": true,
+    "capture": {
+      "retainedMessages": 2,
+      "mappedNoteOns": 1,
+      "unmappedNoteOns": 0,
+      "otherMessages": 1,
+      "fallbackTimestamps": 0,
+      "deliveryMedianMs": 0,
+      "deliveryP95Ms": 0.2,
+      "deliveryMaxMs": 0.2
+    },
+    "sixteenPadsRendered": 16,
+    "mobileNoHorizontalOverflow": true
+  },
+  "status": "pass",
+  "errors": []
+}

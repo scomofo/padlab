@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { KEY_TO_PAD, keyLabelForPad, padBus, type PadEvent } from '../../src/input/inputBus'
+import { KEY_TO_PAD, keyLabelForPad, padBus, type PadInput } from '../../src/input/inputBus'
 import { autoFlashBus } from '../../src/input/flashBus'
 
-const hit = (over: Partial<PadEvent> = {}): PadEvent => ({
+const hit = (over: Partial<PadInput> = {}): PadInput => ({
   pad: 1,
   velocity: 100,
   source: 'keyboard',
@@ -39,7 +39,7 @@ describe('padBus', () => {
     const l = vi.fn()
     const off = padBus.subscribe(l)
     padBus.emit(hit({ pad: 9, velocity: 27, source: 'midi' }))
-    expect(l).toHaveBeenCalledWith({ pad: 9, velocity: 27, source: 'midi' })
+    expect(l).toHaveBeenCalledWith(expect.objectContaining({ pad: 9, velocity: 27, source: 'midi' }))
     off()
   })
 

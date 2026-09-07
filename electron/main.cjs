@@ -4,6 +4,9 @@ const { app, BrowserWindow, Menu, net, protocol, session, shell } = require('ele
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
+const { isBundled } = require('./runtime-mode.cjs')
+const IS_BUNDLED = isBundled(app.isPackaged, __dirname)
+
 const WEB_ROOT = path.join(__dirname, 'web')
 
 const MIME_BY_EXT = new Map([
@@ -59,7 +62,7 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       webviewTag: false,
-      devTools: !app.isPackaged,
+      devTools: !IS_BUNDLED,
     },
   })
 
@@ -101,7 +104,7 @@ const CSP = [
 ].join('; ')
 
 app.whenReady().then(() => {
-  if (app.isPackaged) Menu.setApplicationMenu(null)
+  if (IS_BUNDLED) Menu.setApplicationMenu(null)
   // Defence in depth: no <webview> today — deny if one ever appears.
   app.on('web-contents-created', (_event, contents) => {
     contents.on('will-attach-webview', (e) => e.preventDefault())

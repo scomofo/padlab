@@ -39,9 +39,9 @@ export default function App() {
     void midi.init()
     setMasterVolume(settings.volume)
     // Hardware pads join the same bus as keyboard and pointer input.
-    const offPad = midi.onPad((pad, velocity) => {
+    const offPad = midi.onPad((pad, velocity, timeStamp) => {
       unlockAudio()
-      padBus.emit({ pad, velocity, source: 'midi' })
+      padBus.emit({ pad, velocity, source: 'midi', timeStamp })
     })
     const unlock = () => unlockAudio()
     window.addEventListener('pointerdown', unlock, { once: true })

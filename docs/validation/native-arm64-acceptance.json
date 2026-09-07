@@ -1,0 +1,19 @@
+{
+  "scope": "Locally built arm64 application, isolated test profile. Not a downloaded Gatekeeper test or physical MIDI acceptance.",
+  "checks": {
+    "origin": "padlab://app",
+    "electronPackagedFlag": false,
+    "bundlePath": "/private/tmp/padlab-timing.qepbvc/release/PadLab.app/Contents/Resources/app",
+    "releasePolicy": {
+      "devToolsDisabled": true,
+      "developmentMenuRemoved": true
+    },
+    "noPhysicalDevices": true,
+    "savedVolume": "0",
+    "listenRunStarted": "LISTEN\nThe pulse\n56 BPM\nBar 1 of 4\nListen and follow the pads",
+    "volumeAfterRelaunch": "0",
+    "midiPermissionReady": true
+  },
+  "status": "pass",
+  "errors": []
+}

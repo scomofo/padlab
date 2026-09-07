@@ -1,0 +1,41 @@
+{
+  "scope": "Synthetic keyboard/browser checks only; no physical MIDI controller tested",
+  "browser": "152.0.7977.77",
+  "checks": {
+    "desktopStatus": "PLAY\nPerform\n80 BPM\nBar 1 of 4\n100%\naccuracy so far\n1×\ncombo\nEarly 22 ms",
+    "mobileNoHorizontalOverflow": true,
+    "laptopNoHorizontalOverflow": true,
+    "keyboardFullRun": {
+      "perfect": 16,
+      "great": 0,
+      "good": 0,
+      "miss": 0,
+      "stray": 0,
+      "total": 16,
+      "accuracy": 100,
+      "stars": 3,
+      "maxCombo": 16,
+      "deltas": [
+        -22,
+        -19,
+        -23,
+        -21,
+        -19,
+        -22,
+        -20,
+        -23,
+        -21,
+        -19,
+        -23,
+        -21,
+        -21,
+        -22,
+        -20,
+        -23
+      ]
+    },
+    "reducedMotion": true
+  },
+  "errors": [],
+  "status": "pass"
+}

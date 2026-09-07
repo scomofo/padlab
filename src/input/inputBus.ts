@@ -1,26 +1,29 @@
-// Central pad-input bus. MIDI, keyboard, and on-screen pads all publish here;
-// the lesson player and pad grid subscribe.
+// Capture timing once, before any audio/UI subscriber can delay dispatch.
+import { captureInputTiming, type InputTiming } from './timing'
 
 export type InputSource = 'midi' | 'keyboard' | 'pointer'
-
-export interface PadEvent {
+export interface PadEvent extends InputTiming {
   pad: number
   velocity: number
   source: InputSource
 }
-
+export type PadInput = Pick<PadEvent, 'pad' | 'velocity' | 'source'> & { timeStamp?: number }
 type Listener = (e: PadEvent) => void
 
 class InputBus {
-  private listeners = new Set<Listener>()
+  private listeners = new Map<Listener, 'realtime' | 'visual'>()
 
-  emit(e: PadEvent): void {
-    for (const l of this.listeners) l(e)
+  emit(input: PadInput): void {
+    const event: PadEvent = { ...input, ...captureInputTiming(input.timeStamp) }
+    // Scoring and audio always precede DOM pad flashes, regardless of mount order.
+    for (const phase of ['realtime', 'visual'] as const) {
+      for (const [listener, kind] of this.listeners) if (kind === phase) listener(event)
+    }
   }
 
-  subscribe(l: Listener): () => void {
-    this.listeners.add(l)
-    return () => this.listeners.delete(l)
+  subscribe(listener: Listener, phase: 'realtime' | 'visual' = 'realtime'): () => void {
+    this.listeners.set(listener, phase)
+    return () => { this.listeners.delete(listener) }
   }
 }
 

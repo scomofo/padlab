@@ -6,6 +6,8 @@ Built for the **Akai MPK Mini MK4** (8 pads) and **Roland SP-404 MKII** (16 pads
 
 ## Run it
 
+Use Node 22.22.2 or a compatible newer runtime (see `engines` and `.nvmrc`). With nvm, run `nvm install && nvm use` before installing dependencies.
+
 ```
 npm install
 npm run dev        # http://localhost:8743
@@ -39,6 +41,22 @@ a full Perform first earns a star. Star/combo badges require a scored Perform;
 practice still earns its normal XP in Play. The studio refreshes its local day
 when focused, made visible, or left open across midnight, so yesterday's daily
 clear and XP do not appear as today's.
+
+## Input timing and hardware acceptance
+
+MIDI, keyboard and pointer hits retain their event timestamps through scoring. A
+bounded 250 ms callback backlog is allowed before final miss detection; the
+Perfect/Great/Good windows remain unchanged. Scoring runs before synthesis and
+pad-flash DOM work. This hardens judging, not physical/audio round-trip latency.
+
+Device & settings now includes **Hardware acceptance & MIDI diagnostics**:
+opt-in raw-message capture, delivery statistics, manual checklists and a JSON
+report export. Reports never auto-pass because a controller appears. Capture and
+draft data remain in memory; export before closing the panel.
+
+Follow [the hardware acceptance procedure](docs/HARDWARE_ACCEPTANCE.md), and see
+[recorded validation evidence](docs/validation/README.md). Physical controller
+checks remain required before release-candidate approval.
 
 ## Add a lesson
 
