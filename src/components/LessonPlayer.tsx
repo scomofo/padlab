@@ -8,6 +8,7 @@ import { padSoundFor } from '../engine/kits'
 import { padBus } from '../input/inputBus'
 import { usePadKeyboard } from '../input/usePadKeyboard'
 import { autoFlashBus } from '../input/flashBus'
+import { RunStatus } from './RunStatus'
 import { Highway } from './Highway'
 import { PadGrid } from './PadGrid'
 import { Results } from './Results'
@@ -82,7 +83,6 @@ export function LessonPlayer({
   const [pendingStart, setPendingStart] = useState(false)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
-  const [hud, setHud] = useState({ combo: 0, acc: 0, judged: 0 })
   const [results, setResults] = useState<{
     summary: ScoreSummary | null; practiceNotes?: number; newBest: boolean; award: RunAward | null; dailyMet: boolean
     stepCleared: boolean; newRung: number | null; phrase: FocusPhrase | null
@@ -99,7 +99,7 @@ export function LessonPlayer({
   const isLastStep = stepIndex === lesson.steps.length - 1
   // A slowed-down Perform is practice: it shows results but saves nothing.
   const scored = mode === 'play' && !focus && performScored(isLastStep, tempoPct)
-  const chartedPads = useMemo(() => new Set(lesson.events.map((e) => e.pad)), [lesson])
+  const chartedPads = useMemo(() => step.playerPads === 'all' ? new Set(activeLesson.events.map((e) => e.pad)) : new Set(step.playerPads), [activeLesson, step])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
   const lessonProgress = (progress ?? loadProgress())[lesson.id]
   const ladderOn = !focus && !sessionRound && isLastStep && ladderUnlocked(lessonProgress)
@@ -120,7 +120,6 @@ export function LessonPlayer({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     runtimeRef.current?.stop()
     setResults(null)
-    setHud({ combo: 0, acc: 0, judged: 0 })
     startedAt.current = performance.now()
     const rt = new PlayerRuntime({
       lesson: activeLesson,
@@ -250,36 +249,12 @@ export function LessonPlayer({
     return padBus.subscribe((e) => {
       const sound = padSoundFor(lesson, lesson.padCount, e.pad)
       if (!sound) return
+      runtimeRef.current?.handlePad(e.pad, e.timeStamp)
       playSound(sound, undefined, e.velocity)
-      runtimeRef.current?.handlePad(e.pad)
     })
   }, [lesson])
 
   usePadKeyboard(lesson.padCount)
-
-  useEffect(() => {
-    if (!playing) return
-    let raf = 0
-    let lastHud = { combo: -1, acc: -1, judged: -1 }
-    let lastPush = 0
-    const tick = () => {
-      const rt = runtimeRef.current
-      if (rt?.score) {
-        const s = rt.score.summary()
-        const next = { combo: rt.score.combo, acc: s.accuracy, judged: s.perfect + s.great + s.good + s.miss }
-        const now = performance.now()
-        // HUD at most ~10Hz and only on change — summary() is O(n).
-        if ((next.combo !== lastHud.combo || next.acc !== lastHud.acc || next.judged !== lastHud.judged) && now - lastPush > 100) {
-          lastHud = next
-          lastPush = now
-          setHud(next)
-        }
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [playing])
 
   // Space toggles the run.
   useEffect(() => {
@@ -311,11 +286,12 @@ export function LessonPlayer({
           )}
         </div>
         <div className="player-controls">
-          <div className="segmented">
+          <div className="segmented" role="group" aria-label="Playback mode">
             {MODES.map((m) => (
               <button
                 key={m.id}
                 className={mode === m.id ? 'seg on' : 'seg'}
+                aria-pressed={mode === m.id}
                 onClick={() => setMode(m.id)}
               >
                 {m.label}
@@ -323,7 +299,7 @@ export function LessonPlayer({
             ))}
           </div>
           <select
-            className="tempo-select"
+            className="tempo-select" aria-label="Tempo"
             value={tempoPct}
             disabled={Boolean(sessionRound) && !focus}
             onChange={(e) => setTempoPct(Number(e.target.value))}
@@ -340,7 +316,7 @@ export function LessonPlayer({
               setMetronome(next)
               runtimeRef.current?.setMetronome(next)
             }}
-            title="Metronome"
+            title="Metronome" aria-pressed={metronome}
           >
             Click
           </button>
@@ -404,19 +380,15 @@ export function LessonPlayer({
         </div>
       )}
 
+      <RunStatus runtime={runtimeRef.current} lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} mode={mode} />
       <div className="player-stage">
         <Highway lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={focus ? 0 : modifier?.fadeBeats ?? 0} />
-        {playing && mode === 'play' && hud.judged > 0 && (
-          <div className="play-hud">
-            <span>{hud.acc}%</span>
-            {hud.combo >= 2 && <span className="combo">{hud.combo}x</span>}
-          </div>
-        )}
         {!playing && !results && (
           <button className="play-curtain" onClick={startRun}>
             <span className="play-orb">▶</span>
-            <strong>Play</strong>
-            <span className="muted">Hit the pads as notes reach the line · space to start</span>
+            <span className="curtain-eyebrow">{step.name}</span>
+            <strong>{mode === 'listen' ? 'Listen first' : mode === 'practice' ? 'Practice at your pace' : 'Find your groove'}</strong>
+            <span className="muted">{mode === 'listen' ? 'Hear the pattern and watch the pads light up.' : mode === 'practice' ? 'The groove waits until you hit each note.' : 'Hit the bright notes at the line. Dim lanes play for you.'} · Space to start</span>
           </button>
         )}
       </div>

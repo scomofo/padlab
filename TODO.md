@@ -1,5 +1,11 @@
 # TODO
 
+## Timestamped-input and gameplay follow-up
+
+Software changes and automated/local-macOS evidence are recorded in [validation](docs/validation/README.md). Original event timestamps, bounded miss deferral, MIDI port cleanup, diagnostics export, focused gameplay status and signed-bundle release-mode detection are implemented.
+
+**Physical hardware acceptance remains open:** no MIDI input sources were attached during this work. Follow [the operator procedure](docs/HARDWARE_ACCEPTANCE.md) for both controllers and the release-workflow DMGs. No release tag was created and no physical checklist below is being checked automatically.
+
 Open work as of `main` @ `95d29ed` (2026-09-02), plus the coverage/hygiene
 follow-up on `chore/rc-hygiene`. PR #13 (`feat/sticky-daily-loop`) is merged.
 Core CI is green. The two pinned design questions are decided. Remaining work

@@ -39,7 +39,8 @@ rm -rf "$APP" "$STAGE"
 mkdir -p "$STAGE"
 cp -a "$ELECTRON_APP" "$APP"
 mkdir -p "$APP/Contents/Resources/app"
-cp electron/main.cjs electron/package.json "$APP/Contents/Resources/app/"
+cp electron/main.cjs electron/runtime-mode.cjs electron/package.json "$APP/Contents/Resources/app/"
+touch "$APP/Contents/Resources/app/.padlab-bundle"
 cp -a "$OUT/web" "$APP/Contents/Resources/app/web"
 rm -rf "$APP/Contents/Resources/default_app.asar" "$APP/Contents/Resources/electron.icns"
 cp assets/PadLab.icns "$APP/Contents/Resources/PadLab.icns"
@@ -95,6 +96,7 @@ hdiutil attach "$DMG" -mountpoint "$MNT" -nobrowse -quiet
 trap 'hdiutil detach "$MNT" -quiet -force || true' EXIT
 [ -x "$MNT/PadLab.app/Contents/MacOS/Electron" ] || { echo "main executable missing or not executable" >&2; exit 1; }
 [ -f "$MNT/PadLab.app/Contents/Resources/app/web/index.html" ] || { echo "web payload missing" >&2; exit 1; }
+[ -f "$MNT/PadLab.app/Contents/Resources/app/.padlab-bundle" ] || { echo "bundle marker missing" >&2; exit 1; }
 codesign --verify --deep --strict "$MNT/PadLab.app"
 echo "    mounted, signature verifies, payload present"
 

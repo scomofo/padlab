@@ -5,6 +5,7 @@ import { playSound } from '../audio/drumSynth'
 import { padSoundFor } from '../engine/kits'
 import { padBus } from '../input/inputBus'
 import { usePadKeyboard } from '../input/usePadKeyboard'
+import { HardwareDiagnostics } from './HardwareDiagnostics'
 import { PadGrid } from './PadGrid'
 import { LATENCY_MAX, LATENCY_MIN, type Settings } from '../store/progress'
 
@@ -88,7 +89,7 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
       <div className="setup-card">
         <div className="setup-head">
           <h2>Device &amp; settings</h2>
-          <button className="btn ghost" onClick={onClose}>✕</button>
+          <button className="btn ghost" aria-label="Close device settings" onClick={onClose}>✕</button>
         </div>
 
         <section>
@@ -177,6 +178,7 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
         </section>
 
         <section>
+          <HardwareDiagnostics latencyMs={settings.latencyMs} />
           <h3>Test your pads</h3>
           <p className="muted">Hit your controller (or keys Z-V / A-F / Q-R / 1-4) — pads should light and sound.</p>
           <div onPointerDown={() => unlockAudio()}>

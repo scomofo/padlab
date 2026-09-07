@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Lesson } from '../engine/types'
-import type { PlayerRuntime } from '../engine/player'
+import { COUNT_IN_BEATS, type PlayerRuntime } from '../engine/player'
 import { padColor } from '../engine/kits'
 import { SOUND_LABELS } from '../engine/types'
 import { padSoundFor } from '../engine/kits'
@@ -69,6 +69,10 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
     const wrap = wrapRef.current!
     const ctx2d = canvas.getContext('2d')!
     let raf = 0
+    const motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    let reducedMotion = motion?.matches ?? false
+    const updateMotion = () => { reducedMotion = motion?.matches ?? false }
+    motion?.addEventListener('change', updateMotion)
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1
@@ -90,8 +94,6 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
     let particles: Particle[] = []
     const processedFeedback = new WeakSet<object>()
     let lastFrame = performance.now()
-    let lastCombo = 0
-    let comboPulseUntil = 0
     let missFlashUntil = 0
     // Judged-map cache: ScoreKeeper mutates judgements in place, but every
     // judgement also pushes feedback — so feedback length is a cheap version.
@@ -100,6 +102,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
     let judgedCacheVersion = -1
 
     const spawnBurst = (x: number, y: number, color: string) => {
+      if (reducedMotion) return
       const n = 10
       for (let i = 0; i < n; i++) {
         const angle = (Math.PI * 2 * i) / n + Math.random() * 0.4
@@ -160,10 +163,6 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
             missFlashUntil = frameNow + 220
           }
         }
-        if (rt.score && rt.score.combo > lastCombo) comboPulseUntil = frameNow + 260
-        lastCombo = rt.score?.combo ?? 0
-      } else {
-        lastCombo = 0
       }
 
       // lane backgrounds
@@ -287,6 +286,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       }
 
       // hit-burst particles
+      if (reducedMotion) particles = []
       particles = particles.filter((p) => p.life < p.maxLife)
       for (const p of particles) {
         p.life += dt
@@ -304,7 +304,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
 
       // waiting indicator (practice mode)
       if (rt?.waitingPads) {
-        const pulse = 0.55 + 0.45 * Math.sin(performance.now() / 180)
+        const pulse = reducedMotion ? 0.85 : 0.55 + 0.45 * Math.sin(performance.now() / 180)
         for (const pad of rt.waitingPads) {
           const li = laneIndex.get(pad)
           if (li === undefined) continue
@@ -337,33 +337,17 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
           ctx2d.fillText(JUDGE_TEXT[f.judgement], li * laneW + laneW / 2, hitY - 34 - age * 26)
           ctx2d.globalAlpha = 1
         }
-        // combo, with a brief pop + glow on every step up and a hotter color at higher tiers
-        if (rt.score && rt.score.combo >= 4) {
-          const pulseT = Math.max(0, (comboPulseUntil - frameNow) / 260)
-          const scale = 1 + pulseT * 0.4
-          const color = comboColor(rt.score.combo)
-          ctx2d.save()
-          ctx2d.translate(w - 14, 30)
-          ctx2d.scale(scale, scale)
-          ctx2d.shadowColor = color
-          ctx2d.shadowBlur = 8 + pulseT * 14
-          ctx2d.fillStyle = color
-          ctx2d.font = '800 20px system-ui, sans-serif'
-          ctx2d.textAlign = 'right'
-          ctx2d.fillText(`${rt.score.combo}x`, 0, 0)
-          ctx2d.restore()
-        }
         // count-in
         if (rt.transport.state === 'playing' && now < 0) {
           ctx2d.fillStyle = 'rgba(255,255,255,0.9)'
           ctx2d.font = '800 64px system-ui, sans-serif'
           ctx2d.textAlign = 'center'
-          ctx2d.fillText(String(Math.ceil(-now)), w / 2, h * 0.4)
+          ctx2d.fillText(String(Math.min(COUNT_IN_BEATS, Math.ceil(-now))), w / 2, h * 0.4)
         }
       }
 
       // miss flash — a quick red vignette at the screen edges
-      if (frameNow < missFlashUntil) {
+      if (!reducedMotion && frameNow < missFlashUntil) {
         const t = (missFlashUntil - frameNow) / 220
         const vignette = ctx2d.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.7)
         vignette.addColorStop(0, 'rgba(255,93,115,0)')
@@ -383,10 +367,10 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         ctx2d.font = '800 12px system-ui, sans-serif'
         ctx2d.textAlign = 'center'
         const key = keyLabelForPad(pad)
-        ctx2d.fillText(`${pad}${key ? ` · ${key}` : ''}`, cx, hitY + 22)
+        ctx2d.fillText(playerPads.has(pad) ? `${pad}${key ? ` · ${key}` : ''}` : `${pad} · AUTO`, cx, hitY + 22, Math.max(1, laneW - 8))
         ctx2d.fillStyle = 'rgba(255,255,255,0.55)'
         ctx2d.font = '600 10px system-ui, sans-serif'
-        ctx2d.fillText(sound ? SOUND_LABELS[sound] : '—', cx, hitY + 38)
+        ctx2d.fillText(sound ? SOUND_LABELS[sound] : '—', cx, hitY + 38, Math.max(1, laneW - 8))
       }
     }
 
@@ -394,12 +378,13 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
+      motion?.removeEventListener('change', updateMotion)
     }
   }, [lesson])
 
   return (
     <div ref={wrapRef} className="highway-wrap">
-      <canvas ref={canvasRef} />
+      <canvas ref={canvasRef} role="img" aria-label="Scrolling rhythm notes. Bright lanes are your part; dim lanes play automatically." />
     </div>
   )
 }

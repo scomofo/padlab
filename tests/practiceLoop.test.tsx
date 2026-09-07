@@ -22,7 +22,9 @@ vi.mock('../src/components/Highway', () => ({
 }))
 vi.mock('../src/engine/player', async () => {
   const { ScoreKeeper } = await import('../src/engine/scoring')
-  return { PlayerRuntime: class {
+  return { COUNT_IN_BEATS: 4, PlayerRuntime: class {
+    feedback = []
+    transport = { now: () => 0 }
     opts: RuntimeOptions
     score: ScoreKeeper | null
     playerEvents: NoteEvent[]

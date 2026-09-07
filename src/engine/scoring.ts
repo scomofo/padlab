@@ -64,6 +64,7 @@ export class ScoreKeeper {
   stray = 0
   /** Retriggers swallowed by the debounce, for diagnostics. */
   ignored = 0
+  private readonly comboTimeline: { beat: number; hit: boolean }[] = []
   /** Per pad, when the last accepted note-on arrived, in ms. */
   private readonly lastHitMs = new Map<number, number>()
 
@@ -124,7 +125,7 @@ export class ScoreKeeper {
 
     if (!best) {
       this.stray++
-      this.combo = 0
+      this.recordCombo(hitBeat, false)
       return { judgement: 'stray' }
     }
     const deltaMs = (hitBeat - best.t) * this.secPerBeat * 1000
@@ -133,8 +134,7 @@ export class ScoreKeeper {
       a <= WINDOW_MS.perfect ? 'perfect' : a <= WINDOW_MS.great ? 'great' : 'good'
     best.judgement = judgement
     best.deltaMs = deltaMs
-    this.combo++
-    if (this.combo > this.maxCombo) this.maxCombo = this.combo
+    this.recordCombo(hitBeat, true)
     return { judgement, event: best, deltaMs }
   }
 
@@ -146,10 +146,36 @@ export class ScoreKeeper {
       if (!ev.judgement && ev.t + this.outerBeats < nowBeat) {
         ev.judgement = 'miss'
         missed.push(ev)
-        this.combo = 0
+        this.recordCombo(ev.t + this.outerBeats, false)
       }
     }
     return missed
+  }
+
+  /** Keep combo chronology independent of delayed input/miss callback order. */
+  private recordCombo(beat: number, hit: boolean): void {
+    const timeline = this.comboTimeline
+    const last = timeline.at(-1)
+    if (!last || beat >= last.beat) {
+      timeline.push({ beat, hit })
+      this.combo = hit ? this.combo + 1 : 0
+      this.maxCombo = Math.max(this.maxCombo, this.combo)
+      return
+    }
+    // In-order hits are O(1). Only a late result needs insertion and rebuilding.
+    let low = 0, high = timeline.length
+    while (low < high) {
+      const mid = (low + high) >>> 1
+      if (timeline[mid].beat <= beat) low = mid + 1
+      else high = mid
+    }
+    timeline.splice(low, 0, { beat, hit })
+    this.combo = 0
+    this.maxCombo = 0
+    for (const result of timeline) {
+      this.combo = result.hit ? this.combo + 1 : 0
+      this.maxCombo = Math.max(this.maxCombo, this.combo)
+    }
   }
 
   summary(): ScoreSummary {

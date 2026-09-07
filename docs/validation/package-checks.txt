@@ -1,0 +1,69 @@
+
+> padlab@0.1.0 package:mac
+> bash scripts/package-macos.sh arm64
+
+==> building the web app (relative base, so it loads off disk)
+vite v6.4.3 building for production...
+transforming...
+✓ 134 modules transformed.
+rendering chunks...
+computing gzip size...
+release/web/index.html                   0.44 kB │ gzip:   0.28 kB
+release/web/assets/index-Cnx6S44S.css   28.67 kB │ gzip:   6.45 kB
+release/web/assets/index-C5_kzv2G.js   510.27 kB │ gzip: 138.45 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 664ms
+==> assembling PadLab.app
+==> patching Info.plists
+  PadLab.app: PadLab 0.1.0 (com.scomofo.padlab)
+  helper: Electron Helper (GPU).app -> Electron Helper (GPU)
+  helper: Electron Helper (Plugin).app -> Electron Helper (Plugin)
+  helper: Electron Helper (Renderer).app -> Electron Helper (Renderer)
+  helper: Electron Helper.app -> Electron Helper
+==> ad-hoc signing
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libEGL.dylib: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libvk_swiftshader.dylib: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libGLESv2.dylib: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libffmpeg.dylib: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Helpers/chrome_crashpad_handler: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Squirrel.framework/Versions/A/Resources/ShipIt: replacing existing signature
+    signed 6 nested binaries
+release/PadLab.app/Contents/Frameworks/Electron Helper (Renderer).app: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Framework.framework: replacing existing signature
+release/PadLab.app/Contents/Frameworks/ReactiveObjC.framework: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Squirrel.framework: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Mantle.framework: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Helper (Plugin).app: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Helper (GPU).app: replacing existing signature
+release/PadLab.app/Contents/Frameworks/Electron Helper.app: replacing existing signature
+release/PadLab.app: replacing existing signature
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (Renderer).app
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (GPU).app
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (Renderer).app
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (Plugin).app
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (GPU).app
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper.app
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper (Plugin).app
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Helper.app
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+--prepared:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:<checkout>/release/PadLab.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+release/PadLab.app: valid on disk
+release/PadLab.app: satisfies its Designated Requirement
+==> building release/PadLab-0.1.0-arm64.dmg
+created: <checkout>/release/PadLab-0.1.0-arm64.dmg
+==> verifying the image mounts and the app inside it is intact
+    mounted, signature verifies, payload present
+e2001c58ec212de9f9713b2a37c8bdc15b8e5d0937b3e0ccb9ccc5692931231c  release/PadLab-0.1.0-arm64.dmg
+==> done: release/PadLab-0.1.0-arm64.dmg

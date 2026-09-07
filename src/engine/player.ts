@@ -1,4 +1,5 @@
 import { Transport } from './transport'
+import { captureInputTiming, eventAudioTime, INPUT_DELIVERY_GRACE_MS } from '../input/timing'
 import { ScoreKeeper, WINDOW_MS, type ScoreSummary } from './scoring'
 import type { Judgement, Lesson, LessonStep, NoteEvent, SoundName } from './types'
 import { playSound, playClick } from '../audio/drumSynth'
@@ -10,7 +11,8 @@ export type PlayMode = 'listen' | 'practice' | 'play'
 export interface FeedbackItem {
   pad: number
   judgement: Judgement | 'stray' | 'ignored'
-  wall: number // performance.now() when it happened, for fading popups
+  wall: number // receipt time for responsive visual feedback, never scoring
+  deltaMs?: number
 }
 
 export interface RuntimeOptions {
@@ -68,6 +70,9 @@ export class PlayerRuntime {
   private timer: number | null = null
   private schedBeat = 0
   private finished = false
+  private startedWallMs = 0
+  /** Valid event timestamps outside the bounded delivery budget are not scored. */
+  staleInputs = 0
   /** Pending pad-flash callbacks, cancelled on stop so lights die with the run. */
   private readonly flashTimers = new Set<number>()
 
@@ -92,12 +97,14 @@ export class PlayerRuntime {
   }
 
   start(): void {
+    this.startedWallMs = performance.now()
     if (this.mode === 'play') {
       this.score = new ScoreKeeper(this.playerEvents, this.transport.secPerBeat)
     }
     this.schedBeat = -COUNT_IN_BEATS
     this.transport.start(-COUNT_IN_BEATS)
     this.timer = window.setInterval(() => this.tick(), TICK_MS)
+    this.tick()
   }
 
   stop(): void {
@@ -157,16 +164,18 @@ export class PlayerRuntime {
       this.schedBeat = horizon
     }
 
-    // Sweep at the same compensated position hits are judged at, or a late-but-
-    // valid hit would be force-missed before its event ever arrives.
+    // Input tasks and timer tasks can be delivered in either order after a stall.
+    // Defer final misses by the same bounded backlog accepted in handlePad. This
+    // does NOT widen Perfect/Great/Good; they still use the original event time.
     const latBeats = this.opts.latencyMs / 1000 / t.secPerBeat
+    const deliveryBeats = INPUT_DELIVERY_GRACE_MS / 1000 / t.secPerBeat
     if (this.score) {
-      for (const missed of this.score.sweepMisses(now - latBeats)) {
+      for (const missed of this.score.sweepMisses(now - latBeats - deliveryBeats)) {
         this.feedback.push({ pad: missed.pad, judgement: 'miss', wall: performance.now() })
       }
     }
 
-    if (now >= this.totalBeats + 1 + Math.max(0, latBeats)) this.finish()
+    if (now >= this.totalBeats + 1 + Math.max(0, latBeats) + deliveryBeats) this.finish()
   }
 
   private scheduleRange(events: NoteEvent[], from: number, to: number): void {
@@ -197,10 +206,22 @@ export class PlayerRuntime {
   }
 
   /** Route a live pad hit (MIDI / keyboard / pointer). Sound is played by the caller. */
-  handlePad(pad: number): void {
+  handlePad(pad: number, timeStamp?: number): void {
     const t = this.transport
+    if (t.state === 'stopped') return
+    const ctx = getAudioContext()
+    // A suspended audio clock cannot be correlated with advancing wall time.
+    if (ctx.state && ctx.state !== 'running') return
+    const nowMs = performance.now()
+    const timing = captureInputTiming(timeStamp, nowMs)
+    if (timing.timeStamp < this.startedWallMs || nowMs - timing.timeStamp > INPUT_DELIVERY_GRACE_MS) {
+      this.staleInputs++
+      return
+    }
+    const eventBeat = timeStamp === undefined ? t.now()
+      : t.ctxTimeToBeat(eventAudioTime(timing.timeStamp, ctx.currentTime, nowMs))
     if (this.mode === 'play' && t.state === 'playing' && this.score) {
-      const hitBeat = t.now() - this.opts.latencyMs / 1000 / t.secPerBeat
+      const hitBeat = eventBeat - this.opts.latencyMs / 1000 / t.secPerBeat
       // Jamming during the count-in is free, right up to the first note's
       // judging window — from there a hit must reach the scorer, or an early
       // strike at the first note could never claim it.
@@ -212,7 +233,7 @@ export class PlayerRuntime {
       if (hitBeat > this.totalBeats + 0.5) return
       const res = this.score.registerHit(pad, hitBeat)
       if (res.judgement !== 'ignored') {
-        this.feedback.push({ pad, judgement: res.judgement, wall: performance.now() })
+        this.feedback.push({ pad, judgement: res.judgement, wall: nowMs, deltaMs: res.deltaMs })
       }
       return
     }
@@ -233,7 +254,7 @@ export class PlayerRuntime {
       } else if (t.state === 'playing') {
         // Early hits within a short window satisfy the note so we don't pause on it.
         const win = 0.2 / t.secPerBeat
-        const now = t.now()
+        const now = eventBeat
         let best: NoteEvent | null = null
         let bestDist = Infinity
         for (const e of this.playerEvents) {

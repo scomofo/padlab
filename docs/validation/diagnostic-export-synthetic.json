@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-07T05:53:08.984Z",
+  "status": "incomplete",
+  "scope": "Manual operator report, not automated hardware certification. Delivery delay is not audio round-trip latency.",
+  "build": "Working-tree browser QA",
+  "controller": "Synthetic SP-404 fixture — no device attached",
+  "firmware": "not recorded",
+  "audioOutput": "Browser muted; no audible latency measurement",
+  "checks": {
+    "factory": {
+      "label": "Factory mapping: every pad and both MPK banks",
+      "result": "not-run"
+    },
+    "learn": {
+      "label": "MIDI Learn: remapping survives reopening",
+      "result": "not-run"
+    },
+    "isolation": {
+      "label": "Keybed, knobs and transport never score pad hits",
+      "result": "not-run"
+    },
+    "compensation": {
+      "label": "Judging checked at -50, 20 and 150 ms",
+      "result": "not-run"
+    },
+    "rolls": {
+      "label": "Fast rolls preserved; duplicate strikes ignored",
+      "result": "not-run"
+    },
+    "reconnect": {
+      "label": "Unplug/replug recovers without restarting",
+      "result": "not-run"
+    },
+    "progress": {
+      "label": "Perform, daily credit and saved progress verified",
+      "result": "not-run"
+    },
+    "install": {
+      "label": "Release DMG mounts and installs into Applications",
+      "result": "not-run"
+    },
+    "launch": {
+      "label": "Installed app opens through documented Gatekeeper flow",
+      "result": "not-run"
+    },
+    "permission": {
+      "label": "Installed app detects the controller",
+      "result": "not-run"
+    },
+    "full-run": {
+      "label": "Installed app completes a real-controller run",
+      "result": "not-run"
+    },
+    "relaunch": {
+      "label": "Quit/relaunch preserves settings, mapping and progress",
+      "result": "not-run"
+    }
+  },
+  "notes": "",
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "origin": "http://127.0.0.1:8757",
+    "midiStatus": "denied",
+    "inputs": [],
+    "mapping": "factory",
+    "latencyMs": 20,
+    "audioState": "running",
+    "sampleRate": 48000,
+    "baseLatencySeconds": 0.005333333333333333,
+    "outputLatencySeconds": 0.032
+  },
+  "capture": {
+    "limit": 200,
+    "summary": {
+      "retainedMessages": 2,
+      "mappedNoteOns": 1,
+      "unmappedNoteOns": 0,
+      "otherMessages": 1,
+      "fallbackTimestamps": 0,
+      "deliveryMedianMs": 0,
+      "deliveryP95Ms": 0.2,
+      "deliveryMaxMs": 0.2
+    },
+    "events": [
+      {
+        "timeStamp": 483.59999999403954,
+        "receivedAtMs": 483.7999999821186,
+        "timestampSource": "event",
+        "inputId": "synthetic-fixture",
+        "inputName": "SP-404 MKII",
+        "channel": 0,
+        "data": [
+          144,
+          36,
+          100
+        ],
+        "pad": 1,
+        "disposition": "mapped"
+      },
+      {
+        "timeStamp": 485.90000000596046,
+        "receivedAtMs": 485.90000000596046,
+        "timestampSource": "event",
+        "inputId": "synthetic-fixture",
+        "inputName": "SP-404 MKII",
+        "channel": 0,
+        "data": [
+          176,
+          1,
+          100
+        ],
+        "pad": null,
+        "disposition": "not-note-on"
+      }
+    ]
+  }
+}
