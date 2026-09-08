@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { COUNT_IN_BEATS, type PlayerRuntime, type PlayMode } from '../engine/player'
 import type { Lesson } from '../engine/types'
+import { readGroove, type GroovePlan } from '../lib/groove'
+import type { GrooveTarget } from '../lib/grooveTarget'
+import { GrooveStage } from './GrooveStage'
 
 export function readRunStatus(runtime: PlayerRuntime | null) {
   const score = runtime?.score?.summary()
@@ -12,21 +15,28 @@ export function readRunStatus(runtime: PlayerRuntime | null) {
     - Math.min(20, score.stray / judged * 100 * 0.5))) : null
   const recent = runtime?.feedback.filter((f) => f.deltaMs !== undefined && performance.now() - f.wall < 700).at(-1)
   return { beat: runtime?.transport.now() ?? 0, combo: runtime?.score?.combo ?? 0,
-    accuracy, judged, deltaMs: recent?.deltaMs,
+    accuracy, judged, score: score?.accuracy ?? 0, deltaMs: recent?.deltaMs,
     waiting: runtime?.waitingPads ? [...runtime.waitingPads].join(' + ') : null }
 }
 
-export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode }: {
+export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode, groovePlan, grooveTarget = null }: {
   runtime: PlayerRuntime | null; lesson: Lesson; stepIndex: number; tempoPct: number; mode: PlayMode
+  groovePlan?: GroovePlan; grooveTarget?: GrooveTarget | null
 }) {
   const [status, setStatus] = useState(() => readRunStatus(runtime))
+  const [groove, setGroove] = useState(() => groovePlan ? readGroove(groovePlan, [], -1) : null)
   useEffect(() => {
-    setStatus(readRunStatus(runtime))
+    const update = () => {
+      const next = readRunStatus(runtime)
+      setStatus(next)
+      setGroove(groovePlan ? readGroove(groovePlan, runtime?.score?.events ?? [], runtime ? next.beat : -1) : null)
+    }
+    update()
     if (!runtime) return
     // Both O(n) score aggregation and React updates are bounded to 10 Hz.
-    const timer = window.setInterval(() => setStatus(readRunStatus(runtime)), 100)
+    const timer = window.setInterval(update, 100)
     return () => window.clearInterval(timer)
-  }, [runtime])
+  }, [runtime, groovePlan])
   const step = lesson.steps[stepIndex]
   const total = lesson.bars * 4
   const scale = Math.min(1.2, Math.max(0.25, (step.tempoScale ?? 1) * tempoPct / 100))
@@ -37,7 +47,7 @@ export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode }: {
     : status.beat >= total ? 'Finishing' : `Bar ${Math.floor(status.beat / 4) + 1} of ${lesson.bars}`
   const timing = status.deltaMs === undefined ? (mode === 'listen' ? 'Listen and follow the pads' : 'Play the bright lanes')
     : Math.abs(status.deltaMs) <= 15 ? 'On time' : `${status.deltaMs < 0 ? 'Early' : 'Late'} ${Math.round(Math.abs(status.deltaMs))} ms`
-  return <section className="run-status" aria-label="Run status">
+  return <><section className="run-status" aria-label="Run status">
     <div className="run-context"><span className={`mode-tag mode-${mode}`}>{mode}</span>
       <strong>{step.name}</strong><span className="muted">{bpm} BPM</span>
     </div>
@@ -50,4 +60,6 @@ export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode }: {
       <span className="run-timing">{timing}</span>
     </div>
   </section>
+    {mode === 'play' && groovePlan && groove && <GrooveStage snapshot={groove} target={grooveTarget} score={status.score} playing={Boolean(runtime)} />}
+  </>
 }

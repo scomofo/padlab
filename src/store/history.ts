@@ -56,7 +56,7 @@ export function loadHistory(): PerformanceRun[] {
 }
 
 /** Compare the same chart, tempo and daily rules; a slow or easier run is never an improvement. */
-export function comparableRuns(history: PerformanceRun[], run: PerformanceRun): PerformanceRun[] {
+export function comparableRuns(history: PerformanceRun[], run: Pick<PerformanceRun, 'lessonId' | 'tempoPct' | 'variant' | 'total'>): PerformanceRun[] {
   return history.filter((r) => r.lessonId === run.lessonId && r.tempoPct === run.tempoPct
     && r.variant === run.variant && r.total === run.total)
 }

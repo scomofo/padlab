@@ -9,10 +9,15 @@ import type { DailyModifier } from '../lib/daily'
 import { FOCUS_REPEATS, focusTempo, phraseLabel, type FocusPhrase } from '../lib/focus'
 import type { PerformanceRun } from '../store/history'
 import { PerformanceTrail } from './PerformanceTrail'
+import type { GrooveSnapshot } from '../lib/groove'
+import type { GrooveTarget } from '../lib/grooveTarget'
+import { GrooveRecap } from './GrooveStage'
 
 interface ResultsProps {
   /** Null for a completed wait-mode practice: no timing score was measured. */
   summary: ScoreSummary | null
+  groove?: GrooveSnapshot
+  grooveTarget?: GrooveTarget | null
   practiceNotes?: number
   newBest: boolean
   lessonTitle: string
@@ -86,7 +91,7 @@ export function Results({
   summary: measured, practiceNotes = 0, newBest, lessonTitle, stepName, scored, slowed = false, stepCleared = false, stepNumber, stepCount, tempoPct = 100,
   focusPractice = false, focusPhrase = null, onFocus, onReturnFromFocus, returnStepName, performances = [],
   newRung = null, nextRung = null, award, daily = null, nextLesson, onRetry, onNext, onExit,
-  sessionRound, nextLabel,
+  sessionRound, nextLabel, groove, grooveTarget = null,
 }: ResultsProps) {
   const practiceMode = measured === null
   const summary = measured ?? NO_SCORE
@@ -160,6 +165,8 @@ export function Results({
           </div>
         )}
         {hook && <div className="results-hook">{hook}</div>}
+
+        {!practiceMode && groove && <GrooveRecap snapshot={groove} target={grooveTarget} score={summary.accuracy} />}
 
         {performances.length > 0 && (
           <div className="performance-comparison">
