@@ -22,6 +22,8 @@ import { LESSONS } from '../lessons'
 import { createFocusLesson, findFocusPhrase, focusTempo, FOCUS_REPEATS, phraseLabel, type FocusPhrase } from '../lib/focus'
 import { comparableRuns, savePerformance, type PerformanceRun } from '../store/history'
 import type { SessionResult } from '../lib/session'
+import { createGroovePlan, readGroove, type GrooveSnapshot } from '../lib/groove'
+import { personalBestTarget, type GrooveTarget } from '../lib/grooveTarget'
 
 interface LessonPlayerProps {
   lesson: Lesson
@@ -87,7 +89,9 @@ export function LessonPlayer({
     summary: ScoreSummary | null; practiceNotes?: number; newBest: boolean; award: RunAward | null; dailyMet: boolean
     stepCleared: boolean; newRung: number | null; phrase: FocusPhrase | null
     performances: PerformanceRun[]
+    groove?: GrooveSnapshot; grooveTarget?: GrooveTarget | null
   } | null>(null)
+  const [runTarget, setRunTarget] = useState<GrooveTarget | null>(null)
   const runtimeRef = useRef<PlayerRuntime | null>(null)
   const startedAt = useRef(0)
   // re-render trigger so Highway gets the fresh runtime reference
@@ -100,6 +104,10 @@ export function LessonPlayer({
   // A slowed-down Perform is practice: it shows results but saves nothing.
   const scored = mode === 'play' && !focus && performScored(isLastStep, tempoPct)
   const chartedPads = useMemo(() => step.playerPads === 'all' ? new Set(activeLesson.events.map((e) => e.pad)) : new Set(step.playerPads), [activeLesson, step])
+  const groovePlan = useMemo(() => createGroovePlan(activeLesson.events.filter((event) => chartedPads.has(event.pad)), activeLesson.bars), [activeLesson, chartedPads])
+  const target = useMemo(() => scored ? personalBestTarget(history, {
+    lessonId: lesson.id, tempoPct, variant: modifier?.id ?? 'standard', total: groovePlan.total,
+  }) : null, [scored, history, lesson.id, tempoPct, modifier, groovePlan.total])
   const nextLesson = nextInCourse(LESSONS, lesson, progress ?? loadProgress())
   const lessonProgress = (progress ?? loadProgress())[lesson.id]
   const ladderOn = !focus && !sessionRound && isLastStep && ladderUnlocked(lessonProgress)
@@ -120,6 +128,7 @@ export function LessonPlayer({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     runtimeRef.current?.stop()
     setResults(null)
+    setRunTarget(target)
     startedAt.current = performance.now()
     const rt = new PlayerRuntime({
       lesson: activeLesson,
@@ -191,7 +200,8 @@ export function LessonPlayer({
           const notesHit = summary.perfect + summary.great + summary.good
           if (!focus && notesHit > 0) onSessionResult?.({ accuracy: summary.accuracy, notesHit, mode: 'play' })
           const phrase = focus ? null : findFocusPhrase(lesson, rt.score?.events ?? [])
-          setResults({ summary, newBest, award, dailyMet, stepCleared, newRung, phrase, performances })
+          setResults({ summary, newBest, award, dailyMet, stepCleared, newRung, phrase, performances,
+            groove: readGroove(groovePlan, rt.score?.events ?? [], activeLesson.bars * 4), grooveTarget: target })
         }
         bump((n) => n + 1)
       },
@@ -200,7 +210,7 @@ export function LessonPlayer({
     rt.start()
     setPlaying(true)
     bump((n) => n + 1)
-  }, [lesson, stepIndex, activeLesson, activeStepIndex, focus, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored, history, onHistory, onSessionResult])
+  }, [lesson, stepIndex, activeLesson, activeStepIndex, focus, mode, tempoPct, metronome, settings.latencyMs, isLastStep, onProgressChange, profile, modifier, onProfile, progress, scored, history, onHistory, onSessionResult, groovePlan, target])
 
   const startFocus = (phrase: FocusPhrase) => {
     stopRun()
@@ -380,7 +390,8 @@ export function LessonPlayer({
         </div>
       )}
 
-      <RunStatus runtime={runtimeRef.current} lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} mode={mode} />
+      <RunStatus runtime={runtimeRef.current} lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} mode={mode}
+        groovePlan={mode === 'play' && !results ? groovePlan : undefined} grooveTarget={playing ? runTarget : target} />
       <div className="player-stage">
         <Highway lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={focus ? 0 : modifier?.fadeBeats ?? 0} />
         {!playing && !results && (
@@ -398,6 +409,8 @@ export function LessonPlayer({
       {results && (
         <Results
           summary={results.summary}
+          groove={results.groove}
+          grooveTarget={results.grooveTarget}
           practiceNotes={results.practiceNotes}
           newBest={results.newBest}
           lessonTitle={lesson.title}

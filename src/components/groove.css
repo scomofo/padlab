@@ -1,0 +1,91 @@
+.groove-stage {
+  flex: none;
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(105deg, rgba(62, 240, 200, .035), rgba(129, 140, 248, .045)), #101727;
+  font-variant-numeric: tabular-nums;
+}
+
+.groove-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.groove-heading h2, .groove-heading h3 { font-size: 12px; font-weight: 750; line-height: 1.4; }
+.groove-heading h2 > span { display: inline-block; margin-left: 6px; color: var(--accent); }
+.groove-goals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 7px 0; padding: 0; list-style: none; }
+.groove-goal { --groove-color: #73dec9; min-width: 0; }
+.groove-goal--tight { --groove-color: #a8b0ff; }
+.groove-goal--phrases { --groove-color: #f2cd80; }
+.groove-goal-title { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; line-height: 1.35; color: #cad3e8; }
+.groove-goal-symbol { width: 13px; flex: none; text-align: center; font-weight: 800; color: var(--groove-color); }
+.groove-goal.is-earned .groove-goal-title { color: var(--groove-color); }
+.groove-goal-detail { display: flex; align-items: center; gap: 7px; margin: 5px 0 0 19px; }
+.groove-goal-count { flex: none; font-size: 10px; line-height: 1.3; color: #b8c3db; }
+.groove-earned-label { color: var(--groove-color); }
+.groove-track { flex: 1; min-width: 16px; height: 4px; overflow: hidden; border-radius: 99px; background: rgba(232, 236, 248, .12); }
+.groove-track > span { display: block; height: 100%; border-radius: inherit; background: var(--groove-color, var(--accent)); }
+.groove-footer { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.groove-phrases { display: flex; align-items: center; gap: 5px; list-style: none; padding: 0; min-width: 0; max-width: 60%; overflow-x: auto; scrollbar-width: thin; }
+.groove-phrases:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 5px; }
+.groove-phrase { flex: none; border: 1px solid rgba(232, 236, 248, .12); border-radius: 5px; padding: 3px 6px; font-size: 10px; line-height: 1.2; color: #b0bbd3; white-space: nowrap; }
+.groove-phrase > span:first-child { display: inline-block; min-width: 8px; text-align: center; }
+.groove-phrase--active { color: #e2e7ff; border-color: #8f9cec; background: rgba(129, 140, 248, .12); }
+.groove-phrase--landed { color: #80ead4; border-color: rgba(62, 240, 200, .32); background: rgba(62, 240, 200, .06); }
+.groove-phrase--locked { color: #c3b5ff; border-color: rgba(176, 153, 255, .45); background: rgba(176, 153, 255, .1); }
+.groove-phrase--retry { color: #eccb88; border-style: dashed; border-color: rgba(242, 205, 128, .3); }
+.groove-encouragement { margin: 0; color: #acb9d1; font-size: 11px; line-height: 1.4; }
+.groove-footer .groove-encouragement { text-align: right; }
+.groove-best { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 10px; color: #c1c8f5; line-height: 1.4; }
+.groove-best-track { position: relative; flex: none; width: 64px; height: 5px; overflow: visible; }
+.groove-best-track > span { background: #9eacf7; }
+.groove-best-marker { position: absolute; top: -2px; height: 9px; width: 1px; background: #e0e5ff; }
+.groove-best.is-reached { color: var(--accent); }
+.groove-best.is-reached .groove-track > span { background: var(--accent); }
+.groove-goal.is-celebrating .groove-goal-symbol { animation: groove-earned-pop 500ms ease-out both; }
+.groove-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.player:has(.groove-stage[data-earned='1']) .player-stage { border-inline-color: rgba(62, 240, 200, .4); box-shadow: 0 0 14px rgba(62, 240, 200, .08); }
+.player:has(.groove-stage[data-earned='2']) .player-stage { border-inline-color: rgba(168, 176, 255, .55); box-shadow: 0 0 18px rgba(168, 176, 255, .11); }
+.player:has(.groove-stage[data-earned='3']) .player-stage { border-inline-color: rgba(242, 205, 128, .65); box-shadow: 0 0 20px rgba(242, 205, 128, .14); }
+
+.groove-recap { width: 100%; border: 1px solid rgba(129, 140, 248, .25); border-radius: 12px; padding: 12px; text-align: left; }
+.groove-recap .groove-heading h3 { font-size: 14px; color: var(--text); }
+.groove-recap .groove-goals { grid-template-columns: 1fr; gap: 9px; margin: 12px 0; }
+.groove-recap .groove-goal-title { font-size: 12px; }
+.groove-recap .groove-goal-count { font-size: 11px; }
+.groove-recap .groove-phrases { max-width: 100%; flex-wrap: wrap; overflow: visible; }
+.groove-recap .groove-encouragement { margin-top: 9px; font-size: 12px; }
+.groove-recap .groove-best { margin-top: 9px; font-size: 12px; }
+.groove-recap .groove-best-track { margin-left: auto; }
+
+@keyframes groove-earned-pop {
+  0% { transform: scale(.85); }
+  45% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 720px) {
+  .groove-stage { padding: 8px 12px; }
+  .groove-goals { gap: 10px; }
+  .groove-goal-title { font-size: 10px; gap: 4px; }
+  .groove-goal-detail { margin-left: 17px; gap: 4px; }
+  .groove-footer { align-items: flex-start; }
+  .groove-footer .groove-encouragement { font-size: 10px; }
+  .groove-best-track { width: 40px; }
+}
+
+@media (max-width: 460px) {
+  .groove-heading { flex-wrap: wrap; }
+  .groove-goals { gap: 8px; }
+  .groove-goal-title { min-height: 40px; }
+  .groove-goal-detail { margin-left: 0; flex-wrap: wrap; }
+  .groove-goal-detail .groove-track { flex-basis: 100%; }
+  .groove-goal-count { font-size: 10px; }
+  .groove-footer { flex-wrap: wrap; }
+  .groove-phrases { max-width: 100%; }
+  .groove-footer .groove-encouragement { text-align: left; }
+  .groove-recap .groove-goal-title { min-height: 0; }
+  .groove-recap .groove-goal-detail { flex-wrap: nowrap; margin-left: 17px; }
+  .groove-recap .groove-goal-detail .groove-track { flex-basis: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groove-stage *, .groove-stage *::before, .groove-stage *::after { animation: none !important; transition: none !important; }
+}

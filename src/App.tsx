@@ -7,6 +7,7 @@ import { LessonBrowser } from './components/LessonBrowser'
 import { LessonPlayer } from './components/LessonPlayer'
 import { GuideViewer } from './components/GuideViewer'
 import { DeviceSetup } from './components/DeviceSetup'
+import { JamStudio } from './components/JamStudio'
 import { midi } from './midi/midiManager'
 import { padBus } from './input/inputBus'
 import { playSound } from './audio/drumSynth'
@@ -19,11 +20,14 @@ import { loadProfile, type Profile } from './store/profile'
 import { loadHistory, type PerformanceRun } from './store/history'
 import { buildSession, completeSessionRound, type PracticeSession, type SessionResult } from './lib/session'
 import { loadSession, saveSession } from './store/session'
+import { loadJam } from './store/jam'
 
 export default function App() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [launch, setLaunch] = useState<{ daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number; stepIndex?: number }>({})
   const [guide, setGuide] = useState<Guide | null>(null)
+  const [jamming, setJamming] = useState(false)
+  const [jamSketch, setJamSketch] = useState(loadJam)
   const [showSetup, setShowSetup] = useState(false)
   const [settings, setSettings] = useState<Settings>(() => loadSettings())
   const [progress, setProgress] = useState(() => loadProgress())
@@ -59,12 +63,12 @@ export default function App() {
   // Paused while DeviceSetup is open — it owns its own 16-pad test audio,
   // otherwise one keydown would sound twice.
   useEffect(() => {
-    if (lesson || guide || showSetup) return
+    if (lesson || guide || showSetup || jamming) return
     return padBus.subscribe((e) => {
       const sound = padSoundFor(null, 8, e.pad)
       if (sound) playSound(sound, undefined, e.velocity)
     })
-  }, [lesson, guide, showSetup])
+  }, [lesson, guide, showSetup, jamming])
 
   const updateSettings = (s: Settings) => {
     setSettings(s)
@@ -113,7 +117,8 @@ export default function App() {
 
   return (
     <div className="app">
-      {lesson ? (
+      {jamming ? <JamStudio settings={settings} initialSketch={jamSketch} onSketchChange={setJamSketch}
+        onExit={() => setJamming(false)} /> : lesson ? (
         <LessonPlayer
           key={`${lesson.id}:${sessionRound ?? 'free'}`}
           lesson={lesson}
@@ -159,6 +164,7 @@ export default function App() {
           onOpen={openLesson}
           onOpenGuide={setGuide}
           onOpenSetup={() => setShowSetup(true)}
+          onOpenJam={() => setJamming(true)}
           keyboardEnabled={!showSetup}
         />
       )}
