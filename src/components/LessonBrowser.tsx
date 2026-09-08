@@ -33,6 +33,7 @@ interface LessonBrowserProps {
   onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }) => void
   onOpenGuide: (guide: Guide) => void
   onOpenSetup: () => void
+  onOpenJam: () => void
   /** False while DeviceSetup overlay is open — its own 16-pad listener owns keys. */
   keyboardEnabled?: boolean
 }
@@ -40,7 +41,7 @@ interface LessonBrowserProps {
 type Filter = 'all' | 8 | 16
 
 export function LessonBrowser({
-  lessons, guides, progress, guideProgress, profile, history, session, onStartSession, onOpen, onOpenGuide, onOpenSetup,
+  lessons, guides, progress, guideProgress, profile, history, session, onStartSession, onOpen, onOpenGuide, onOpenSetup, onOpenJam,
   keyboardEnabled = true,
 }: LessonBrowserProps) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -163,6 +164,14 @@ export function LessonBrowser({
 
       <SessionCard lessons={lessons} session={session}
         suggestion={buildSession(lessons, progress, profile.lastLessonId)} onStart={onStartSession} />
+
+      <section className="jam-invitation" aria-label="Make your own beat">
+        <div><span className="kicker muted">Make something yours</span>
+          <h2>Four bars. Your beat.</h2>
+          <p>Record your pads, layer a groove, and play it back. Keep your latest loop on this device.</p>
+        </div>
+        <button className="btn" onClick={onOpenJam}>Open Jam ›</button>
+      </section>
 
       <section className="hub-actions">
         <button

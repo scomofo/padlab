@@ -72,6 +72,13 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
                   unlockAudio()
                   padBus.emit({ pad, velocity: 100, source: 'pointer', timeStamp: e.timeStamp })
                 }}
+                onClick={(e) => {
+                  // Keyboard/assistive activation has no pointerdown. Pointer
+                  // clicks already sounded there and must never fire twice.
+                  if (e.detail !== 0) return
+                  unlockAudio()
+                  padBus.emit({ pad, velocity: 100, source: 'keyboard', timeStamp: e.timeStamp })
+                }}
               >
                 <span className="pad-num">{pad}</span>
                 {key && <span className="pad-key">{key}</span>}
