@@ -236,7 +236,7 @@ export function Results({
               </span>
             </div>
             {award.freezesEarned > 0 && (
-              <div className="results-badges">❄ Streak freeze earned — one missed day won’t break your streak</div>
+              <div className="results-badges">Streak freeze earned — one missed day will not break your streak</div>
             )}
           </div>
         )}

@@ -21,6 +21,7 @@ export const LATENCY_MAX = 150
 
 function read<T>(key: string): T | null {
   try {
+    if (typeof localStorage === 'undefined') return null
     const raw = localStorage.getItem(key)
     return raw ? (JSON.parse(raw) as T) : null
   } catch {
@@ -30,6 +31,7 @@ function read<T>(key: string): T | null {
 
 function write(key: string, value: unknown): void {
   try {
+    if (typeof localStorage === 'undefined') return
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
     // storage unavailable — progress just won't persist
@@ -213,6 +215,7 @@ export function loadCustomMap(): Record<string, number> | null {
 export function saveCustomMap(map: Record<string, number> | null): void {
   if (map === null) {
     try {
+      if (typeof localStorage === 'undefined') return
       localStorage.removeItem(MIDIMAP_KEY)
     } catch { /* ignore */ }
   } else {

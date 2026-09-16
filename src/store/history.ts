@@ -49,6 +49,7 @@ function sanitizeHistory(value: unknown): PerformanceRun[] {
 
 export function loadHistory(): PerformanceRun[] {
   try {
+    if (typeof localStorage === 'undefined') return []
     return sanitizeHistory(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
   } catch {
     return []

@@ -39,6 +39,8 @@ describe('App smoke', () => {
       measureText: () => ({ width: 0 }),
       save: vi.fn(),
       restore: vi.fn(),
+      roundRect: vi.fn(),
+      createLinearGradient: () => ({ addColorStop: vi.fn() }),
     })) as unknown as typeof HTMLCanvasElement.prototype.getContext
     if (typeof globalThis.ResizeObserver === 'undefined') {
       globalThis.ResizeObserver = class {
@@ -71,6 +73,7 @@ describe('App smoke', () => {
     expect(host.textContent).toContain('PadLab')
     expect(host.textContent).toMatch(/Start here|Continue/)
     expect(host.textContent).toContain('Daily groove')
+    expect(host.textContent).toContain('The deck')
     expect(host.textContent).toContain('First Taps')
 
     const deviceChip = host.querySelector<HTMLButtonElement>('button.device-chip')
