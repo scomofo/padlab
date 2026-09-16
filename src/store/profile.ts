@@ -53,6 +53,7 @@ const EMPTY: Profile = {
 
 function readRaw(): unknown {
   try {
+    if (typeof localStorage === 'undefined') return null
     const raw = localStorage.getItem(KEY)
     return raw ? JSON.parse(raw) : null
   } catch {

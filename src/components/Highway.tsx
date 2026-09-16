@@ -18,10 +18,10 @@ interface HighwayProps {
 }
 
 const JUDGE_COLORS: Record<string, string> = {
-  perfect: '#3ef0c8',
-  great: '#6ea8ff',
-  good: '#ffd166',
-  miss: '#ff5d73',
+  perfect: '#9fd4b3',
+  great: '#9bb4c9',
+  good: '#c8b89a',
+  miss: '#e07a7a',
   stray: '#a34554',
 }
 
@@ -46,9 +46,9 @@ interface Particle {
 }
 
 const COMBO_TIERS: { min: number; color: string }[] = [
-  { min: 20, color: '#ff6ec7' },
-  { min: 10, color: '#ffd166' },
-  { min: 0, color: '#3ef0c8' },
+  { min: 20, color: '#f0ece3' },
+  { min: 10, color: '#c8b89a' },
+  { min: 0, color: '#9fd4b3' },
 ]
 const comboColor = (combo: number) => COMBO_TIERS.find((t) => combo >= t.min)!.color
 
@@ -165,12 +165,22 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         }
       }
 
+      // stage backdrop
+      const stage = ctx2d.createLinearGradient(0, 0, 0, hitY)
+      stage.addColorStop(0, '#0b0b0c')
+      stage.addColorStop(1, '#141416')
+      ctx2d.fillStyle = stage
+      ctx2d.fillRect(0, 0, w, hitY)
+
       // lane backgrounds
       for (let i = 0; i < lanePads.length; i++) {
-        ctx2d.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.022)' : 'rgba(255,255,255,0.045)'
+        const pad = lanePads[i]
+        ctx2d.fillStyle = i % 2 === 0 ? 'rgba(240,236,227,0.018)' : 'rgba(240,236,227,0.04)'
         ctx2d.fillRect(i * laneW, 0, laneW, hitY)
-        if (!playerPads.has(lanePads[i])) {
-          ctx2d.fillStyle = 'rgba(6,8,16,0.45)' // dim backing lanes
+        ctx2d.fillStyle = padColor(pad) + '14'
+        ctx2d.fillRect(i * laneW, 0, 3, hitY)
+        if (!playerPads.has(pad)) {
+          ctx2d.fillStyle = 'rgba(11,11,12,0.5)'
           ctx2d.fillRect(i * laneW, 0, laneW, hitY)
         }
       }
@@ -181,15 +191,15 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         const y = beatToY(b)
         if (y < 0 || y > hitY) continue
         const isBar = b % 4 === 0
-        ctx2d.strokeStyle = isBar ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.055)'
+        ctx2d.strokeStyle = isBar ? 'rgba(240,236,227,0.16)' : 'rgba(240,236,227,0.05)'
         ctx2d.lineWidth = isBar ? 1.5 : 1
         ctx2d.beginPath()
         ctx2d.moveTo(0, y)
         ctx2d.lineTo(w, y)
         ctx2d.stroke()
         if (isBar && b < lesson.bars * 4) {
-          ctx2d.fillStyle = 'rgba(255,255,255,0.3)'
-          ctx2d.font = '600 10px system-ui, sans-serif'
+          ctx2d.fillStyle = 'rgba(240,236,227,0.32)'
+          ctx2d.font = '600 10px "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'left'
           ctx2d.fillText(`BAR ${b / 4 + 1}`, 6, y - 5)
         }
@@ -197,14 +207,11 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
 
       // hit line, with a soft glow that brightens with combo
       const comboGlow = rt?.score ? Math.min(1, rt.score.combo / 24) : 0
-      const grad = ctx2d.createLinearGradient(0, hitY - 2, w, hitY - 2)
-      grad.addColorStop(0, '#3ef0c8')
-      grad.addColorStop(1, '#818cf8')
       ctx2d.save()
-      ctx2d.shadowColor = rt?.score ? comboColor(rt.score.combo) : '#3ef0c8'
-      ctx2d.shadowBlur = 6 + comboGlow * 18
-      ctx2d.fillStyle = grad
-      ctx2d.fillRect(0, hitY - 2, w, 4)
+      ctx2d.shadowColor = rt?.score ? comboColor(rt.score.combo) : '#f0ece3'
+      ctx2d.shadowBlur = 8 + comboGlow * 18
+      ctx2d.fillStyle = '#f0ece3'
+      ctx2d.fillRect(0, hitY - 1.5, w, 3)
       ctx2d.restore()
 
       // notes
@@ -236,14 +243,14 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         const nw = laneW - 10
         const color = padColor(pad)
         ctx2d.beginPath()
-        ctx2d.roundRect(x, y - noteH / 2, nw, noteH, 5)
+        ctx2d.roundRect(x, y - noteH / 2, nw, noteH, 6)
         if (style === 'backing') {
           ctx2d.globalAlpha = 0.28
           ctx2d.fillStyle = color
           ctx2d.fill()
         } else if (style === 'missed') {
           ctx2d.globalAlpha = 0.45
-          ctx2d.fillStyle = '#ff5d73'
+          ctx2d.fillStyle = '#e07a7a'
           ctx2d.fill()
         } else if (style === 'hit') {
           ctx2d.globalAlpha = 0.15
@@ -259,10 +266,13 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
           ctx2d.globalAlpha = alpha
           ctx2d.fillStyle = color
           ctx2d.fill()
-          ctx2d.globalAlpha = 0.5 * alpha
-          ctx2d.strokeStyle = '#ffffff'
-          ctx2d.lineWidth = 1
+          ctx2d.globalAlpha = 0.35 * alpha
+          ctx2d.strokeStyle = '#f0ece3'
+          ctx2d.lineWidth = 1.25
           ctx2d.stroke()
+          ctx2d.globalAlpha = 0.22 * alpha
+          ctx2d.fillStyle = '#ffffff'
+          ctx2d.fillRect(x + 2, y - noteH / 2 + 1, nw - 4, Math.max(2, noteH * 0.28))
         }
         ctx2d.globalAlpha = 1
       }
@@ -315,7 +325,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
           ctx2d.roundRect(li * laneW + 3, hitY - 16, laneW - 6, 32, 8)
           ctx2d.stroke()
           ctx2d.fillStyle = padColor(pad)
-          ctx2d.font = '700 11px system-ui, sans-serif'
+          ctx2d.font = '700 11px "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'center'
           ctx2d.fillText('TAP', li * laneW + laneW / 2, hitY - 24)
           ctx2d.globalAlpha = 1
@@ -332,15 +342,15 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
           const age = (nowWall - f.wall) / 700
           ctx2d.globalAlpha = 1 - age
           ctx2d.fillStyle = JUDGE_COLORS[f.judgement]
-          ctx2d.font = '800 13px system-ui, sans-serif'
+          ctx2d.font = '800 13px "Syne", "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'center'
           ctx2d.fillText(JUDGE_TEXT[f.judgement], li * laneW + laneW / 2, hitY - 34 - age * 26)
           ctx2d.globalAlpha = 1
         }
         // count-in
         if (rt.transport.state === 'playing' && now < 0) {
-          ctx2d.fillStyle = 'rgba(255,255,255,0.9)'
-          ctx2d.font = '800 64px system-ui, sans-serif'
+          ctx2d.fillStyle = 'rgba(240,236,227,0.92)'
+          ctx2d.font = '800 72px "Syne", "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'center'
           ctx2d.fillText(String(Math.min(COUNT_IN_BEATS, Math.ceil(-now))), w / 2, h * 0.4)
         }
@@ -357,19 +367,19 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       }
 
       // lane footer labels
-      ctx2d.fillStyle = 'rgba(10,13,24,0.92)'
+      ctx2d.fillStyle = '#0b0b0c'
       ctx2d.fillRect(0, hitY + 2, w, h - hitY - 2)
       for (let i = 0; i < lanePads.length; i++) {
         const pad = lanePads[i]
         const cx = i * laneW + laneW / 2
         const sound = padSoundFor(lesson, lesson.padCount, pad)
         ctx2d.fillStyle = padColor(pad)
-        ctx2d.font = '800 12px system-ui, sans-serif'
+        ctx2d.font = '700 12px "IBM Plex Sans", system-ui, sans-serif'
         ctx2d.textAlign = 'center'
         const key = keyLabelForPad(pad)
         ctx2d.fillText(playerPads.has(pad) ? `${pad}${key ? ` · ${key}` : ''}` : `${pad} · AUTO`, cx, hitY + 22, Math.max(1, laneW - 8))
-        ctx2d.fillStyle = 'rgba(255,255,255,0.55)'
-        ctx2d.font = '600 10px system-ui, sans-serif'
+        ctx2d.fillStyle = 'rgba(240,236,227,0.5)'
+        ctx2d.font = '600 10px "IBM Plex Sans", system-ui, sans-serif'
         ctx2d.fillText(sound ? SOUND_LABELS[sound] : '—', cx, hitY + 38, Math.max(1, laneW - 8))
       }
     }

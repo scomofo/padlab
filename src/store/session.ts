@@ -7,6 +7,7 @@ const TEMPOS = [50, 60, 70, 80, 90, 100, 105, 110, 115, 120]
 /** Restore only configurations that the current lesson can still play. Never rewrite older saves. */
 export function loadSession(lessons: Lesson[]): PracticeSession | null {
   try {
+    if (typeof localStorage === 'undefined') return null
     const value: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null')
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null
     const saved = value as Record<string, unknown>

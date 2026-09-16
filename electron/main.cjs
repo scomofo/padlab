@@ -56,7 +56,7 @@ function createWindow() {
     minWidth: 940,
     minHeight: 640,
     title: 'PadLab',
-    backgroundColor: '#0b0e1a',
+    backgroundColor: '#0b0b0c',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

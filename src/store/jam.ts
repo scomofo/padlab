@@ -4,6 +4,7 @@ const KEY = 'padlab-jam-v1'
 
 export function loadJam(): JamSketch {
   try {
+    if (typeof localStorage === 'undefined') return createEmptyJam()
     const stored = localStorage.getItem(KEY)
     if (!stored || stored.length > 512_000) return createEmptyJam()
     const value = JSON.parse(stored)

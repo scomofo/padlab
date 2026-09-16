@@ -117,14 +117,31 @@ export function LessonBrowser({
         <button className="device-chip" onClick={onOpenSetup}>
           <span className={device ? 'dot on' : 'dot'} />
           {deviceLabel}
-          <span className="gear">⚙</span>
+          <span className="gear" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </span>
         </button>
       </header>
+
+      <section className="warmup">
+        <div className="warmup-head">
+          <div>
+            <h2>The deck</h2>
+            <p className="muted">
+              {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too. MIDI if you have it.'}
+            </p>
+          </div>
+        </div>
+        <PadGrid padCount={8} compact />
+      </section>
 
       <section className="hub-stats">
         <div className="stat-card">
           <div className="stat-label">
-            {status === 'safe' ? '🔥 Streak' : status === 'at-risk' ? '⚠ Streak at risk' : status === 'frozen' ? '❄ Streak frozen' : 'Streak'}
+            {status === 'safe' ? 'Streak' : status === 'at-risk' ? 'Streak at risk' : status === 'frozen' ? 'Streak frozen' : 'Streak'}
           </div>
           <div className={status === 'at-risk' ? 'stat-value warn' : status === 'frozen' ? 'stat-value frost' : 'stat-value'}>
             {shownStreak > 0 ? `${shownStreak}d` : '—'}
@@ -137,7 +154,7 @@ export function LessonBrowser({
               : 'Play a Perform step'}
           </div>
           {profile.freezes > 0 && (
-            <div className="streak-freezes">{'❄'.repeat(profile.freezes)} {profile.freezes === 1 ? '1 freeze' : `${profile.freezes} freezes`}</div>
+            <div className="streak-freezes">{profile.freezes === 1 ? '1 freeze' : `${profile.freezes} freezes`}</div>
           )}
         </div>
         <div className="stat-card">
@@ -149,7 +166,7 @@ export function LessonBrowser({
         <div className="stat-card goal">
           <div className="stat-label">Today</div>
           <div className="stat-value">{dailyXp}<span className="muted"> / {DAILY_XP_GOAL} XP</span></div>
-          <div className="muted">{dailyPct >= 100 ? `Goal done · ${stars} ★ · ${minutes} min` : `${stars} ★ · ${minutes} min on pads`}</div>
+          <div className="muted">{dailyPct >= 100 ? `Goal done · ${stars} stars · ${minutes} min` : `${stars} stars · ${minutes} min on pads`}</div>
           <div className="goal-ring" style={{ '--pct': `${dailyPct}%` } as CSSProperties} aria-label={`Daily goal ${dailyPct}%`}>
             <span>{dailyPct}%</span>
           </div>
@@ -305,18 +322,6 @@ export function LessonBrowser({
       {filtered.length === 0 && filteredGuides.length === 0 && (
         <div className="muted empty">No lessons for this filter yet.</div>
       )}
-
-      <section className="warmup">
-        <div className="warmup-head">
-          <div>
-            <h2>Warm up</h2>
-            <p className="muted">
-              {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too.'}
-            </p>
-          </div>
-        </div>
-        <PadGrid padCount={8} compact />
-      </section>
     </div>
   )
 }

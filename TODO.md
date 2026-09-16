@@ -61,7 +61,7 @@ Use the DMG produced by the release workflow, not a dev-server build.
 - [ ] Document the expected Gatekeeper flow for the current ad-hoc-signed build;
       no unexplained blank window or silent failure is acceptable.
       Known step: `xattr -dr com.apple.quarantine /Applications/PadLab.app`.
-- [ ] Main window renders the studio (Continue / Daily groove / warmup pads)
+- [ ] Main window renders the studio (Continue / Daily groove / deck pads)
       and opens a lesson normally.
 - [ ] Web MIDI permission succeeds in the Electron shell and a connected physical
       controller appears in Device Setup.
