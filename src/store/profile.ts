@@ -118,10 +118,6 @@ export function saveProfile(p: Profile): void {
   write(p)
 }
 
-export function goalMetToday(p: Profile): boolean {
-  return p.lastGoalDate === todayKey()
-}
-
 export function dailyGoalMet(p: Profile): boolean {
   return p.dailyXpDate === todayKey() && p.dailyXp >= DAILY_XP_GOAL
 }

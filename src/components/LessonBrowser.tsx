@@ -308,7 +308,7 @@ export function LessonBrowser({
                           <span key={s} className={(p?.stars ?? 0) >= s ? 'star on' : 'star'}>★</span>
                         ))}
                       </span>
-                      {ladderLabel(l, p) && <span className="ladder-chip" title="Tempo ladder: fastest 3-star Perform">{ladderLabel(l, p)}</span>}
+                      {ladderLabel(p) && <span className="ladder-chip" title="Tempo ladder: fastest 3-star Perform">{ladderLabel(p)}</span>}
                       {p && p.bestAccuracy > 0 && <span className="best muted">best {p.bestAccuracy}%</span>}
                     </div>
                   </button>

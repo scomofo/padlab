@@ -1,4 +1,4 @@
-import type { Lesson, LessonProgress } from '../engine/types'
+import type { LessonProgress } from '../engine/types'
 
 /**
  * Tempo ladder: once a lesson is mastered (3 stars at 100%), the Perform step
@@ -49,8 +49,7 @@ export function tempoChoices(p: LessonProgress | undefined, base: number[]): num
 }
 
 /** Card label: "⚡120%" once any rung is cleared. */
-export function ladderLabel(lesson: Lesson, p: LessonProgress | undefined): string | null {
-  void lesson
+export function ladderLabel(p: LessonProgress | undefined): string | null {
   const best = bestRung(p)
   return best > 100 ? `⚡${best}%` : null
 }
