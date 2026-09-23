@@ -57,6 +57,21 @@ describe('loadProfile', () => {
     expect(p.dailyChallengeDone).toBe(false)
     expect(p.dailyXp).toBe(0)
   })
+
+  it('prunes week entries older than 60 days', () => {
+    const old = daysAgoKey(61)
+    const edge = daysAgoKey(60)
+    const recent = daysAgoKey(30)
+    const today = todayKey()
+    localStorage.setItem(KEY, JSON.stringify({
+      week: { [old]: 2, [edge]: 1, [recent]: 3, [today]: 1 },
+    }))
+    const p = loadProfile()
+    expect(p.week[old]).toBeUndefined()
+    expect(p.week[edge]).toBe(1)
+    expect(p.week[recent]).toBe(3)
+    expect(p.week[today]).toBe(1)
+  })
 })
 
 describe('applyRun', () => {
