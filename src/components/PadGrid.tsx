@@ -45,10 +45,13 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
     }
     const un1 = padBus.subscribe((e) => flash(e.pad, 'hit'), 'visual')
     const un2 = autoFlashBus.subscribe((pad) => flash(pad, 'auto'))
+    // Capture the map (not its contents): flash() keeps mutating this same Map,
+    // so cleanup clears every timeout scheduled during the component's life.
+    const pending = timeouts.current
     return () => {
       un1()
       un2()
-      for (const id of timeouts.current.values()) window.clearTimeout(id)
+      for (const id of pending.values()) window.clearTimeout(id)
     }
   }, [])
 

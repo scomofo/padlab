@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "validate": "node scripts/validate-lessons.mjs && node scripts/validate-guides.mjs && node scripts/analyze-difficulty.mjs",
-    "check": "npm run build && npm run validate && npm run test"
+    "check": "npm run build && npm run validate && npm run test",
+    "lint": "eslint ."
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -23,8 +24,12 @@
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
     "jsdom": "^30.0.1",
     "typescript": "~5.7.2",
+    "typescript-eslint": "^8.70.1",
     "vite": "^6.2.0",
     "vitest": "^4.1.10"
   },

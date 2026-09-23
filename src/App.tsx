@@ -57,6 +57,7 @@ export default function App() {
     }
     // Deliberately mount-only: settings.volume is read once here; later changes
     // are applied live by DeviceSetup, and re-running would re-bind MIDI.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Home warmup pads share the kit so tapping them is immediately audible.

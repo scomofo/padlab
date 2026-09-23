@@ -122,6 +122,8 @@ export function LessonPlayer({
   }, [])
 
   const startRun = useCallback(() => {
+    // Consume a pending auto-start request (no-op when starting directly).
+    setPendingStart(false)
     unlockAudio()
     // Space-to-start focus trap: Start button keeps focus, so Space would
     // hit the button instead of toggling. Blur so the window handler owns Space.
@@ -241,15 +243,20 @@ export function LessonPlayer({
   }, [stepIndex, mode, tempoPct, focus, stopRun])
   // Configuration must commit before constructing a new runtime. This also
   // handles a drill launched while already at the minimum practice tempo.
+  // The pendingStart flag is consumed inside startRun. Calling startRun here
+  // intentionally sets run state after the config commit — that is this
+  // effect's job.
   useEffect(() => {
     if (!pendingStart) return
-    setPendingStart(false)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     startRun()
   }, [pendingStart, startRun])
   useEffect(() => {
     if (!autoStart) return
-    startRun()
     // Mount-only: Continue / Daily / next-lesson should roll immediately.
+    // startRun intentionally sets state on mount (fresh run, results cleared).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startRun()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useEffect(() => () => runtimeRef.current?.stop(), [])
@@ -390,9 +397,14 @@ export function LessonPlayer({
         </div>
       )}
 
+      {/* runtimeRef is read during render below. This is safe because every
+          mutation of the ref is paired with a state update (setPlaying/bump)
+          that re-renders immediately — the prop never goes stale. */}
+      {/* eslint-disable-next-line react-hooks/refs */}
       <RunStatus runtime={runtimeRef.current} lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} mode={mode}
         groovePlan={mode === 'play' && !results ? groovePlan : undefined} grooveTarget={playing ? runTarget : target} />
       <div className="player-stage">
+        {/* eslint-disable-next-line react-hooks/refs */}
         <Highway lesson={activeLesson} stepIndex={activeStepIndex} tempoPct={tempoPct} runtime={runtimeRef.current} fadeBeats={focus ? 0 : modifier?.fadeBeats ?? 0} />
         {!playing && !results && (
           <button className="play-curtain" onClick={startRun}>

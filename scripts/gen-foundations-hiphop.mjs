@@ -3,12 +3,6 @@ import { writeLessons, perform } from './lib/chart.mjs'
 
 /** Repeat a bar pattern n times, then append the given variation bars. */
 const rep = (n, p, ...tail) => [...Array(n).fill(p), ...tail]
-/** Build a 16-step bar string with 'x' at the given step indices. */
-const bar16 = (on) => {
-  const s = Array(16).fill('.')
-  for (const i of on) s[i] = 'x'
-  return s.join('')
-}
 
 writeLessons([
   // ---------------- Foundations ----------------

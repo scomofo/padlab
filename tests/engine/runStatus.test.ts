@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ScoreKeeper } from '../../src/engine/scoring'
 import type { PlayerRuntime } from '../../src/engine/player'
-import { readRunStatus } from '../../src/components/RunStatus'
+import { readRunStatus } from '../../src/lib/runStatus'
 function fixture() {
   const score = new ScoreKeeper([{ t: 0, pad: 1 }, { t: 1, pad: 2 }], .5)
   const runtime = { score, transport: { now: () => .5 }, feedback: [], waitingPads: null } as unknown as PlayerRuntime

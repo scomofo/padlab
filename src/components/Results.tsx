@@ -58,14 +58,13 @@ const NO_SCORE: ScoreSummary = { perfect: 0, great: 0, good: 0, miss: 0, stray: 
 
 /** Counts from `from` up to `to` over COUNT_MS; jumps straight there without rAF. */
 function useCountUp(from: number, to: number): number {
+  const reducedMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true
+  const animate = typeof requestAnimationFrame === 'function' && from !== to && !reducedMotion
   const [value, setValue] = useState(from)
   const frame = useRef(0)
   useEffect(() => {
-    if (typeof requestAnimationFrame !== 'function' || from === to
-      || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setValue(to)
-      return
-    }
+    if (!animate) return
     const t0 = performance.now()
     const tick = (now: number) => {
       const k = Math.min(1, (now - t0) / COUNT_MS)
@@ -75,8 +74,9 @@ function useCountUp(from: number, to: number): number {
     }
     frame.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame.current)
-  }, [from, to])
-  return value
+  }, [from, to, animate])
+  // No animation: the value is `to` immediately (no setState-in-effect cascade).
+  return animate ? value : to
 }
 
 const BUCKET_LABEL: Record<string, string> = {
