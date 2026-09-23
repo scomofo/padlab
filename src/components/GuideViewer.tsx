@@ -33,7 +33,8 @@ export function GuideViewer({ guide, startStep = 0, onExit, onProgressChange }: 
     // onProgressChange is deliberately not a dependency: the parent passes an
     // inline closure whose identity changes every render, and depending on it
     // would re-save (and re-notify) on every render instead of per step.
-  }, [guide.id, index])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide.id, index, guide.steps.length])
 
   const toggleClick = useCallback(() => {
     unlockAudio()

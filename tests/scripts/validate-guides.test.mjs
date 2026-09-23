@@ -147,7 +147,7 @@ describe('key combos', () => {
   })
 
   it('warns when no step documents a button press', () => {
-    const steps = validGuide().steps.map(({ keys, ...rest }) => rest)
+    const steps = validGuide().steps.map(({ keys: _keys, ...rest }) => rest)
     const { errors, warnings } = check({ steps })
     expect(errors).toEqual([])
     expect(warnings.some((w) => /no step documents a button press/.test(w))).toBe(true)

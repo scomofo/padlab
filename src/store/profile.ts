@@ -85,8 +85,11 @@ export function loadProfile(): Profile {
   const challengeDate = typeof s.dailyChallengeDate === 'string' ? s.dailyChallengeDate : null
   const week: Record<string, number> = {}
   if (s.week && typeof s.week === 'object' && !Array.isArray(s.week)) {
+    // Prune entries older than 60 days so the map can't grow forever.
+    // Keys are local YYYY-MM-DD, so lexicographic comparison works.
+    const cutoff = daysAgoKey(60)
     for (const [k, v] of Object.entries(s.week as Record<string, unknown>)) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(k) && typeof v === 'number' && Number.isFinite(v)) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k >= cutoff && typeof v === 'number' && Number.isFinite(v)) {
         week[k] = v
       }
     }

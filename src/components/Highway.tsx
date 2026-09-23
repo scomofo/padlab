@@ -56,13 +56,17 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const runtimeRef = useRef(runtime)
-  runtimeRef.current = runtime
   const stepRef = useRef(stepIndex)
-  stepRef.current = stepIndex
   const tempoRef = useRef(tempoPct)
-  tempoRef.current = tempoPct
   const fadeRef = useRef(fadeBeats)
-  fadeRef.current = fadeBeats
+  // Latest-value refs for the rAF loop below; synced in an effect (not during
+  // render) so the loop always sees the props from the last committed render.
+  useEffect(() => {
+    runtimeRef.current = runtime
+    stepRef.current = stepIndex
+    tempoRef.current = tempoPct
+    fadeRef.current = fadeBeats
+  })
 
   useEffect(() => {
     const canvas = canvasRef.current!

@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - name: Typecheck and build
         run: npm run build
+      - name: Lint
+        run: npm run lint
       - name: Validate lesson and guide data
         run: npm run validate
       - name: Unit tests

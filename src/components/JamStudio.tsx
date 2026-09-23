@@ -60,6 +60,10 @@ export function JamStudio({ settings, onExit, initialSketch, onSketchChange }: J
   }, [])
 
   useEffect(() => {
+    // Persist to the external store and report the write result. The setState
+    // here reports a side-effect outcome (storage write success), not derived
+    // render data — that is this effect's job.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(saveJam(sketch))
     onSketchChange?.(sketch)
   }, [sketch, onSketchChange])
@@ -93,6 +97,9 @@ export function JamStudio({ settings, onExit, initialSketch, onSketchChange }: J
     return () => {
       off()
       window.clearInterval(timer)
+      // Invalidate in-flight async starts on unmount: the increment (not the
+      // read value) is the point, so the changing ref value is intentional.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       startSequence.current++
       startingRef.current = false
       const runtime = runtimeRef.current
