@@ -6,7 +6,7 @@ Software changes and automated/local-macOS evidence are recorded in [validation]
 
 **Physical hardware acceptance remains open:** no MIDI input sources were attached during this work. Follow [the operator procedure](docs/HARDWARE_ACCEPTANCE.md) for both controllers and the release-workflow DMGs. No release tag was created and no physical checklist below is being checked automatically.
 
-Open work as of `main` @ `95d29ed` (2026-09-02), plus the coverage/hygiene
+Open work as of `main` @ `94dcd0b` (2026-09-23), plus the coverage/hygiene
 follow-up on `chore/rc-hygiene`. PR #13 (`feat/sticky-daily-loop`) is merged.
 Core CI is green. The two pinned design questions are decided. Remaining work
 is physical-device acceptance and cutting a release that matches current `main`.
@@ -119,11 +119,14 @@ sake; add tests where they protect behaviour or arithmetic.
 
 ## Known follow-ups (not blocking RC)
 
-- Home `LessonBrowser` mounts `usePadKeyboard(8)` while `DeviceSetup` (overlay)
+- ~~Home `LessonBrowser` mounts `usePadKeyboard(8)` while `DeviceSetup` (overlay)
   mounts `usePadKeyboard(16)`. Opening Device Setup from the studio installs two
   window listeners, so one keydown emits twice. Harmless for scoring (no run is
   active) but the warmup / setup test kit can double-trigger. Hoist the hook to
-  `App` or make the listener singleton before this becomes a scored-path bug.
+  `App` or make the listener singleton before this becomes a scored-path bug.~~
+  **Done:** `App.tsx` passes `keyboardEnabled={!showSetup}` to `LessonBrowser`,
+  and `DeviceSetup` only renders while setup is open, so the studio listener is
+  disabled whenever the setup listener is installed.
 - `dailyLesson` can pick the same chart as Continue. Fine for a small catalog;
   revisit if the daily card should always be a different groove.
 - Results / Continue auto-start Play. Confirm on a real controller that the
