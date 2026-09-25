@@ -268,15 +268,18 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
             if (alpha <= 0) { ctx2d.globalAlpha = 1; return }
           }
           ctx2d.globalAlpha = alpha
-          ctx2d.fillStyle = color
+          // Subtle vertical gradient for depth: lit top edge falling to full color.
+          const grad = ctx2d.createLinearGradient(0, y - noteH / 2, 0, y + noteH / 2)
+          grad.addColorStop(0, '#ffffff')
+          grad.addColorStop(0.3, color)
+          grad.addColorStop(1, color)
+          ctx2d.fillStyle = grad
           ctx2d.fill()
           ctx2d.globalAlpha = 0.35 * alpha
           ctx2d.strokeStyle = '#f0ece3'
           ctx2d.lineWidth = 1.25
           ctx2d.stroke()
-          ctx2d.globalAlpha = 0.22 * alpha
-          ctx2d.fillStyle = '#ffffff'
-          ctx2d.fillRect(x + 2, y - noteH / 2 + 1, nw - 4, Math.max(2, noteH * 0.28))
+          ctx2d.globalAlpha = alpha
         }
         ctx2d.globalAlpha = 1
       }
