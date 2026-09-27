@@ -12,6 +12,7 @@ interface TestRuntime {
   playerEvents: NoteEvent[]
   start: ReturnType<typeof vi.fn>
   stop: ReturnType<typeof vi.fn>
+  handlePad: ReturnType<typeof vi.fn>
 }
 const { runs } = vi.hoisted(() => ({ runs: [] as TestRuntime[] }))
 
@@ -108,6 +109,25 @@ describe('personal practice loop integration', () => {
     await click('Play', host.querySelector('.segmented')!)
     await click('Start', host.querySelector('.player-controls')!)
   }
+
+  it('changes focus view during a run without restarting playback or losing keyboard input', async () => {
+    await mount()
+    await openPerform()
+    const rt = runs.at(-1)!
+    const count = runs.length
+    const stops = rt.stop.mock.calls.length
+    await click('Focus view')
+    expect(host.querySelector('.player')?.classList.contains('is-focused')).toBe(true)
+    expect(host.querySelector('.focus-toggle')?.getAttribute('aria-pressed')).toBe('true')
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true })))
+    expect(rt.handlePad).toHaveBeenCalledOnce()
+    await click('Focus view')
+    expect(host.querySelector('.player')?.classList.contains('is-focused')).toBe(false)
+    expect(host.querySelector('.focus-toggle')?.getAttribute('aria-pressed')).toBe('false')
+    expect(runs).toHaveLength(count)
+    expect(rt.stop).toHaveBeenCalledTimes(stops)
+    expect(rt.start).toHaveBeenCalledOnce()
+  })
 
   it('goes from a weak performance through a drill to a better full run, then replays it after reopening', async () => {
     await mount()

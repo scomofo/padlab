@@ -29,6 +29,7 @@ export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode, groovePl
   const scale = Math.min(1.2, Math.max(0.25, (step.tempoScale ?? 1) * tempoPct / 100))
   const bpm = Math.round(lesson.bpm * scale)
   const position = Math.max(0, Math.min(total, status.beat))
+  const beatInBar = runtime && status.beat < total ? Math.floor(Math.max(-COUNT_IN_BEATS, status.beat) + COUNT_IN_BEATS) % 4 : -1
   const phase = !runtime ? 'Ready' : status.waiting ? `Tap pads ${status.waiting}`
     : status.beat < 0 ? `Count-in · ${Math.min(COUNT_IN_BEATS, Math.ceil(-status.beat))}`
     : status.beat >= total ? 'Finishing' : `Bar ${Math.floor(status.beat / 4) + 1} of ${lesson.bars}`
@@ -38,7 +39,10 @@ export function RunStatus({ runtime, lesson, stepIndex, tempoPct, mode, groovePl
     <div className="run-context"><span className={`mode-tag mode-${mode}`}>{mode}</span>
       <strong>{step.name}</strong><span className="muted">{bpm} BPM</span>
     </div>
-    <div className="run-position"><span>{phase}</span>
+    <div className="run-position"><div className="run-position-label"><span>{phase}</span>
+      <span className="beat-dots" aria-hidden="true">{[0, 1, 2, 3].map((beat) =>
+        <span key={beat} className={beatInBar === beat ? 'on' : ''}>{beat + 1}</span>)}</span>
+      </div>
       <progress aria-label="Lesson progress" value={position} max={total} />
     </div>
     <div className="run-metrics">

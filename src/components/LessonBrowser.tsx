@@ -129,13 +129,50 @@ export function LessonBrowser({
       <section className="warmup">
         <div className="warmup-head">
           <div>
+            <span className="deck-kicker"><span className="dot on" /> Ready when you are</span>
             <h2>The deck</h2>
             <p className="muted">
               {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too. MIDI if you have it.'}
             </p>
+            <div className="deck-key-hint" aria-hidden="true"><kbd>Z X C V</kbd><kbd>A S D F</kbd></div>
+            <button className="btn deck-jam" title="Record your pads, layer a groove, and loop it" onClick={onOpenJam}>Open Jam ›</button>
           </div>
         </div>
         <PadGrid padCount={8} compact />
+      </section>
+
+      <section className="hub-actions">
+        <button
+          className="continue-card"
+          onClick={() => {
+            void unlockAudio()
+            onOpen(startLesson, { autoStart: true })
+          }}
+        >
+          <span className="muted kicker">{fresh ? 'Start here' : 'Continue'}</span>
+          <h2>{fresh ? 'First Taps' : next.title}</h2>
+          <p className="muted">
+            {fresh
+              ? 'One kick. Four beats. Land on the click.'
+              : `${next.genre} · ${next.bpm} BPM · LV ${next.level} · Step ${resumeStep(next, progress[next.id]) + 1} of ${next.steps.length}: ${next.steps[resumeStep(next, progress[next.id])].name}`}
+          </p>
+          <span className="btn primary play-now">{fresh ? 'Play now ›' : 'Keep going ›'}</span>
+        </button>
+        <button
+          className="daily-card"
+          onClick={() => {
+            void unlockAudio()
+            onOpen(daily, { daily: true, autoStart: true })
+          }}
+        >
+          <span className="muted kicker">Daily groove{twist.id !== 'standard' ? ` · ${twist.name}` : ''}</span>
+          <h2>{daily.title}</h2>
+          <p className="muted">{dailyBlurb(daily, twist)}</p>
+          {twist.id !== 'standard' && <p className="muted daily-rule">{twist.rule}</p>}
+          <span className={dailyDone ? 'daily-status done' : 'daily-status'}>
+            {dailyDone ? 'Cleared today' : 'Take it on ›'}
+          </span>
+        </button>
       </section>
 
       <section className="hub-stats">
@@ -182,48 +219,6 @@ export function LessonBrowser({
       <SessionCard lessons={lessons} session={session}
         suggestion={buildSession(lessons, progress, profile.lastLessonId)} onStart={onStartSession} />
 
-      <section className="jam-invitation" aria-label="Make your own beat">
-        <div><span className="kicker muted">Make something yours</span>
-          <h2>Four bars. Your beat.</h2>
-          <p>Record your pads, layer a groove, and play it back. Keep your latest loop on this device.</p>
-        </div>
-        <button className="btn" onClick={onOpenJam}>Open Jam ›</button>
-      </section>
-
-      <section className="hub-actions">
-        <button
-          className="continue-card"
-          onClick={() => {
-            void unlockAudio()
-            onOpen(startLesson, { autoStart: true })
-          }}
-        >
-          <span className="muted kicker">{fresh ? 'Start here' : 'Continue'}</span>
-          <h2>{fresh ? 'First Taps' : next.title}</h2>
-          <p className="muted">
-            {fresh
-              ? 'One kick. Four beats. Land on the click.'
-              : `${next.genre} · ${next.bpm} BPM · LV ${next.level} · Step ${resumeStep(next, progress[next.id]) + 1} of ${next.steps.length}: ${next.steps[resumeStep(next, progress[next.id])].name}`}
-          </p>
-          <span className="btn primary play-now">{fresh ? 'Play now ›' : 'Keep going ›'}</span>
-        </button>
-        <button
-          className="daily-card"
-          onClick={() => {
-            void unlockAudio()
-            onOpen(daily, { daily: true, autoStart: true })
-          }}
-        >
-          <span className="muted kicker">Daily groove{twist.id !== 'standard' ? ` · ${twist.name}` : ''}</span>
-          <h2>{daily.title}</h2>
-          <p className="muted">{dailyBlurb(daily, twist)}</p>
-          {twist.id !== 'standard' && <p className="muted daily-rule">{twist.rule}</p>}
-          <span className={dailyDone ? 'daily-status done' : 'daily-status'}>
-            {dailyDone ? 'Cleared today' : 'Take it on ›'}
-          </span>
-        </button>
-      </section>
-
       <ReplayCard lessons={lessons} history={history} onReplay={(lesson, tempoPct) => {
         void unlockAudio()
         onOpen(lesson, { autoStart: true, perform: true, tempoPct })
@@ -232,7 +227,7 @@ export function LessonBrowser({
       <div className="filter-row">
         {([['all', 'All lessons'], [8, '8 pads · MPK Mini'], [16, '16 pads · SP-404']] as [Filter, string][]).map(
           ([f, label]) => (
-            <button key={String(f)} className={filter === f ? 'chip-btn on' : 'chip-btn'} onClick={() => setFilter(f)}>
+            <button key={String(f)} className={filter === f ? 'chip-btn on' : 'chip-btn'} aria-pressed={filter === f} onClick={() => setFilter(f)}>
               {label}
             </button>
           ),
