@@ -29,9 +29,10 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
   }, [padCount])
 
   useEffect(() => {
-    const flash = (pad: number, cls: string) => {
+    const flash = (pad: number, cls: string, velocity = 80) => {
       const el = gridRef.current?.querySelector<HTMLElement>(`[data-pad="${pad}"]`)
       if (!el) return
+      el.style.setProperty('--strike-strength', String(Math.max(0.2, Math.min(1, velocity / 127))))
       el.classList.remove('hit', 'auto')
       // force reflow so re-adding the class restarts the animation
       void el.offsetWidth
@@ -40,10 +41,13 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
       if (prev) window.clearTimeout(prev)
       timeouts.current.set(
         pad,
-        window.setTimeout(() => el.classList.remove('hit', 'auto'), 160),
+        window.setTimeout(() => {
+          el.classList.remove('hit', 'auto')
+          timeouts.current.delete(pad)
+        }, 220),
       )
     }
-    const un1 = padBus.subscribe((e) => flash(e.pad, 'hit'), 'visual')
+    const un1 = padBus.subscribe((e) => flash(e.pad, 'hit', e.velocity), 'visual')
     const un2 = autoFlashBus.subscribe((pad) => flash(pad, 'auto'))
     // Capture the map (not its contents): flash() keeps mutating this same Map,
     // so cleanup clears every timeout scheduled during the component's life.
@@ -68,6 +72,7 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
                 key={pad}
                 type="button"
                 data-pad={pad}
+                aria-label={`Pad ${pad}${sound ? `, ${SOUND_LABELS[sound]}` : ''}${key ? `, key ${key}` : ''}`}
                 className={`pad ${active ? 'active' : 'inactive'}`}
                 style={{ ['--pad-color' as string]: padColor(pad) }}
                 onPointerDown={(e) => {

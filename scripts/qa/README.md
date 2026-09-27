@@ -24,3 +24,9 @@ node scripts/qa/native-macos.mjs
 Each probe writes explicitly scoped JSON evidence and screenshots to `docs/validation/`. Review new output before committing it; it replaces the recorded evidence from an earlier run. A native local launch is not equivalent to installing a quarantined download through Gatekeeper. The scripts close their own browser/app on completion and set a nonzero exit code if an assertion fails.
 
 The broader physical-controller checklist is in [HARDWARE_ACCEPTANCE.md](../../docs/HARDWARE_ACCEPTANCE.md). Do not interpret injected MIDI messages as a successful physical device test.
+
+## Visual polish probe (cross-platform)
+
+With the optional `playwright` dependency installed, run `npx playwright install chromium` then `node scripts/qa/polish.mjs`. This probe starts and closes its own Vite server unless `PADLAB_BASE_URL` is provided. `PADLAB_CHROMIUM_PATH` can select an existing Chromium executable; `PADLAB_QA_OUT` changes the output directory from `docs/validation/polish/`.
+
+It checks layouts at 320, 390, 768 and 1366 pixels, completes a keyboard performance through the real scoring engine, toggles Focus view during playback, checks reduced-motion pad effects, and opens Jam from the deck. Screenshots cover the studio, count-in, single/dense lanes, mobile Focus view and results. Its browser profile is isolated, and its runtime instrumentation only runs against the development server.

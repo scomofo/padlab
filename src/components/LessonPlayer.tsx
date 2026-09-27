@@ -85,6 +85,7 @@ export function LessonPlayer({
   const [pendingStart, setPendingStart] = useState(false)
   const [metronome, setMetronome] = useState(settings.metronome)
   const [playing, setPlaying] = useState(false)
+  const [focusView, setFocusView] = useState(false)
   const [results, setResults] = useState<{
     summary: ScoreSummary | null; practiceNotes?: number; newBest: boolean; award: RunAward | null; dailyMet: boolean
     stepCleared: boolean; newRung: number | null; phrase: FocusPhrase | null
@@ -289,7 +290,7 @@ export function LessonPlayer({
   }, [startRun, stopRun, results])
 
   return (
-    <div className="player">
+    <div className={`player${focusView ? ' is-focused' : ''}`}>
       <header className="player-bar">
         <button className="btn ghost" onClick={() => { stopRun(); onExit() }}>{sessionRound ? '‹ Pause session' : '‹ Studio'}</button>
         <div className="player-title">
@@ -337,6 +338,11 @@ export function LessonPlayer({
           >
             Click
           </button>
+          <button className={`btn small focus-toggle${focusView ? ' on' : ''}`}
+            aria-pressed={focusView} onClick={() => setFocusView((value) => !value)}
+            title={focusView ? 'Show pads and groove goals' : 'Give the highway more room; keyboard and MIDI stay active'}>
+            Focus view
+          </button>
           <button className={playing ? 'btn primary stop' : 'btn primary'} onClick={playing ? stopRun : startRun}>
             {playing ? '■ Stop' : '▶ Start'}
           </button>
@@ -364,6 +370,7 @@ export function LessonPlayer({
             <button
               key={i}
               className={`step-pill${i === stepIndex ? ' on' : ''}${done ? ' done' : ''}`}
+              aria-current={i === stepIndex ? 'step' : undefined}
               onClick={() => setStepIndex(i)}
               title={done ? `${s.name} — done` : s.name}
               disabled={Boolean(sessionRound)}
@@ -411,7 +418,8 @@ export function LessonPlayer({
             <span className="play-orb">▶</span>
             <span className="curtain-eyebrow">{step.name}</span>
             <strong>{mode === 'listen' ? 'Listen first' : mode === 'practice' ? 'Practice at your pace' : 'Find your groove'}</strong>
-            <span className="muted">{mode === 'listen' ? 'Hear the pattern and watch the pads light up.' : mode === 'practice' ? 'The groove waits until you hit each note.' : 'Hit the bright notes at the line. Dim lanes play for you.'} · Space to start</span>
+            <span className="muted">{mode === 'listen' ? 'Hear the pattern and watch the pads light up.' : mode === 'practice' ? 'The groove waits until you hit each note.' : 'Hit the bright notes at the line. Dim lanes play for you.'}</span>
+            <span className="curtain-shortcut"><kbd>Space</kbd> or tap to start</span>
           </button>
         )}
       </div>

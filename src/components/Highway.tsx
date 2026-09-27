@@ -79,7 +79,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
     motion?.addEventListener('change', updateMotion)
 
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
       const { width, height } = wrap.getBoundingClientRect()
       canvas.width = Math.max(1, Math.round(width * dpr))
       canvas.height = Math.max(1, Math.round(height * dpr))
@@ -96,9 +96,12 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
 
     // ---- flare state (particles, combo pulse, miss flash) — persists across frames ----
     let particles: Particle[] = []
+    let previousWidth = 0
+    let previousHeight = 0
+    const impacts = new Map<number, { wall: number; color: string }>()
+    let previousRuntime: PlayerRuntime | null = null
     const processedFeedback = new WeakSet<object>()
     let lastFrame = performance.now()
-    let missFlashUntil = 0
     // Judged-map cache: ScoreKeeper mutates judgements in place, but every
     // judgement also pushes feedback — so feedback length is a cheap version.
     let judgedCache: Map<string, { judgement?: string }> | null = null
@@ -125,7 +128,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
 
     const draw = () => {
       raf = requestAnimationFrame(draw)
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
       const w = canvas.width / dpr
       const h = canvas.height / dpr
       ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -137,6 +140,13 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       lastFrame = frameNow
 
       const rt = runtimeRef.current
+      if (rt !== previousRuntime || w !== previousWidth || h !== previousHeight) {
+        particles = []
+        impacts.clear()
+        previousRuntime = rt
+        previousWidth = w
+        previousHeight = h
+      }
       const step = lesson.steps[stepRef.current]
       const playerPads: Set<number> = rt
         ? rt.playerPadSet
@@ -151,41 +161,53 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       const labelH = 34
       const hitY = h - labelH - 26
       const ppb = (hitY / VISIBLE_SEC) * secPerBeat // px per beat
-      const laneW = w / lanePads.length
+      // Keep a one-pad exercise centred and legible instead of stretching its
+      // notes across the entire screen. Dense charts still use the full width.
+      const laneW = Math.min(lanePads.length <= 2 ? 220 : 164, w / Math.max(1, lanePads.length))
+      const trackW = laneW * lanePads.length
+      const trackX = (w - trackW) / 2
+      const laneX = (index: number) => trackX + index * laneW
       const beatToY = (t: number) => hitY - (t - now) * ppb
 
-      // react to new judgements: bursts on great hits, a flash on misses
+      // React to new judgements with feedback local to the affected lane.
       if (rt) {
         for (const f of rt.feedback) {
           if (processedFeedback.has(f)) continue
           processedFeedback.add(f)
           const li = laneIndex.get(f.pad)
           if (li === undefined) continue
+          // Only the struck lane lights up; rapid chords retain separate cues.
+          // Late-arriving feedback must not restart an old impact effect.
+          if (frameNow - f.wall > 420) continue
+          impacts.set(f.pad, { wall: f.wall, color: f.judgement === 'miss' || f.judgement === 'stray' ? JUDGE_COLORS[f.judgement] : padColor(f.pad) })
           if (f.judgement === 'perfect' || f.judgement === 'great') {
-            spawnBurst(li * laneW + laneW / 2, hitY, JUDGE_COLORS[f.judgement])
-          } else if (f.judgement === 'miss') {
-            missFlashUntil = frameNow + 220
+            spawnBurst(laneX(li) + laneW / 2, hitY, padColor(f.pad))
           }
         }
       }
 
       // stage backdrop
       const stage = ctx2d.createLinearGradient(0, 0, 0, hitY)
-      stage.addColorStop(0, '#0b0b0c')
-      stage.addColorStop(1, '#141416')
+      stage.addColorStop(0, '#0c0d10')
+      stage.addColorStop(1, '#191b21')
       ctx2d.fillStyle = stage
-      ctx2d.fillRect(0, 0, w, hitY)
+      ctx2d.fillRect(trackX, 0, trackW, hitY)
 
       // lane backgrounds
       for (let i = 0; i < lanePads.length; i++) {
         const pad = lanePads[i]
         ctx2d.fillStyle = i % 2 === 0 ? 'rgba(240,236,227,0.018)' : 'rgba(240,236,227,0.04)'
-        ctx2d.fillRect(i * laneW, 0, laneW, hitY)
-        ctx2d.fillStyle = padColor(pad) + '14'
-        ctx2d.fillRect(i * laneW, 0, 3, hitY)
+        ctx2d.fillRect(laneX(i), 0, laneW, hitY)
+        const wash = ctx2d.createLinearGradient(0, Math.max(0, hitY - 140), 0, hitY)
+        wash.addColorStop(0, padColor(pad) + '00')
+        wash.addColorStop(1, padColor(pad) + (playerPads.has(pad) ? '22' : '08'))
+        ctx2d.fillStyle = wash
+        ctx2d.fillRect(laneX(i), 0, laneW, hitY)
+        ctx2d.fillStyle = padColor(pad) + '24'
+        ctx2d.fillRect(laneX(i), 0, 1, hitY)
         if (!playerPads.has(pad)) {
           ctx2d.fillStyle = 'rgba(11,11,12,0.5)'
-          ctx2d.fillRect(i * laneW, 0, laneW, hitY)
+          ctx2d.fillRect(laneX(i), 0, laneW, hitY)
         }
       }
 
@@ -198,14 +220,14 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         ctx2d.strokeStyle = isBar ? 'rgba(240,236,227,0.16)' : 'rgba(240,236,227,0.05)'
         ctx2d.lineWidth = isBar ? 1.5 : 1
         ctx2d.beginPath()
-        ctx2d.moveTo(0, y)
-        ctx2d.lineTo(w, y)
+        ctx2d.moveTo(trackX, y)
+        ctx2d.lineTo(trackX + trackW, y)
         ctx2d.stroke()
         if (isBar && b < lesson.bars * 4) {
           ctx2d.fillStyle = 'rgba(240,236,227,0.32)'
           ctx2d.font = '600 10px "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'left'
-          ctx2d.fillText(`BAR ${b / 4 + 1}`, 6, y - 5)
+          ctx2d.fillText(`BAR ${b / 4 + 1}`, Math.max(6, trackX - 48), y - 5)
         }
       }
 
@@ -215,8 +237,43 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       ctx2d.shadowColor = rt?.score ? comboColor(rt.score.combo) : '#f0ece3'
       ctx2d.shadowBlur = 8 + comboGlow * 18
       ctx2d.fillStyle = '#f0ece3'
-      ctx2d.fillRect(0, hitY - 1.5, w, 3)
+      ctx2d.fillRect(trackX, hitY - 1.5, trackW, 3)
       ctx2d.restore()
+
+      // Receptors mark exactly where to strike. Impact columns and rings are
+      // decorative; reduced motion keeps a short, stationary colour cue.
+      for (let i = 0; i < lanePads.length; i++) {
+        const pad = lanePads[i]
+        const x = laneX(i) + 5
+        const impact = impacts.get(pad)
+        const age = impact ? (frameNow - impact.wall) / 420 : 1
+        if (age >= 1) impacts.delete(pad)
+        if (impact && age < 1 && !reducedMotion) {
+          const beam = ctx2d.createLinearGradient(0, hitY - 95, 0, hitY)
+          beam.addColorStop(0, impact.color + '00')
+          beam.addColorStop(1, impact.color + '66')
+          ctx2d.globalAlpha = 1 - age
+          ctx2d.fillStyle = beam
+          ctx2d.fillRect(x, hitY - 95, laneW - 10, 95)
+          ctx2d.strokeStyle = impact.color
+          ctx2d.lineWidth = 2 * (1 - age)
+          ctx2d.beginPath()
+          ctx2d.ellipse(x + (laneW - 10) / 2, hitY, (laneW - 10) * (0.25 + age * 0.23), 5 + age * 15, 0, 0, Math.PI * 2)
+          ctx2d.stroke()
+        }
+        ctx2d.globalAlpha = playerPads.has(pad) ? 0.85 : 0.2
+        ctx2d.strokeStyle = impact && age < 1 ? impact.color : padColor(pad)
+        ctx2d.lineWidth = 2
+        ctx2d.beginPath()
+        ctx2d.roundRect(x, hitY - 9, laneW - 10, 18, 5)
+        ctx2d.stroke()
+        if (impact && age < (reducedMotion ? 0.4 : 1)) {
+          ctx2d.globalAlpha = reducedMotion ? 0.4 : (1 - age) * 0.65
+          ctx2d.fillStyle = impact.color
+          ctx2d.fill()
+        }
+        ctx2d.globalAlpha = 1
+      }
 
       // notes
       const noteH = Math.max(10, Math.min(18, ppb * 0.22))
@@ -243,7 +300,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
         if (li === undefined) return
         const y = beatToY(t)
         if (y < -noteH || y > hitY + 120) return
-        const x = li * laneW + 5
+        const x = laneX(li) + 5
         const nw = laneW - 10
         const color = padColor(pad)
         ctx2d.beginPath()
@@ -329,12 +386,12 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
           ctx2d.strokeStyle = padColor(pad)
           ctx2d.lineWidth = 3
           ctx2d.beginPath()
-          ctx2d.roundRect(li * laneW + 3, hitY - 16, laneW - 6, 32, 8)
+          ctx2d.roundRect(laneX(li) + 3, hitY - 16, laneW - 6, 32, 8)
           ctx2d.stroke()
           ctx2d.fillStyle = padColor(pad)
           ctx2d.font = '700 11px "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'center'
-          ctx2d.fillText('TAP', li * laneW + laneW / 2, hitY - 24)
+          ctx2d.fillText('TAP', laneX(li) + laneW / 2, hitY - 24, laneW - 6)
           ctx2d.globalAlpha = 1
         }
       }
@@ -343,51 +400,63 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
       if (rt) {
         const nowWall = performance.now()
         rt.pruneFeedback(700, nowWall)
-        for (const f of rt.feedback) {
+        // Show the latest judgement per lane so fast rolls stay readable.
+        const latest = new Map(rt.feedback.map((f) => [f.pad, f]))
+        for (const f of latest.values()) {
           const li = laneIndex.get(f.pad)
           if (li === undefined) continue
           const age = (nowWall - f.wall) / 700
-          ctx2d.globalAlpha = 1 - age
+          ctx2d.globalAlpha = Math.max(0, 1 - age)
           ctx2d.fillStyle = JUDGE_COLORS[f.judgement]
-          ctx2d.font = '800 13px "Syne", "IBM Plex Sans", system-ui, sans-serif'
+          ctx2d.font = `800 ${laneW < 60 ? 10 : 13}px "Syne", "IBM Plex Sans", system-ui, sans-serif`
           ctx2d.textAlign = 'center'
-          ctx2d.fillText(JUDGE_TEXT[f.judgement], li * laneW + laneW / 2, hitY - 34 - age * 26)
+          ctx2d.fillText(JUDGE_TEXT[f.judgement], laneX(li) + laneW / 2, hitY - 34 - (reducedMotion ? 0 : age * 26), laneW - 6)
           ctx2d.globalAlpha = 1
         }
         // count-in
         if (rt.transport.state === 'playing' && now < 0) {
+          const remaining = Math.min(COUNT_IN_BEATS, Math.ceil(-now))
+          const cy = Math.max(58, hitY * 0.44)
+          const radius = Math.min(58, hitY * 0.3)
+          ctx2d.fillStyle = 'rgba(11,13,16,0.94)'
+          ctx2d.beginPath()
+          ctx2d.arc(w / 2, cy, radius, 0, Math.PI * 2)
+          ctx2d.fill()
+          ctx2d.strokeStyle = '#c8b89a'
+          ctx2d.lineWidth = 2
+          ctx2d.stroke()
           ctx2d.fillStyle = 'rgba(240,236,227,0.92)'
-          ctx2d.font = '800 72px "Syne", "IBM Plex Sans", system-ui, sans-serif'
+          ctx2d.font = '700 10px "IBM Plex Sans", system-ui, sans-serif'
           ctx2d.textAlign = 'center'
-          ctx2d.fillText(String(Math.min(COUNT_IN_BEATS, Math.ceil(-now))), w / 2, h * 0.4)
+          ctx2d.fillText('GET READY', w / 2, cy - 22)
+          ctx2d.font = '800 44px "Syne", "IBM Plex Sans", system-ui, sans-serif'
+          ctx2d.fillText(String(remaining), w / 2, cy + 20)
+          for (let beat = 0; beat < COUNT_IN_BEATS; beat++) {
+            ctx2d.fillStyle = beat <= COUNT_IN_BEATS - remaining ? '#c8b89a' : '#3a3a3e'
+            ctx2d.beginPath()
+            ctx2d.arc(w / 2 + (beat - 1.5) * 14, cy + radius + 14, 3, 0, Math.PI * 2)
+            ctx2d.fill()
+          }
         }
-      }
-
-      // miss flash — a quick red vignette at the screen edges
-      if (!reducedMotion && frameNow < missFlashUntil) {
-        const t = (missFlashUntil - frameNow) / 220
-        const vignette = ctx2d.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.7)
-        vignette.addColorStop(0, 'rgba(255,93,115,0)')
-        vignette.addColorStop(1, `rgba(255,93,115,${0.35 * t})`)
-        ctx2d.fillStyle = vignette
-        ctx2d.fillRect(0, 0, w, h)
       }
 
       // lane footer labels
       ctx2d.fillStyle = '#0b0b0c'
-      ctx2d.fillRect(0, hitY + 2, w, h - hitY - 2)
+      ctx2d.fillRect(0, hitY + 12, w, h - hitY - 12)
       for (let i = 0; i < lanePads.length; i++) {
         const pad = lanePads[i]
-        const cx = i * laneW + laneW / 2
+        const cx = laneX(i) + laneW / 2
         const sound = padSoundFor(lesson, lesson.padCount, pad)
         ctx2d.fillStyle = padColor(pad)
         ctx2d.font = '700 12px "IBM Plex Sans", system-ui, sans-serif'
         ctx2d.textAlign = 'center'
         const key = keyLabelForPad(pad)
-        ctx2d.fillText(playerPads.has(pad) ? `${pad}${key ? ` · ${key}` : ''}` : `${pad} · AUTO`, cx, hitY + 22, Math.max(1, laneW - 8))
+        const compactLabel = laneW < 48
+        ctx2d.fillText(compactLabel ? String(pad) : playerPads.has(pad) ? `${pad}${key ? ` · ${key}` : ''}` : `${pad} · AUTO`, cx, hitY + 25, Math.max(1, laneW - 8))
         ctx2d.fillStyle = 'rgba(240,236,227,0.5)'
         ctx2d.font = '600 10px "IBM Plex Sans", system-ui, sans-serif'
-        ctx2d.fillText(sound ? SOUND_LABELS[sound] : '—', cx, hitY + 38, Math.max(1, laneW - 8))
+        const secondaryLabel = compactLabel ? (playerPads.has(pad) ? key ?? '—' : 'AUTO') : sound ? SOUND_LABELS[sound] : '—'
+        ctx2d.fillText(secondaryLabel, cx, hitY + 41, Math.max(1, laneW - 8))
       }
     }
 
@@ -401,7 +470,7 @@ export function Highway({ lesson, stepIndex, tempoPct, runtime, fadeBeats = 0 }:
 
   return (
     <div ref={wrapRef} className="highway-wrap">
-      <canvas ref={canvasRef} role="img" aria-label="Scrolling rhythm notes. Bright lanes are your part; dim lanes play automatically." />
+      <canvas ref={canvasRef} role="img" aria-label="Scrolling rhythm notes. Bright lanes are your part; dim lanes play automatically. Lane footers show pad numbers and keyboard keys." />
     </div>
   )
 }
