@@ -105,7 +105,10 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
             <div key={i.id} className="input-row">
               <span className="dot on" />
               <span>{i.name}</span>
-              <span className="muted">{midi.customMap ? 'custom mapping' : i.profile.label}</span>
+              <span className="muted">
+                {midi.customMap ? 'custom mapping' : i.profile.label}
+                {midi.rememberedDevice()?.id === i.id ? ' · last played' : ''}
+              </span>
             </div>
           ))}
         </section>
