@@ -142,7 +142,10 @@ describe('personal practice loop integration', () => {
     const actions = dialog.querySelectorAll('button')
     actions[actions.length - 1].focus()
     await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
-    expect(document.activeElement).toBe(actions[0])
+    const details = dialog.querySelector('[role="region"]')
+    expect(document.activeElement).toBe(details)
+    await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })))
+    expect(document.activeElement).toBe(actions[actions.length - 1])
     // Space must not start a background performance while results own focus.
     await act(async () => dialog.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })))
     expect(runs).toHaveLength(1)

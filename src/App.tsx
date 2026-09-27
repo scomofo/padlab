@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Lesson } from './engine/types'
 import type { Guide } from './guides/types'
 import { LESSONS } from './lessons'
 import { GUIDES } from './guides'
-import { LessonBrowser } from './components/LessonBrowser'
+import { LessonBrowser, type LibraryFilters } from './components/LessonBrowser'
 import { LessonPlayer } from './components/LessonPlayer'
 import { GuideViewer } from './components/GuideViewer'
 import { DeviceSetup } from './components/DeviceSetup'
@@ -36,6 +36,8 @@ export default function App() {
   const [history, setHistory] = useState<PerformanceRun[]>(loadHistory)
   const [session, setSession] = useState<PracticeSession | null>(() => loadSession(LESSONS))
   const [sessionRound, setSessionRound] = useState<number | null>(null)
+  const [libraryFilters, setLibraryFilters] = useState<LibraryFilters>({ query: '', padCount: 'all', level: 'all' })
+  const libraryScroll = useRef(0)
 
   useEffect(() => { if (session) saveSession(session) }, [session])
 
@@ -161,6 +163,9 @@ export default function App() {
           profile={profile}
           history={history}
           session={session}
+          filters={libraryFilters}
+          onFiltersChange={setLibraryFilters}
+          scrollPositionRef={libraryScroll}
           onStartSession={startSession}
           onOpen={openLesson}
           onOpenGuide={setGuide}
