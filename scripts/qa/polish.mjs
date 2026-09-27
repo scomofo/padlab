@@ -22,7 +22,18 @@ try {
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 } })
   page.on('pageerror', error => report.errors.push(error.message))
   await page.addInitScript(() => localStorage.setItem('padlab-settings-v1', JSON.stringify({ latencyMs: 0, volume: 0, metronome: true })))
-  const shot = name => page.screenshot({ path: `${out}/${name}.png` })
+  const shot = async name => {
+    // Canvas backing buffers are cleared by ResizeObserver. Let the animation
+    // loop repaint after layout before collecting evidence of the new view.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    if (await page.locator('.highway-wrap canvas').count()) {
+      assert.ok(await page.locator('.highway-wrap canvas').evaluate(canvas => {
+        const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data
+        return pixels.some((value, index) => index % 4 === 3 && value > 0)
+      }), `${name}: highway has not painted`)
+    }
+    return page.screenshot({ path: `${out}/${name}.png` })
+  }
   const noOverflow = async label => {
     const fits = await page.evaluate(() => {
       const main = document.querySelector('.browser, .player, .jam-studio')
