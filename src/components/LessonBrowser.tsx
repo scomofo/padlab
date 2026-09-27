@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import type { Lesson, LessonProgress } from '../engine/types'
 import type { Guide } from '../guides/types'
 import type { GuideProgress } from '../store/progress'
 import type { Profile } from '../store/profile'
 import { DAILY_XP_GOAL, displayStreak, streakStatus } from '../store/profile'
-import { COURSES } from '../lessons/courses'
+import { COURSES, courseTitle } from '../lessons/courses'
 import { courseProgress, totalStars } from '../lessons/courseProgress'
 import { midi } from '../midi/midiManager'
 import { dailyLesson, recommendLesson, resumeStep, stepDone, stepsDoneCount, weekDots } from '../lib/curriculum'
@@ -20,6 +20,13 @@ import { ReplayCard } from './ReplayCard'
 import { SessionCard } from './SessionCard'
 import { buildSession, type PracticeSession } from '../lib/session'
 import { useLocalDay } from '../lib/useLocalDay'
+import { RhythmPreview } from './RhythmPreview'
+
+export interface LibraryFilters {
+  query: string
+  padCount: 'all' | 8 | 16
+  level: 'all' | number
+}
 
 interface LessonBrowserProps {
   lessons: Lesson[]
@@ -29,6 +36,9 @@ interface LessonBrowserProps {
   profile: Profile
   history: PerformanceRun[]
   session: PracticeSession | null
+  filters: LibraryFilters
+  onFiltersChange: (filters: LibraryFilters) => void
+  scrollPositionRef: RefObject<number>
   onStartSession: () => void
   onOpen: (lesson: Lesson, opts?: { daily?: boolean; autoStart?: boolean; perform?: boolean; tempoPct?: number }) => void
   onOpenGuide: (guide: Guide) => void
@@ -38,30 +48,40 @@ interface LessonBrowserProps {
   keyboardEnabled?: boolean
 }
 
-type Filter = 'all' | 8 | 16
-
 export function LessonBrowser({
   lessons, guides, progress, guideProgress, profile, history, session, onStartSession, onOpen, onOpenGuide, onOpenSetup, onOpenJam,
-  keyboardEnabled = true,
+  filters, onFiltersChange, scrollPositionRef, keyboardEnabled = true,
 }: LessonBrowserProps) {
-  const [filter, setFilter] = useState<Filter>('all')
+  const browser = useRef<HTMLDivElement>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
   const [, bump] = useState(0)
   const [jammed, setJammed] = useState(false)
   const today = useLocalDay()
+
+  useLayoutEffect(() => {
+    if (browser.current) browser.current.scrollTop = scrollPositionRef.current
+  }, [scrollPositionRef])
 
   useEffect(() => midi.onStatusChange(() => bump((n) => n + 1)), [])
   useEffect(() => padBus.subscribe(() => setJammed(true)), [])
   usePadKeyboard(8, keyboardEnabled)
 
-  const filtered = useMemo(
-    () => lessons.filter((l) => filter === 'all' || l.padCount === filter),
-    [lessons, filter],
-  )
-
-  const filteredGuides = useMemo(
-    () => guides.filter((g) => filter === 'all' || g.padCount === filter),
-    [guides, filter],
-  )
+  const { filtered, filteredGuides } = useMemo(() => {
+    const words = filters.query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean)
+    const matches = (item: Lesson | Guide) => {
+      const text = `${item.title} ${courseTitle(item.course)} ${'genre' in item ? item.genre : `${item.device} ${item.blurb}`}`.toLocaleLowerCase()
+      return (filters.padCount === 'all' || item.padCount === filters.padCount)
+        && (filters.level === 'all' || item.level === filters.level)
+        && words.every((word) => text.includes(word))
+    }
+    return { filtered: lessons.filter(matches), filteredGuides: guides.filter(matches) }
+  }, [lessons, guides, filters])
+  const levels = useMemo(() => [...new Set([...lessons, ...guides].map((item) => item.level))].sort((a, b) => a - b), [lessons, guides])
+  const hasFilters = filters.query.trim() !== '' || filters.padCount !== 'all' || filters.level !== 'all'
+  const resetFilters = () => {
+    onFiltersChange({ query: '', padCount: 'all', level: 'all' })
+    searchInput.current?.focus()
+  }
 
   const byCourse = useMemo(() => {
     const map = new Map<string, Lesson[]>()
@@ -108,7 +128,7 @@ export function LessonBrowser({
     : 'No MIDI device — keyboard & pads work'
 
   return (
-    <div className="browser">
+    <div className="browser" ref={browser} onScroll={(event) => { scrollPositionRef.current = event.currentTarget.scrollTop }}>
       <header className="browser-head">
         <div>
           <div className="logo">Pad<span>Lab</span></div>
@@ -224,21 +244,49 @@ export function LessonBrowser({
         onOpen(lesson, { autoStart: true, perform: true, tempoPct })
       }} />
 
-      <div className="filter-row">
-        {([['all', 'All lessons'], [8, '8 pads · MPK Mini'], [16, '16 pads · SP-404']] as [Filter, string][]).map(
-          ([f, label]) => (
-            <button key={String(f)} className={filter === f ? 'chip-btn on' : 'chip-btn'} aria-pressed={filter === f} onClick={() => setFilter(f)}>
-              {label}
-            </button>
-          ),
-        )}
-      </div>
+      <section className="library-tools" aria-labelledby="library-title">
+        <div className="library-heading">
+          <div>
+            <span className="kicker muted">The collection</span>
+            <h2 id="library-title">Find your next groove</h2>
+          </div>
+          <span className="library-count muted" role="status">{filtered.length} {filtered.length === 1 ? 'lesson' : 'lessons'} · {filteredGuides.length} {filteredGuides.length === 1 ? 'guide' : 'guides'}</span>
+        </div>
+        <div className="library-search-row">
+          <div className="library-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+            <input ref={searchInput} type="search" aria-label="Search lessons and guides" placeholder="Search title, genre or course…" value={filters.query}
+              onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} />
+            {filters.query && <button className="search-clear" aria-label="Clear search" onClick={() => {
+              onFiltersChange({ ...filters, query: '' })
+              searchInput.current?.focus()
+            }}>×</button>}
+          </div>
+          <label className="library-level">
+            <span>Difficulty</span>
+            <select aria-label="Difficulty" value={filters.level} onChange={(event) => onFiltersChange({ ...filters, level: event.target.value === 'all' ? 'all' : Number(event.target.value) })}>
+              <option value="all">All levels</option>
+              {levels.map((level) => <option key={level} value={level}>Level {level}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="filter-row" role="group" aria-label="Pad layout">
+          {([['all', 'All pads'], [8, '8 pads · MPK Mini'], [16, '16 pads · SP-404']] as [LibraryFilters['padCount'], string][]).map(
+            ([f, label]) => (
+              <button key={String(f)} className={filters.padCount === f ? 'chip-btn on' : 'chip-btn'} aria-pressed={filters.padCount === f} onClick={() => onFiltersChange({ ...filters, padCount: f })}>
+                {label}
+              </button>
+            ),
+          )}
+        </div>
+        {hasFilters && <button className="library-reset" onClick={resetFilters}>Reset filters</button>}
+      </section>
 
       {COURSES.map((course) => {
         const courseLessons = byCourse.get(course.id) ?? []
         const courseGuides = guidesByCourse.get(course.id) ?? []
         if (!courseLessons.length && !courseGuides.length) return null
-        const cp = courseProgress(courseLessons, courseGuides, progress, guideProgress)
+        const cp = courseProgress(lessons.filter((l) => l.course === course.id), guides.filter((g) => g.course === course.id), progress, guideProgress)
         return (
           <section className="course" key={course.id}>
             <div className="course-head">
@@ -246,7 +294,7 @@ export function LessonBrowser({
                 <h2 className="course-title">{course.title}</h2>
                 <div className="muted">{course.blurb}</div>
               </div>
-              <span className="course-count muted">
+              <span className="course-count muted" title="Progress across the full course">
                 {cp.done}/{cp.total} {cp.noun}
               </span>
             </div>
@@ -285,6 +333,7 @@ export function LessonBrowser({
                     </div>
                     <h3>{l.title}</h3>
                     <div className="muted">{l.genre} · {l.bpm} BPM · {l.bars} bars</div>
+                    <RhythmPreview lesson={l} />
                     <div className="step-dots" aria-label={`${stepsDoneCount(l, p)} of ${l.steps.length} steps done`}>
                       {l.steps.map((st, i) => (
                         <span
@@ -315,7 +364,11 @@ export function LessonBrowser({
       })}
 
       {filtered.length === 0 && filteredGuides.length === 0 && (
-        <div className="muted empty">No lessons for this filter yet.</div>
+        <div className="library-empty">
+          <h3>No matching grooves</h3>
+          <p className="muted">Try a different title, genre or course, or open up your filters.</p>
+          <button className="btn" onClick={resetFilters}>Show the full collection</button>
+        </div>
       )}
     </div>
   )
