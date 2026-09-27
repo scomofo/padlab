@@ -118,13 +118,23 @@ export function LessonBrowser({
   const dots = weekDots(profile.week)
   const minutes = Math.round(profile.secondsPracticed / 60)
 
-  const device = midi.inputs[0]
-  const extraInputs = midi.inputs.length - 1
+  const primary = midi.primaryDevice()
+  const device = primary.input
+  const extraInputs = midi.inputs.length - (device ? 1 : 0)
+  // The browser's device ids can change under us (OS MIDI backend restarts);
+  // the manager re-links the remembered controller by name+manufacturer and
+  // says so here instead of silently showing the wrong device.
+  const deviceNotice =
+    primary.status === 'relinked'
+      ? ' · reconnected'
+      : primary.status === 'fallback' && primary.remembered
+        ? ` · “${primary.remembered.name}” not found`
+        : ''
   const deviceLabel =
     midi.status === 'unsupported' ? 'Web MIDI unavailable — use Chrome/Edge (keys still work)'
     : midi.status === 'denied' ? 'MIDI access blocked — keys & pads still work'
     : device
-      ? `${device.name}${extraInputs > 0 ? ` +${extraInputs}` : ''} — ${midi.customMap ? 'custom mapping' : device.profile.label}`
+      ? `${device.name}${extraInputs > 0 ? ` +${extraInputs}` : ''} — ${midi.customMap ? 'custom mapping' : device.profile.label}${deviceNotice}`
     : 'No MIDI device — keyboard & pads work'
 
   return (
