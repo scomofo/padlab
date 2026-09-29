@@ -6,8 +6,8 @@ Software changes and automated/local-macOS evidence are recorded in [validation]
 
 **Physical hardware acceptance remains open:** no MIDI input sources were attached during this work. Follow [the operator procedure](docs/HARDWARE_ACCEPTANCE.md) for both controllers and the release-workflow DMGs. No release tag was created and no physical checklist below is being checked automatically.
 
-Open work as of `main` @ `94dcd0b` (2026-09-23), plus the coverage/hygiene
-follow-up on `chore/rc-hygiene`. PR #13 (`feat/sticky-daily-loop`) is merged.
+Open work as of `main` @ `596ef0d` (2026-09-23). PR #25 (`scout/quick-wins`,
+the coverage/hygiene follow-up) is merged, as is PR #13 (`feat/sticky-daily-loop`).
 Core CI is green. The two pinned design questions are decided. Remaining work
 is physical-device acceptance and cutting a release that matches current `main`.
 
