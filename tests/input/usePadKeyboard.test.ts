@@ -1,6 +1,10 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createElement } from 'react'
+
+// Set React act environment flag for React 19 testing in Vitest jsdom
+// @ts-expect-error global IS_REACT_ACT_ENVIRONMENT for React test environment
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
 import { createRoot, type Root } from 'react-dom/client'
 import { act } from 'react'
 import { padBus, type PadEvent } from '../../src/input/inputBus'
