@@ -16,8 +16,16 @@
   },
   "steps": [
     {
-      "name": "Kick anchor and backbeat",
-      "description": "Kick and snare only. Land the off-beat kick on the 'a' of 1, keep backbeats 2 and 4 solid, and feather the ghost on the 'e' of 3.",
+      "name": "Kick anchor",
+      "description": "Kick only: land the off-beat kick on the 'a' of 1.",
+      "playerPads": [
+        1
+      ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "Backbeat and ghost",
+      "description": "Add the snare: backbeats 2 and 4 solid, and feather the ghost on the 'e' of 3.",
       "playerPads": [
         1,
         2

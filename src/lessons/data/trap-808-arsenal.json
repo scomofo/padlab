@@ -21,27 +21,26 @@
   "steps": [
     {
       "name": "808 Foundation",
-      "description": "Play kick and the tomLow 808 as one low-end voice on the downbeats, then answer with the syncopated 808 hits late in each bar.",
-      "playerPads": [
-        1,
-        4
-      ],
-      "tempoScale": 0.75
-    },
-    {
-      "name": "Backbeat Stack",
-      "description": "Keep the low end going and add the halftime snare on beat 3, stacking the clap on top every other bar.",
+      "description": "Kick and the low Tom Lo 808 as one low-end voice: downbeats first, then the syncopated 808 answers late in each bar. Add the halftime snare on beat 3, with the clap stacked on top every other bar.",
       "playerPads": [
         1,
         2,
         3,
         4
       ],
+      "tempoScale": 0.75
+    },
+    {
+      "name": "Hat Ride",
+      "description": "Ride the closed hats in eighth notes. Then snap into the sixteenth-note bursts that close bars 2 and 6.",
+      "playerPads": [
+        5
+      ],
       "tempoScale": 0.8
     },
     {
-      "name": "Hat Bursts",
-      "description": "Ride eighth-note hats, then snap into the sixteenth-note bursts that close bars 2 and 6; catch the open hat at the end of bar 4.",
+      "name": "Open Hat Catch",
+      "description": "Add the open hat: one splash at the end of bar 4. Catch it and let it ring.",
       "playerPads": [
         5,
         6
@@ -50,7 +49,7 @@
     },
     {
       "name": "Trap Details",
-      "description": "Layer the offbeat perc, the ghost rimshots on the last sixteenth, and the crashes marking bars 1 and 5 over the full backing.",
+      "description": "Layer the offbeat perc and the ghost rimshots on the last sixteenth. The crashes mark bars 1 and 5 over the full backing.",
       "playerPads": [
         7,
         8,

@@ -17,7 +17,7 @@
   "steps": [
     {
       "name": "Shuffle hats",
-      "description": "Hats in a long-short shuffle: on the beat, then late. Feel the limp.",
+      "description": "Hats in a long-short shuffle: the first lands on the beat; the second waits for the last sixteenth — the 'a' — not the straight 'and'. Feel the limp.",
       "playerPads": [
         5
       ],
