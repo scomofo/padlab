@@ -40,7 +40,7 @@
     },
     {
       "name": "Perform",
-      "description": "Every other bar adds a ghost snare and a kick that pushes into the next downbeat.",
+      "description": "Every other bar adds a ghost snare — a very quiet hit — and a kick that pushes into the next downbeat.",
       "playerPads": "all"
     }
   ],

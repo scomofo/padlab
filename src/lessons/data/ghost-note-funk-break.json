@@ -23,7 +23,7 @@
   "steps": [
     {
       "name": "Ghost note snare",
-      "description": "Snare alone: dig into the backbeats at full strength and brush the ghosts on the 'a' of 1 and 'e' of 3 near velocity 50.",
+      "description": "Snare alone. Dig into the backbeats at full strength. Then add the ghosts: brush them on the 'a' of 1 and the 'e' of 3, near velocity 50 of 127 — whispers, not hits.",
       "playerPads": [
         2
       ],
