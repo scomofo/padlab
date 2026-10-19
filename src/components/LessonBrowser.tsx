@@ -85,13 +85,22 @@ export function LessonBrowser({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
+      if (e.key === 'Home') {
+        if (browser.current) {
+          browser.current.scrollTop = 0
+          scrollPositionRef.current = 0
+        }
+        return
+      }
       if (e.key === 'Escape' && hasFilters) {
         resetFilters()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [hasFilters])
+  }, [hasFilters, scrollPositionRef])
 
   const byCourse = useMemo(() => {
     const map = new Map<string, Lesson[]>()

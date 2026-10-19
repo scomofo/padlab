@@ -274,20 +274,58 @@ export function LessonPlayer({
 
   usePadKeyboard(lesson.padCount)
 
-  // Space toggles the run.
+  // Keyboard shortcuts in lesson player: Space (play/stop), M (cycle mode), C (click), F (focus view), [ / ] (prev/next step).
   useEffect(() => {
     if (results) return
     const down = (ev: KeyboardEvent) => {
-      if (ev.repeat || ev.key !== ' ') return
       const target = ev.target as HTMLElement | null
       if (target && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return
-      ev.preventDefault()
-      if (runtimeRef.current) stopRun()
-      else startRun()
+      const k = ev.key.toLowerCase()
+
+      if (ev.key === ' ' && !ev.repeat) {
+        ev.preventDefault()
+        if (runtimeRef.current) stopRun()
+        else startRun()
+        return
+      }
+
+      if (k === 'm') {
+        ev.preventDefault()
+        setMode((current) => current === 'listen' ? 'practice' : current === 'practice' ? 'play' : 'listen')
+        return
+      }
+
+      if (k === 'c') {
+        ev.preventDefault()
+        setMetronome((current) => {
+          const next = !current
+          runtimeRef.current?.setMetronome(next)
+          return next
+        })
+        return
+      }
+
+      if (k === 'f') {
+        ev.preventDefault()
+        setFocusView((value) => !value)
+        return
+      }
+
+      if (ev.key === '[' && !sessionRound && stepIndex > 0) {
+        ev.preventDefault()
+        setStepIndex((i) => i - 1)
+        return
+      }
+
+      if (ev.key === ']' && !sessionRound && stepIndex < lesson.steps.length - 1) {
+        ev.preventDefault()
+        setStepIndex((i) => i + 1)
+        return
+      }
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
-  }, [startRun, stopRun, results])
+  }, [startRun, stopRun, results, sessionRound, stepIndex, lesson.steps.length])
 
   return (
     <div className={`player${focusView ? ' is-focused' : ''}`}>

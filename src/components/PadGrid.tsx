@@ -73,6 +73,7 @@ export function PadGrid({ padCount, lesson = null, activePads, compact = false }
                 type="button"
                 data-pad={pad}
                 aria-label={`Pad ${pad}${sound ? `, ${SOUND_LABELS[sound]}` : ''}${key ? `, key ${key}` : ''}`}
+                title={`Pad ${pad}${sound ? ` · ${SOUND_LABELS[sound]}` : ''}${key ? ` (${key})` : ''}`}
                 className={`pad ${active ? 'active' : 'inactive'}`}
                 style={{ ['--pad-color' as string]: padColor(pad) }}
                 onPointerDown={(e) => {
