@@ -82,13 +82,14 @@ export function GuideViewer({ guide, startStep = 0, onExit, onProgressChange }: 
         )}
       </header>
 
-      <div className="guide-progress">
+      <div className="guide-progress" role="progressbar" aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={guide.steps.length} aria-label={`Step ${index + 1} of ${guide.steps.length}: ${step.title}`}>
         {guide.steps.map((s, i) => (
           <button
             key={i}
             className={i === index ? 'gp-dot on' : i < index ? 'gp-dot done' : 'gp-dot'}
             onClick={() => go(i)}
             title={s.title}
+            aria-label={`Go to step ${i + 1}: ${s.title}`}
           />
         ))}
       </div>
