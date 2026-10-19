@@ -127,6 +127,15 @@ export function Results({
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="results-title" ref={dialog} tabIndex={-1}
       onKeyDown={(event) => {
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onExit() }
+        if (event.key === 'Enter') {
+          const target = event.target as HTMLElement | null
+          if (target && (target.tagName === 'BUTTON' || target.getAttribute('role') === 'button')) return
+          event.preventDefault(); event.stopPropagation()
+          if (onNext) onNext()
+          else if (focusPractice && onReturnFromFocus) onReturnFromFocus()
+          else onExit()
+          return
+        }
         if (event.key !== 'Tab') return
         const controls = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), [tabindex="0"]')
         if (!controls?.length) return

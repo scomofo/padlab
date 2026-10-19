@@ -54,17 +54,18 @@ export function GuideViewer({ guide, startStep = 0, onExit, onProgressChange }: 
     [guide.steps.length],
   )
 
-  // Arrow keys page through the guide.
+  // Arrow keys page through the guide, Escape exits.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t && ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName)) return
       if (e.key === 'ArrowRight') go(index + 1)
       else if (e.key === 'ArrowLeft') go(index - 1)
+      else if (e.key === 'Escape') onExit()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [index, go])
+  }, [index, go, onExit])
 
   return (
     <div className="guide">

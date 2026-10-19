@@ -74,6 +74,14 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
     })
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   usePadKeyboard(16)
 
   // Test area: audible pads with the default kit.
@@ -153,7 +161,13 @@ export function DeviceSetup({ settings, onChange, onClose }: DeviceSetupProps) {
               onChange={(e) => onChange({ ...settings, latencyMs: Number(e.target.value) })}
             />
           </label>
-          <p className="muted">If your hits feel judged “late” even when you’re on the beat, raise this.</p>
+          <p className="muted">
+            {settings.latencyMs > 0
+              ? `Shifts judging ${settings.latencyMs} ms earlier to compensate for controller/audio latency.`
+              : settings.latencyMs < 0
+                ? `Shifts judging ${Math.abs(settings.latencyMs)} ms later.`
+                : 'Zero latency offset applied (uncompensated).'}
+          </p>
         </section>
 
         <section>
