@@ -83,6 +83,16 @@ export function LessonBrowser({
     searchInput.current?.focus()
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && hasFilters) {
+        resetFilters()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [hasFilters])
+
   const byCourse = useMemo(() => {
     const map = new Map<string, Lesson[]>()
     for (const l of filtered) {

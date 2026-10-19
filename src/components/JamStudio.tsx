@@ -189,19 +189,35 @@ export function JamStudio({ settings, onExit, initialSketch, onSketchChange }: J
     }
   }
 
+  const undoTake = useCallback(() => {
+    if (runtimeRef.current || startingRef.current) return
+    const previous = undo[undo.length - 1]
+    if (!previous) return
+    updateSketch((value) => ({ ...value, notes: previous.notes, mutedPads: previous.mutedPads }))
+    setUndo((history) => history.slice(0, -1))
+    setNotice(previous.action === 'clear' ? 'Your loop is restored.' : 'Last take removed. Try a new idea.')
+  }, [undo, updateSketch])
+
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (event.code !== 'Space' || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
       const target = event.target as HTMLElement | null
       if (target instanceof HTMLElement && (target.isContentEditable
         || target.closest('button, input, select, textarea, [contenteditable="true"], a, [role="button"]'))) return
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault()
+        undoTake()
+        return
+      }
+
+      if (event.code !== 'Space' || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
       event.preventDefault()
       if (runtimeRef.current || startingRef.current) stop()
       else void start(sketchRef.current.notes.length ? 'play' : 'record')
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
-  }, [start, stop])
+  }, [start, stop, undoTake])
 
   const toggleMute = (pad: number) => {
     const current = sketchRef.current
@@ -209,15 +225,6 @@ export function JamStudio({ settings, onExit, initialSketch, onSketchChange }: J
       ? current.mutedPads.filter((muted) => muted !== pad) : [...current.mutedPads, pad]
     runtimeRef.current?.setMuted(mutedPads)
     updateSketch((value) => ({ ...value, mutedPads }))
-  }
-
-  const undoTake = () => {
-    if (runtimeRef.current || startingRef.current) return
-    const previous = undo[undo.length - 1]
-    if (!previous) return
-    updateSketch((value) => ({ ...value, notes: previous.notes, mutedPads: previous.mutedPads }))
-    setUndo((history) => history.slice(0, -1))
-    setNotice(previous.action === 'clear' ? 'Your loop is restored.' : 'Last take removed. Try a new idea.')
   }
 
   const clear = () => {

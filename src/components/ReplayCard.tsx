@@ -27,7 +27,7 @@ export function ReplayCard({ lessons, history, onReplay }: {
         <p>{target}</p>
       </div>
       <PerformanceTrail runs={runs} />
-      <button className="btn" onClick={() => onReplay(lesson, latest.tempoPct)}>Replay Perform ›</button>
+      <button className="btn" aria-label={`Replay Perform step for ${lesson.title} at ${latest.tempoPct}% tempo`} onClick={() => onReplay(lesson, latest.tempoPct)}>Replay Perform ›</button>
     </section>
   )
 }

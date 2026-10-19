@@ -16,11 +16,11 @@ export function RhythmPreview({ lesson }: { lesson: Lesson }) {
   return (
     <div className="rhythm-preview" aria-hidden="true">
       <div className="rhythm-preview-label"><span>Opening {bars === 1 ? 'bar' : `${bars} bars`}</span><span>01 — {String(bars).padStart(2, '0')}</span></div>
-      <svg viewBox={`0 0 ${columns.length * 8} 34`} preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${columns.length * 8} 34`} preserveAspectRatio="none" shapeRendering="crispEdges">
         {columns.map((pads, i) => {
           const height = 8 + Math.min(4, pads.length) * 5
           return <g key={i}>
-            {i % 4 === 0 && <path d={`M${i * 8 + 2.5} 0v3`} className="rhythm-beat" />}
+            {i % 4 === 0 && <path d={`M${i * 8 + 2.5} 0v3`} className="rhythm-beat" strokeWidth="1" />}
             {pads.length === 0 ? <rect x={i * 8} y={30} width={5} height={2} rx={1} className="rhythm-rest" />
               : pads.map((pad, j) => <rect key={pad} x={i * 8} y={32 - height + j * height / pads.length}
                 width={5} height={Math.max(1, height / pads.length - 1)} rx={1} fill={padColor(pad)} />)}
