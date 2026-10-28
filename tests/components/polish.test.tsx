@@ -86,11 +86,45 @@ describe('Greatness pass polish features', () => {
       }))
     })
 
+    const search = host.querySelector<HTMLInputElement>('input[type="search"]')!
     await act(async () => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
 
     expect(onFiltersChange).toHaveBeenCalledWith({ query: '', padCount: 'all', level: 'all' })
+  })
+
+  it('focuses library search with / and exposes course progress accessibly', async () => {
+    await act(async () => {
+      root.render(createElement(LessonBrowser, {
+        lessons: LESSONS,
+        guides: GUIDES,
+        progress: {},
+        guideProgress: {},
+        profile: mockProfile,
+        history: [],
+        session: null,
+        filters: { query: '', padCount: 'all', level: 'all' },
+        onFiltersChange: vi.fn(),
+        scrollPositionRef: { current: 0 },
+        onStartSession: vi.fn(),
+        onOpen: vi.fn(),
+        onOpenGuide: vi.fn(),
+        onOpenSetup: vi.fn(),
+        onOpenJam: vi.fn(),
+      }))
+    })
+
+    const search = host.querySelector<HTMLInputElement>('input[type="search"]')!
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true }))
+    })
+
+    expect(document.activeElement).toBe(search)
+    expect(search.getAttribute('aria-keyshortcuts')).toBe('/')
+    const courseProgress = host.querySelector('[role="progressbar"][aria-label="Foundations progress"]')!
+    expect(courseProgress.getAttribute('aria-valuenow')).toBe('0')
+    expect(host.querySelector('.hub-actions')?.nextElementSibling?.classList.contains('warmup')).toBe(true)
   })
 
   it('exits guide view when Escape is pressed in GuideViewer', async () => {

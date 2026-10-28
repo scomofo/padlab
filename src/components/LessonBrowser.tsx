@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import type { Lesson, LessonProgress } from '../engine/types'
 import type { Guide } from '../guides/types'
 import type { GuideProgress } from '../store/progress'
@@ -78,29 +78,34 @@ export function LessonBrowser({
   }, [lessons, guides, filters])
   const levels = useMemo(() => [...new Set([...lessons, ...guides].map((item) => item.level))].sort((a, b) => a - b), [lessons, guides])
   const hasFilters = filters.query.trim() !== '' || filters.padCount !== 'all' || filters.level !== 'all'
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     onFiltersChange({ query: '', padCount: 'all', level: 'all' })
     searchInput.current?.focus()
-  }
+  }, [onFiltersChange])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && hasFilters) {
+        resetFilters()
+        return
+      }
       const target = e.target as HTMLElement | null
-      if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
+      if (target && (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable)) return
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        searchInput.current?.focus()
+        return
+      }
       if (e.key === 'Home') {
         if (browser.current) {
           browser.current.scrollTop = 0
           scrollPositionRef.current = 0
         }
-        return
-      }
-      if (e.key === 'Escape' && hasFilters) {
-        resetFilters()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [hasFilters, scrollPositionRef])
+  }, [hasFilters, resetFilters, scrollPositionRef])
 
   const byCourse = useMemo(() => {
     const map = new Map<string, Lesson[]>()
@@ -163,7 +168,7 @@ export function LessonBrowser({
           <div className="logo">Pad<span>Lab</span></div>
           <div className="muted tagline">Finger drumming. One groove at a time.</div>
         </div>
-        <button className="device-chip" onClick={onOpenSetup}>
+        <button className="device-chip" aria-label={`Open device and settings. ${deviceLabel}`} onClick={onOpenSetup}>
           <span className={device ? 'dot on' : 'dot'} />
           {deviceLabel}
           <span className="gear" aria-hidden="true">
@@ -175,22 +180,7 @@ export function LessonBrowser({
         </button>
       </header>
 
-      <section className="warmup">
-        <div className="warmup-head">
-          <div>
-            <span className="deck-kicker"><span className="dot on" /> Ready when you are</span>
-            <h2>The deck</h2>
-            <p className="muted">
-              {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too. MIDI if you have it.'}
-            </p>
-            <div className="deck-key-hint" aria-hidden="true"><kbd>Z X C V</kbd><kbd>A S D F</kbd></div>
-            <button className="btn deck-jam" title="Record your pads, layer a groove, and loop it" onClick={onOpenJam}>Open Jam ›</button>
-          </div>
-        </div>
-        <PadGrid padCount={8} compact />
-      </section>
-
-      <section className="hub-actions">
+      <section className="hub-actions" aria-label="Recommended practice">
         <button
           className="continue-card"
           onClick={() => {
@@ -222,6 +212,21 @@ export function LessonBrowser({
             {dailyDone ? 'Cleared today' : 'Take it on ›'}
           </span>
         </button>
+      </section>
+
+      <section className="warmup" aria-labelledby="deck-title">
+        <div className="warmup-head">
+          <div>
+            <span className="deck-kicker"><span className="dot on" /> Ready when you are</span>
+            <h2 id="deck-title">The deck</h2>
+            <p className="muted">
+              {jammed ? 'Keep going — Z X C V / A S D F' : 'Tap a pad. Keyboard works too. MIDI if you have it.'}
+            </p>
+            <div className="deck-key-hint" aria-hidden="true"><kbd>Z X C V</kbd><kbd>A S D F</kbd></div>
+            <button className="btn deck-jam" title="Record your pads, layer a groove, and loop it" onClick={onOpenJam}>Open Jam ›</button>
+          </div>
+        </div>
+        <PadGrid padCount={8} compact />
       </section>
 
       <section className="hub-stats">
@@ -284,8 +289,9 @@ export function LessonBrowser({
         <div className="library-search-row">
           <div className="library-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
-            <input ref={searchInput} type="search" aria-label="Search lessons and guides" placeholder="Search title, genre or course…" value={filters.query}
+            <input ref={searchInput} type="search" aria-label="Search lessons and guides" aria-keyshortcuts="/" placeholder="Search title, genre or course…" value={filters.query}
               onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} />
+            {!filters.query && <kbd className="search-shortcut" aria-hidden="true">/</kbd>}
             {filters.query && <button className="search-clear" aria-label="Clear search" onClick={() => {
               onFiltersChange({ ...filters, query: '' })
               searchInput.current?.focus()
@@ -327,7 +333,7 @@ export function LessonBrowser({
                 {cp.done}/{cp.total} {cp.noun}
               </span>
             </div>
-            <div className="course-progress">
+            <div className="course-progress" role="progressbar" aria-label={`${course.title} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={cp.pct}>
               <div className={cp.pct === 100 ? 'course-progress-fill maxed' : 'course-progress-fill'} style={{ width: `${cp.pct}%` }} />
             </div>
             <div className="lesson-grid">

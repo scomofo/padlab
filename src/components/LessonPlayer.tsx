@@ -279,10 +279,11 @@ export function LessonPlayer({
     if (results) return
     const down = (ev: KeyboardEvent) => {
       const target = ev.target as HTMLElement | null
-      if (target && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return
+      if (target && (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable)) return
       const k = ev.key.toLowerCase()
 
       if (ev.key === ' ' && !ev.repeat) {
+        if (target?.tagName === 'BUTTON') return
         ev.preventDefault()
         if (runtimeRef.current) stopRun()
         else startRun()

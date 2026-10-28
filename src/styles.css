@@ -145,13 +145,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .device-chip:hover { box-shadow: 0 0 0 1px color-mix(in oklab, var(--text) 22%, transparent); color: var(--text); }
 @media (max-width: 640px) {
-  .device-chip {
-    max-width: 180px;
-    font-size: 11px;
-    padding: 8px 12px;
-    gap: 8px;
+  .browser-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
   }
-  .browser-head { align-items: flex-start; }
+  .device-chip {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    padding: 10px 12px;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  .device-chip .gear { margin-left: auto; }
 }
 .device-chip .gear { display: inline-flex; opacity: 0.7; }
 .device-chip .gear svg { width: 14px; height: 14px; }
@@ -345,9 +352,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .library-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding-left: 14px; }
 .library-search:focus-within { border-color: var(--accent2); box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent2) 15%, transparent); }
 .library-search > svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
-.library-search input { width: 100%; min-width: 0; height: 48px; font: inherit; font-size: 16px; color: var(--text); background: transparent; border: 0; outline: 0; padding-right: 12px; }
+.library-search input { width: 100%; min-width: 0; height: 48px; font: inherit; font-size: 16px; color: var(--text); background: transparent; border: 0; outline: 0; padding-right: 0; }
 .library-search input::placeholder { color: var(--muted); }
 .library-search input::-webkit-search-cancel-button { display: none; }
+.search-shortcut {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--muted);
+  font: 12px var(--font-mono);
+}
 .search-clear { align-self: stretch; flex: none; width: 44px; color: var(--muted); font-size: 24px; border-radius: 10px; }
 .search-clear:hover { color: var(--text); }
 .library-level { display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
@@ -391,17 +411,28 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: transform var(--motion-quick) var(--ease-out), box-shadow var(--motion-quick) var(--ease-out);
 }
 .lesson-card::after {
-  content: "";
+  content: "↗";
   position: absolute;
-  left: 0; top: 14px; bottom: 14px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--accent2);
-  opacity: 0.35;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--muted);
+  font: 16px var(--font-mono);
+  opacity: 0.45;
+  transform: translate(-3px, 3px);
+  transition: color var(--motion-quick) var(--ease-out), opacity var(--motion-quick) var(--ease-out), transform var(--motion-quick) var(--ease-out);
 }
 .lesson-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--text) 22%, transparent);
+}
+.lesson-card:hover::after, .lesson-card:focus-visible::after {
+  color: var(--text);
+  opacity: 1;
+  transform: translate(0, 0);
 }
 .lesson-card h3 {
   font-family: var(--font-display);
@@ -409,11 +440,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-weight: 700;
   letter-spacing: -0.03em;
   text-wrap: balance;
-  padding-left: 8px;
 }
-.lesson-card .muted, .lesson-card .card-top, .lesson-card .card-bottom, .lesson-card .step-dots {
-  padding-left: 8px;
-}
+.lesson-card .card-top { padding-right: 32px; }
 
 .card-top { display: flex; gap: 8px; align-items: center; }
 .level-chip {
@@ -433,7 +461,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: rgba(240, 236, 227, 0.06); color: var(--muted);
 }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: auto; gap: 8px; }
-.rhythm-preview { margin: 4px 0 2px 8px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rhythm-preview { margin: 4px 0 2px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .rhythm-preview-label { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font: 9px var(--font-mono); letter-spacing: 0.04em; margin-bottom: 8px; }
 .rhythm-preview svg { width: 100%; height: 34px; display: block; opacity: 0.78; }
 .lesson-card:hover .rhythm-preview svg, .lesson-card:focus-visible .rhythm-preview svg { opacity: 1; }
@@ -1072,6 +1100,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
   .focus-banner { flex-wrap: wrap; gap: 8px; }
   .hub-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-card.goal { grid-column: 1 / -1; }
+  .deck-jam, .player-bar .btn, .seg, .tempo-select, .step-pill, .rung { min-height: 44px; }
 }
 @media (max-width: 480px) {
   .overlay { padding: 12px; }
@@ -1081,6 +1110,8 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
   .library-heading { flex-direction: column; align-items: start; gap: 4px; }
   .library-heading h2 { font-size: 24px; }
   .library-search-row { flex-direction: column; gap: 8px; }
+  .library-search input { padding-right: 12px; }
+  .search-shortcut { display: none; }
   .library-level { justify-content: space-between; }
   .library-level select { flex: 1; text-align: right; }
   .course-head { flex-wrap: wrap; gap: 6px; }
@@ -1194,7 +1225,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 
 @media (prefers-reduced-motion: reduce) {
   .stars.big .star.pop, .logo span { animation: none; }
-  .rank-bar span, .goal-bar span, .course-progress-fill, .pad, .play-orb, .continue-card, .daily-card, .lesson-card { transition: none; }
+  .rank-bar span, .goal-bar span, .course-progress-fill, .pad, .play-orb, .continue-card, .daily-card, .lesson-card, .lesson-card::after { transition: none; }
   .player *, .player *::before, .player *::after { animation: none !important; transition: none !important; }
   .pad.hit { transform: none; }
   .pad.hit::after { animation: none; }
