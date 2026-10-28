@@ -133,10 +133,11 @@ describe('Greater-ness pass polish features', () => {
     })
 
     const player = host.querySelector('.player')!
+    const focusButton = host.querySelector<HTMLButtonElement>('.focus-toggle')!
     expect(player.classList.contains('is-focused')).toBe(false)
 
     await act(async () => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }))
+      focusButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }))
     })
 
     expect(player.classList.contains('is-focused')).toBe(true)
